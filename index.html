@@ -1,0 +1,1644 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Mind Archive</title>
+  <style>
+    :root {
+      --page: #e7e7e7;
+      --panel: #ffffff;
+      --panel-2: #f3f3f3;
+      --line: #b9c3cf;
+      --line-dark: #8c9bad;
+      --text: #1f2933;
+      --muted: #5d6670;
+      --link: #1a4f8f;
+      --danger: #9b1c1c;
+      --pin: #7d5200;
+      --ok: #1b6f3a;
+      --title: #2b5f93;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      color: var(--text);
+      background: var(--page);
+      font-family: Verdana, Geneva, Tahoma, sans-serif;
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    a {
+      color: var(--link);
+      text-decoration: underline;
+      cursor: pointer;
+    }
+
+    button,
+    input,
+    textarea,
+    select {
+      font: inherit;
+    }
+
+    button {
+      border: 1px solid #7d8896;
+      background: #eeeeee;
+      color: #17202a;
+      padding: 3px 8px;
+      cursor: pointer;
+      min-height: 24px;
+    }
+
+    button:hover {
+      background: #e0e7ef;
+    }
+
+    button:disabled {
+      color: #7d8896;
+      cursor: not-allowed;
+    }
+
+    input,
+    textarea,
+    select {
+      width: 100%;
+      border: 1px solid #8793a3;
+      background: #ffffff;
+      color: var(--text);
+      padding: 4px 5px;
+    }
+
+    textarea {
+      min-height: 300px;
+      resize: vertical;
+      font-family: Consolas, "Courier New", monospace;
+      line-height: 1.55;
+    }
+
+    .page {
+      width: min(1260px, calc(100vw - 16px));
+      margin: 8px auto 24px;
+      border: 1px solid var(--line-dark);
+      background: var(--panel);
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      border-top: 4px solid #3b6fa3;
+      border-bottom: 1px solid #9aa8b8;
+      background: #f7f7f7;
+      padding: 6px 9px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .brand h1 {
+      margin: 0;
+      color: var(--title);
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 22px;
+      line-height: 1;
+      white-space: nowrap;
+    }
+
+    .brand span {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .top-actions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 6px;
+    }
+
+    .session-user {
+      align-self: center;
+      color: #475569;
+      font-size: 12px;
+    }
+
+    .nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 2px;
+      border-bottom: 1px solid #aeb9c6;
+      background: #dce5ee;
+      padding: 3px 4px 0;
+    }
+
+    .tab {
+      border: 1px solid #aeb9c6;
+      border-bottom: 0;
+      background: #edf2f7;
+      padding: 4px 8px;
+      min-height: auto;
+    }
+
+    .tab.active {
+      border-color: #8d9caf;
+      background: #ffffff;
+      font-weight: bold;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 218px 1fr;
+      min-height: 720px;
+    }
+
+    .auth-panel {
+      max-width: 760px;
+      margin: 22px auto 30px;
+    }
+
+    .auth-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .auth-note {
+      border: 1px solid #c4ccd6;
+      background: #f8fafc;
+      color: #4b5563;
+      margin-top: 8px;
+      padding: 8px;
+    }
+
+    .sidebar {
+      border-right: 1px solid var(--line);
+      background: var(--panel-2);
+      padding: 8px;
+    }
+
+    .main {
+      padding: 8px;
+      min-width: 0;
+    }
+
+    .box {
+      border: 1px solid var(--line);
+      background: #ffffff;
+      margin-bottom: 8px;
+    }
+
+    .box-title {
+      border-bottom: 1px solid var(--line);
+      background: #e1e9f2;
+      color: #2a4f76;
+      font-weight: bold;
+      padding: 4px 6px;
+    }
+
+    .box-body {
+      padding: 7px;
+    }
+
+    .stack {
+      display: grid;
+      gap: 7px;
+    }
+
+    .row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .row.wrap {
+      flex-wrap: wrap;
+    }
+
+    .row > * {
+      min-width: 0;
+    }
+
+    .field {
+      display: grid;
+      gap: 3px;
+    }
+
+    .field label {
+      color: #344357;
+      font-weight: bold;
+      font-size: 12px;
+    }
+
+    .muted {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .counter-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 6px;
+    }
+
+    .counter {
+      border: 1px solid #c0c9d5;
+      background: #f8fafc;
+      padding: 6px;
+      text-align: center;
+    }
+
+    .counter strong {
+      display: block;
+      font-size: 18px;
+      color: #0f2f57;
+    }
+
+    .post-list {
+      display: grid;
+      gap: 8px;
+    }
+
+    .post {
+      border: 1px solid var(--line);
+      background: #ffffff;
+    }
+
+    .post.pinned {
+      border-color: #b8872f;
+      background: #fffdf7;
+    }
+
+    .post-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 8px;
+      border-bottom: 1px solid #d7dee8;
+      background: #f2f5f9;
+      padding: 7px;
+    }
+
+    .post-title {
+      margin: 0;
+      color: #0f2f57;
+      font-size: 16px;
+      line-height: 1.25;
+    }
+
+    .post-title button {
+      border: 0;
+      background: transparent;
+      color: #0f2f57;
+      min-height: 0;
+      padding: 0;
+      font-weight: bold;
+      text-align: left;
+      text-decoration: underline;
+    }
+
+    .post-meta {
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 2px;
+    }
+
+    .post-actions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 4px;
+      flex: 0 0 auto;
+    }
+
+    .post-body {
+      padding: 8px 9px;
+    }
+
+    .post-body h1,
+    .post-body h2,
+    .post-body h3 {
+      margin: 10px 0 4px;
+      color: #27384c;
+      font-family: Georgia, "Times New Roman", serif;
+    }
+
+    .post-body p {
+      margin: 6px 0;
+    }
+
+    .post-body pre {
+      overflow: auto;
+      border: 1px solid #c7d0dc;
+      background: #f6f8fb;
+      padding: 8px;
+      font-family: Consolas, "Courier New", monospace;
+    }
+
+    .post-body code {
+      background: #edf1f7;
+      padding: 1px 3px;
+      font-family: Consolas, "Courier New", monospace;
+    }
+
+    .tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin-top: 7px;
+    }
+
+    .tag {
+      border: 1px solid #b7c1ce;
+      background: #eef3f9;
+      color: #334155;
+      padding: 1px 5px;
+      font-size: 12px;
+    }
+
+    .pin {
+      color: var(--pin);
+      font-weight: bold;
+    }
+
+    .danger {
+      color: var(--danger);
+    }
+
+    .ok {
+      color: var(--ok);
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .split {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      gap: 8px;
+      align-items: start;
+    }
+
+    .preview {
+      max-height: 260px;
+      overflow: auto;
+    }
+
+    #bodyInput {
+      min-height: 560px;
+    }
+
+    #postForm .box-body {
+      padding: 9px;
+    }
+
+    .timeline {
+      display: grid;
+      gap: 10px;
+    }
+
+    .year {
+      border-left: 4px solid #6f7e91;
+      padding-left: 8px;
+    }
+
+    .year h3 {
+      margin: 0 0 5px;
+      font-size: 18px;
+      font-family: Georgia, "Times New Roman", serif;
+    }
+
+    .month {
+      display: grid;
+      grid-template-columns: 92px 1fr;
+      gap: 8px;
+      border-top: 1px solid #d4dbe5;
+      padding: 6px 0;
+    }
+
+    .month-name {
+      color: #27384c;
+      font-weight: bold;
+    }
+
+    .bar {
+      display: grid;
+      grid-template-columns: repeat(31, 1fr);
+      gap: 1px;
+      min-height: 24px;
+      align-items: end;
+    }
+
+    .day {
+      min-width: 3px;
+      background: #d7dee8;
+      border: 1px solid #c6cfdb;
+    }
+
+    .day.has-posts {
+      background: #6f93bd;
+      border-color: #486d98;
+    }
+
+    .collection-list {
+      display: grid;
+      gap: 8px;
+    }
+
+    .collection-item {
+      border: 1px solid #c0c9d5;
+      background: #ffffff;
+      padding: 7px;
+    }
+
+    .collection-item h3 {
+      margin: 0 0 4px;
+      font-size: 15px;
+      color: #0f2f57;
+    }
+
+    .empty {
+      border: 1px dashed #9aa6b5;
+      background: #fbfcfe;
+      color: var(--muted);
+      padding: 16px;
+      text-align: center;
+    }
+
+    .rss-output {
+      min-height: 190px;
+      white-space: pre;
+      overflow: auto;
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 12px;
+    }
+
+    .footer {
+      border-top: 1px solid var(--line);
+      background: #eef2f7;
+      color: var(--muted);
+      padding: 7px 10px;
+      font-size: 12px;
+    }
+
+    @media (max-width: 800px) {
+      .page {
+        width: calc(100vw - 8px);
+        margin-top: 4px;
+      }
+
+      .topbar,
+      .post-head {
+        align-items: stretch;
+        flex-direction: column;
+      }
+
+      .brand {
+        flex-direction: column;
+        gap: 3px;
+      }
+
+      .brand h1 {
+        white-space: normal;
+      }
+
+      .top-actions,
+      .post-actions {
+        justify-content: flex-start;
+      }
+
+      .layout,
+      .auth-grid,
+      .split {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        border-right: 0;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .month {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media print {
+      body {
+        background: #ffffff;
+      }
+
+      .topbar,
+      .nav,
+      .sidebar,
+      .footer,
+      .post-actions,
+      #editorView,
+      #toolsView {
+        display: none !important;
+      }
+
+      .page {
+        width: auto;
+        margin: 0;
+        border: 0;
+        box-shadow: none;
+      }
+
+      .layout {
+        display: block;
+      }
+
+      .main {
+        padding: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="topbar">
+      <div class="brand">
+        <h1>Mind Archive</h1>
+        <span>plain old thoughts, dated and kept</span>
+      </div>
+      <div class="top-actions">
+        <span class="session-user hidden" id="currentUserLabel"></span>
+        <button id="newPostTop" class="auth-only hidden">New post</button>
+        <button id="downloadMarkdownTop" class="auth-only hidden">Download Markdown</button>
+        <button id="printPdfTop" class="auth-only hidden">Print / PDF</button>
+        <button id="privacyButton">Privacy</button>
+        <button id="logoutButton" class="auth-only hidden">Logout</button>
+      </div>
+    </header>
+
+    <section id="privacyView" class="auth-panel hidden">
+      <div class="box">
+        <div class="box-title">About and Privacy</div>
+        <div class="box-body stack">
+          <p>Mind Archive is for private long-term writing: thoughts, feelings, notes, collections, and personal timelines.</p>
+          <p>Your posts are encrypted in your browser before they are stored on the server. The server stores encrypted vault data, not readable journal text.</p>
+          <p>Your password is used in the browser to unlock your archive. The raw password is not sent to the server.</p>
+          <p>Password recovery is intentionally not available. If you forget the password, the archive cannot be decrypted.</p>
+          <p>Backups matter. Use the Markdown and JSON export tools regularly if the archive is important to you.</p>
+          <div class="row wrap">
+            <button id="privacyBackButton" type="button">Back</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="authView" class="auth-panel">
+      <div class="auth-grid">
+        <form id="signinForm" class="box">
+          <div class="box-title">Sign in</div>
+          <div class="box-body stack">
+            <div class="field">
+              <label for="signinUser">Username</label>
+              <input id="signinUser" autocomplete="username" required>
+            </div>
+            <div class="field">
+              <label for="signinPassword">Password</label>
+              <input id="signinPassword" type="password" autocomplete="current-password" required>
+            </div>
+            <div class="row wrap">
+              <button type="submit">Sign in</button>
+              <span id="signinStatus" class="muted"></span>
+            </div>
+          </div>
+        </form>
+
+        <form id="signupForm" class="box">
+          <div class="box-title">Sign up</div>
+          <div class="box-body stack">
+            <div class="field">
+              <label for="signupUser">Username</label>
+              <input id="signupUser" autocomplete="username" required>
+            </div>
+            <div class="field">
+              <label for="signupPassword">Password</label>
+              <input id="signupPassword" type="password" autocomplete="new-password" minlength="8" required>
+            </div>
+            <div class="field">
+              <label for="signupPasswordAgain">Repeat password</label>
+              <input id="signupPasswordAgain" type="password" autocomplete="new-password" minlength="8" required>
+            </div>
+            <div class="row wrap">
+              <button type="submit">Create private archive</button>
+              <span id="signupStatus" class="muted"></span>
+            </div>
+          </div>
+        </form>
+      </div>
+      <div class="auth-note">
+        Each archive is encrypted in your browser before it is stored on the server. Other users cannot open it, and the server cannot read it without your password. If you forget the password, the archive cannot be recovered.
+      </div>
+    </section>
+
+    <nav id="appNav" class="nav hidden" aria-label="Main views">
+      <button class="tab active" data-view="postsView">Posts</button>
+      <button class="tab" data-view="editorView">Write</button>
+      <button class="tab" data-view="timelineView">What I Was Thinking</button>
+      <button class="tab" data-view="collectionsView">Collections</button>
+      <button class="tab" data-view="toolsView">RSS / Backup</button>
+    </nav>
+
+    <div id="appLayout" class="layout hidden">
+      <aside class="sidebar">
+        <section class="box">
+          <div class="box-title">Archive</div>
+          <div class="box-body">
+            <div class="counter-grid">
+              <div class="counter"><strong id="postCount">0</strong>posts</div>
+              <div class="counter"><strong id="pinCount">0</strong>pinned</div>
+              <div class="counter"><strong id="yearCount">0</strong>years</div>
+              <div class="counter"><strong id="wordCount">0</strong>words</div>
+            </div>
+          </div>
+        </section>
+
+        <section class="box">
+          <div class="box-title">Find</div>
+          <div class="box-body stack">
+            <input id="searchInput" type="search" placeholder="search thoughts">
+            <select id="filterCollection" aria-label="Filter by collection">
+              <option value="">all collections</option>
+            </select>
+            <select id="filterSeries" aria-label="Filter by series">
+              <option value="">all series</option>
+            </select>
+            <label class="row"><input id="onlyPinned" type="checkbox" style="width:auto"> pinned only</label>
+          </div>
+        </section>
+
+        <section class="box">
+          <div class="box-title">Pinned</div>
+          <div class="box-body" id="pinnedList"></div>
+        </section>
+
+        <section class="box">
+          <div class="box-title">Local Note</div>
+          <div class="box-body muted">
+            Your encrypted archive is stored on the server. Use backups if you want extra copies that can survive account or hosting problems.
+          </div>
+        </section>
+      </aside>
+
+      <main class="main">
+        <section id="postsView" class="view">
+          <div class="box">
+            <div class="box-title">Posts</div>
+            <div class="box-body">
+              <div id="postList" class="post-list"></div>
+            </div>
+          </div>
+        </section>
+
+        <section id="editorView" class="view hidden">
+          <div class="split">
+            <form id="postForm" class="box">
+              <div class="box-title" id="editorTitle">Write Post</div>
+              <div class="box-body stack">
+                <input id="postId" type="hidden">
+                <div class="field">
+                  <label for="titleInput">Title</label>
+                  <input id="titleInput" required maxlength="160" placeholder="what was today about?">
+                </div>
+                <div class="row wrap">
+                  <div class="field" style="flex:1 1 170px">
+                    <label for="moodInput">Mood</label>
+                    <input id="moodInput" maxlength="80" placeholder="tired, clear, angry, grateful">
+                  </div>
+                  <div class="field" style="flex:1 1 170px">
+                    <label for="placeInput">Place</label>
+                    <input id="placeInput" maxlength="120" placeholder="room, city, train, college">
+                  </div>
+                </div>
+                <div class="row wrap">
+                  <div class="field" style="flex:1 1 170px">
+                    <label for="collectionsInput">Collections</label>
+                    <input id="collectionsInput" placeholder="life, college, work">
+                  </div>
+                  <div class="field" style="flex:1 1 170px">
+                    <label for="seriesInput">Series</label>
+                    <input id="seriesInput" placeholder="becoming 20">
+                  </div>
+                </div>
+                <div class="field">
+                  <label for="bodyInput">Markdown</label>
+                  <textarea id="bodyInput" required placeholder="Write exactly what is in your head. Markdown works: # heading, **bold**, *italic*, - list, > quote."></textarea>
+                </div>
+                <label class="row"><input id="pinnedInput" type="checkbox" style="width:auto"> pin this thought</label>
+                <div class="row wrap">
+                  <button type="submit">Save post</button>
+                  <button type="button" id="clearEditor">Clear</button>
+                  <span class="muted" id="editorStatus"></span>
+                </div>
+              </div>
+            </form>
+
+            <section class="box preview">
+              <div class="box-title">Preview</div>
+              <div class="box-body post-body" id="markdownPreview"></div>
+            </section>
+          </div>
+        </section>
+
+        <section id="timelineView" class="view hidden">
+          <div class="box">
+            <div class="box-title">What I Was Thinking</div>
+            <div class="box-body">
+              <div id="timeline" class="timeline"></div>
+            </div>
+          </div>
+        </section>
+
+        <section id="collectionsView" class="view hidden">
+          <div class="box">
+            <div class="box-title">Collections and Series</div>
+            <div class="box-body">
+              <div id="collectionsList" class="collection-list"></div>
+            </div>
+          </div>
+        </section>
+
+        <section id="toolsView" class="view hidden">
+          <div class="box">
+            <div class="box-title">RSS Feed</div>
+            <div class="box-body stack">
+              <div class="muted">Download this XML and publish it beside the site as <code>feed.xml</code> if you host the page online.</div>
+              <div class="row wrap">
+                <button id="downloadRss">Download feed.xml</button>
+                <button id="copyRss">Copy RSS</button>
+              </div>
+              <textarea id="rssOutput" class="rss-output" readonly></textarea>
+            </div>
+          </div>
+
+          <div class="box">
+            <div class="box-title">Backup</div>
+            <div class="box-body stack">
+              <div class="row wrap">
+                <button id="downloadJson">Download JSON backup</button>
+                <button id="downloadMarkdown">Download single Markdown</button>
+                <button id="printPdf">Print / PDF</button>
+              </div>
+              <div class="field">
+                <label for="importFile">Restore JSON backup</label>
+                <input id="importFile" type="file" accept="application/json">
+              </div>
+              <div class="muted">Markdown is best for reading anywhere. JSON is best for restoring this website exactly.</div>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <footer class="footer">
+      Stored locally in your browser as encrypted profile vaults. Back up regularly.
+    </footer>
+  </div>
+
+  <script>
+    const LEGACY_STORAGE_KEY = "mind-archive-v1";
+    const cryptoApi = window.crypto && window.crypto.subtle ? window.crypto : null;
+    const encoder = new TextEncoder();
+    const decoder = new TextDecoder();
+    const state = {
+      posts: [],
+      view: "postsView",
+      query: "",
+      collection: "",
+      series: "",
+      onlyPinned: false,
+      currentUser: "",
+      currentKey: null,
+      previousScreen: "auth"
+    };
+
+    const $ = (id) => document.getElementById(id);
+    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+    function uid() {
+      return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+    }
+
+    function bytesToBase64(bytes) {
+      const view = new Uint8Array(bytes);
+      let binary = "";
+      for (let index = 0; index < view.length; index += 0x8000) {
+        binary += String.fromCharCode(...view.subarray(index, index + 0x8000));
+      }
+      return btoa(binary);
+    }
+
+    function base64ToBytes(value) {
+      return Uint8Array.from(atob(value), (char) => char.charCodeAt(0));
+    }
+
+    function randomBase64(length) {
+      const bytes = new Uint8Array(length);
+      crypto.getRandomValues(bytes);
+      return bytesToBase64(bytes);
+    }
+
+    function normalizeUsername(value) {
+      return String(value || "").trim().toLowerCase();
+    }
+
+    async function deriveKey(username, password, salt) {
+      const material = await cryptoApi.subtle.importKey(
+        "raw",
+        encoder.encode(`${username}:${password}:vault`),
+        "PBKDF2",
+        false,
+        ["deriveKey"]
+      );
+      return cryptoApi.subtle.deriveKey(
+        { name: "PBKDF2", salt: base64ToBytes(salt), iterations: 250000, hash: "SHA-256" },
+        material,
+        { name: "AES-GCM", length: 256 },
+        false,
+        ["encrypt", "decrypt"]
+      );
+    }
+
+    async function deriveLoginSecret(username, password, salt) {
+      const material = await cryptoApi.subtle.importKey(
+        "raw",
+        encoder.encode(`${username}:${password}:login`),
+        "PBKDF2",
+        false,
+        ["deriveBits"]
+      );
+      const bits = await cryptoApi.subtle.deriveBits(
+        { name: "PBKDF2", salt: base64ToBytes(salt), iterations: 250000, hash: "SHA-256" },
+        material,
+        256
+      );
+      return bytesToBase64(bits);
+    }
+
+    async function encryptJson(key, value) {
+      const iv = randomBase64(12);
+      const encrypted = await cryptoApi.subtle.encrypt(
+        { name: "AES-GCM", iv: base64ToBytes(iv) },
+        key,
+        encoder.encode(JSON.stringify(value))
+      );
+      return { iv, data: bytesToBase64(encrypted) };
+    }
+
+    async function decryptJson(key, record) {
+      const decrypted = await cryptoApi.subtle.decrypt(
+        { name: "AES-GCM", iv: base64ToBytes(record.iv) },
+        key,
+        base64ToBytes(record.data)
+      );
+      return JSON.parse(decoder.decode(decrypted));
+    }
+
+    async function api(path, options = {}) {
+      const response = await fetch(path, {
+        credentials: "same-origin",
+        headers: { "content-type": "application/json", ...(options.headers || {}) },
+        ...options
+      });
+      const body = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(body.error || "Request failed.");
+      return body;
+    }
+
+    async function savePosts() {
+      if (!state.currentUser || !state.currentKey) return;
+      const vault = await encryptJson(state.currentKey, state.posts);
+      await api("/api/vault", {
+        method: "PUT",
+        body: JSON.stringify({ vault })
+      });
+    }
+
+    function hasLegacyPosts() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(LEGACY_STORAGE_KEY) || "[]");
+        return Array.isArray(saved) && saved.length > 0;
+      } catch {
+        return false;
+      }
+    }
+
+    function readLegacyPosts() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(LEGACY_STORAGE_KEY) || "[]");
+        return Array.isArray(saved) ? saved : [];
+      } catch {
+        return [];
+      }
+    }
+
+    async function signUp(usernameValue, password, passwordAgain) {
+      const username = normalizeUsername(usernameValue);
+      if (password !== passwordAgain) throw new Error("Passwords do not match.");
+      if (!cryptoApi) throw new Error("This browser does not support Web Crypto.");
+
+      const clientSalt = randomBase64(16);
+      const key = await deriveKey(username, password, clientSalt);
+      const loginSecret = await deriveLoginSecret(username, password, clientSalt);
+      let startingPosts = [];
+      if (hasLegacyPosts() && confirm("Import the old local archive into this new encrypted account?")) {
+        startingPosts = readLegacyPosts();
+      }
+      const vault = await encryptJson(key, startingPosts);
+      const result = await api("/api/signup", {
+        method: "POST",
+        body: JSON.stringify({ username, loginSecret, clientSalt, vault })
+      });
+      unlock(result.username, key, startingPosts);
+    }
+
+    async function signIn(usernameValue, password) {
+      const username = normalizeUsername(usernameValue);
+      if (!cryptoApi) throw new Error("This browser does not support Web Crypto.");
+
+      const session = await api(`/api/user-salt?username=${encodeURIComponent(username)}`);
+      const loginSecret = await deriveLoginSecret(username, password, session.clientSalt);
+      const result = await api("/api/signin", {
+        method: "POST",
+        body: JSON.stringify({ username, loginSecret })
+      });
+      const key = await deriveKey(result.username, password, result.clientSalt);
+      const posts = result.vault ? await decryptJson(key, result.vault) : [];
+      unlock(result.username, key, Array.isArray(posts) ? posts : []);
+    }
+
+    async function logout() {
+      try {
+        await api("/api/logout", { method: "POST", body: "{}" });
+      } finally {
+        state.currentUser = "";
+        state.currentKey = null;
+        state.posts = [];
+        clearEditor();
+        showAuth();
+      }
+    }
+
+    function unlock(username, key, posts) {
+      state.currentUser = username;
+      state.currentKey = key;
+      state.posts = posts;
+      state.query = "";
+      state.collection = "";
+      state.series = "";
+      state.onlyPinned = false;
+      $("searchInput").value = "";
+      $("onlyPinned").checked = false;
+      $("currentUserLabel").textContent = `signed in: ${username}`;
+      showApp();
+      renderAll();
+      setView("postsView");
+    }
+
+    function showAuth() {
+      state.previousScreen = "auth";
+      $("privacyView").classList.add("hidden");
+      $("authView").classList.remove("hidden");
+      $("appNav").classList.add("hidden");
+      $("appLayout").classList.add("hidden");
+      $("currentUserLabel").classList.add("hidden");
+      document.querySelectorAll(".auth-only").forEach((el) => el.classList.add("hidden"));
+      $("signinPassword").value = "";
+      $("signupPassword").value = "";
+      $("signupPasswordAgain").value = "";
+    }
+
+    function showApp() {
+      state.previousScreen = "app";
+      $("privacyView").classList.add("hidden");
+      $("authView").classList.add("hidden");
+      $("appNav").classList.remove("hidden");
+      $("appLayout").classList.remove("hidden");
+      $("currentUserLabel").classList.remove("hidden");
+      document.querySelectorAll(".auth-only").forEach((el) => el.classList.remove("hidden"));
+    }
+
+    function showPrivacy() {
+      $("authView").classList.add("hidden");
+      $("appNav").classList.add("hidden");
+      $("appLayout").classList.add("hidden");
+      $("privacyView").classList.remove("hidden");
+    }
+
+    function leavePrivacy() {
+      if (state.currentUser) {
+        showApp();
+        renderAll();
+        setView(state.view || "postsView");
+      } else {
+        showAuth();
+      }
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function inlineMarkdown(text) {
+      return escapeHtml(text)
+        .replace(/`([^`]+)`/g, "<code>$1</code>")
+        .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
+        .replace(/\*([^*]+)\*/g, "<em>$1</em>")
+        .replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+    }
+
+    function renderMarkdown(markdown) {
+      const lines = String(markdown || "").replace(/\r\n/g, "\n").split("\n");
+      const html = [];
+      let listOpen = false;
+      let quoteOpen = false;
+      let codeOpen = false;
+      let paragraph = [];
+
+      function closeParagraph() {
+        if (paragraph.length) {
+          html.push(`<p>${inlineMarkdown(paragraph.join(" "))}</p>`);
+          paragraph = [];
+        }
+      }
+
+      function closeList() {
+        if (listOpen) {
+          html.push("</ul>");
+          listOpen = false;
+        }
+      }
+
+      function closeQuote() {
+        if (quoteOpen) {
+          html.push("</blockquote>");
+          quoteOpen = false;
+        }
+      }
+
+      for (const line of lines) {
+        if (line.trim().startsWith("```")) {
+          closeParagraph();
+          closeList();
+          closeQuote();
+          html.push(codeOpen ? "</code></pre>" : "<pre><code>");
+          codeOpen = !codeOpen;
+          continue;
+        }
+
+        if (codeOpen) {
+          html.push(`${escapeHtml(line)}\n`);
+          continue;
+        }
+
+        if (!line.trim()) {
+          closeParagraph();
+          closeList();
+          closeQuote();
+          continue;
+        }
+
+        const heading = line.match(/^(#{1,3})\s+(.+)$/);
+        if (heading) {
+          closeParagraph();
+          closeList();
+          closeQuote();
+          const level = heading[1].length;
+          html.push(`<h${level}>${inlineMarkdown(heading[2])}</h${level}>`);
+          continue;
+        }
+
+        const list = line.match(/^\s*[-*]\s+(.+)$/);
+        if (list) {
+          closeParagraph();
+          closeQuote();
+          if (!listOpen) {
+            html.push("<ul>");
+            listOpen = true;
+          }
+          html.push(`<li>${inlineMarkdown(list[1])}</li>`);
+          continue;
+        }
+
+        const quote = line.match(/^>\s?(.+)$/);
+        if (quote) {
+          closeParagraph();
+          closeList();
+          if (!quoteOpen) {
+            html.push("<blockquote>");
+            quoteOpen = true;
+          }
+          html.push(`<p>${inlineMarkdown(quote[1])}</p>`);
+          continue;
+        }
+
+        closeList();
+        closeQuote();
+        paragraph.push(line.trim());
+      }
+
+      closeParagraph();
+      closeList();
+      closeQuote();
+      if (codeOpen) {
+        html.push("</code></pre>");
+      }
+      return html.join("");
+    }
+
+    function formatDate(value) {
+      return new Intl.DateTimeFormat(undefined, {
+        year: "numeric",
+        month: "short",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit"
+      }).format(new Date(value));
+    }
+
+    function sortedPosts(posts = state.posts) {
+      return [...posts].sort((a, b) => {
+        if (a.pinned !== b.pinned) return a.pinned ? -1 : 1;
+        return new Date(b.createdAt) - new Date(a.createdAt);
+      });
+    }
+
+    function getCollections() {
+      return [...new Set(state.posts.flatMap((post) => post.collections || []))]
+        .filter(Boolean)
+        .sort((a, b) => a.localeCompare(b));
+    }
+
+    function getSeries() {
+      return [...new Set(state.posts.map((post) => post.series).filter(Boolean))]
+        .sort((a, b) => a.localeCompare(b));
+    }
+
+    function wordsIn(text) {
+      return String(text || "").trim().split(/\s+/).filter(Boolean).length;
+    }
+
+    function filteredPosts() {
+      const q = state.query.toLowerCase();
+      return sortedPosts().filter((post) => {
+        const haystack = `${post.title} ${post.body} ${post.mood} ${post.place} ${(post.collections || []).join(" ")} ${post.series}`.toLowerCase();
+        if (q && !haystack.includes(q)) return false;
+        if (state.collection && !(post.collections || []).includes(state.collection)) return false;
+        if (state.series && post.series !== state.series) return false;
+        if (state.onlyPinned && !post.pinned) return false;
+        return true;
+      });
+    }
+
+    function setView(view) {
+      state.view = view;
+      document.querySelectorAll(".view").forEach((el) => el.classList.toggle("hidden", el.id !== view));
+      document.querySelectorAll(".tab").forEach((tab) => tab.classList.toggle("active", tab.dataset.view === view));
+      if (view === "timelineView") renderTimeline();
+      if (view === "collectionsView") renderCollections();
+      if (view === "toolsView") renderTools();
+    }
+
+    function renderPost(post) {
+      const tags = [
+        post.mood ? `mood: ${post.mood}` : "",
+        post.place ? `place: ${post.place}` : "",
+        ...(post.collections || []).map((name) => `collection: ${name}`),
+        post.series ? `series: ${post.series}` : ""
+      ].filter(Boolean);
+
+      return `
+        <article class="post ${post.pinned ? "pinned" : ""}" id="post-${escapeHtml(post.id)}">
+          <div class="post-head">
+            <div>
+              <h2 class="post-title"><button type="button" data-action="open" data-id="${post.id}">${escapeHtml(post.title)}</button></h2>
+              <div class="post-meta">
+                ${post.pinned ? '<span class="pin">pinned</span> &middot; ' : ""}
+                written ${escapeHtml(formatDate(post.createdAt))}
+                ${post.updatedAt && post.updatedAt !== post.createdAt ? ` &middot; edited ${escapeHtml(formatDate(post.updatedAt))}` : ""}
+                &middot; ${wordsIn(post.body)} words
+              </div>
+            </div>
+            <div class="post-actions">
+              <button type="button" data-action="pin" data-id="${post.id}">${post.pinned ? "Unpin" : "Pin"}</button>
+              <button type="button" data-action="edit" data-id="${post.id}">Edit</button>
+              <button type="button" data-action="delete" data-id="${post.id}" class="danger">Delete</button>
+            </div>
+          </div>
+          <div class="post-body">${renderMarkdown(post.body)}</div>
+          ${tags.length ? `<div class="tags">${tags.map((tag) => `<span class="tag">${escapeHtml(tag)}</span>`).join("")}</div>` : ""}
+        </article>
+      `;
+    }
+
+    function renderPosts() {
+      const posts = filteredPosts();
+      $("postList").innerHTML = posts.length
+        ? posts.map(renderPost).join("")
+        : '<div class="empty">No thoughts found. Write one.</div>';
+    }
+
+    function renderSidebar() {
+      const years = new Set(state.posts.map((post) => new Date(post.createdAt).getFullYear()));
+      $("postCount").textContent = state.posts.length;
+      $("pinCount").textContent = state.posts.filter((post) => post.pinned).length;
+      $("yearCount").textContent = years.size;
+      $("wordCount").textContent = state.posts.reduce((total, post) => total + wordsIn(post.body), 0);
+
+      const pinned = sortedPosts(state.posts.filter((post) => post.pinned));
+      $("pinnedList").innerHTML = pinned.length
+        ? pinned.map((post) => `<div><a data-action="open" data-id="${post.id}">${escapeHtml(post.title)}</a><div class="muted">${escapeHtml(formatDate(post.createdAt))}</div></div>`).join("<hr>")
+        : '<div class="muted">Nothing pinned yet.</div>';
+
+      const selectedCollection = state.collection;
+      const selectedSeries = state.series;
+      $("filterCollection").innerHTML = '<option value="">all collections</option>' + getCollections().map((name) => `<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`).join("");
+      $("filterSeries").innerHTML = '<option value="">all series</option>' + getSeries().map((name) => `<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`).join("");
+      $("filterCollection").value = selectedCollection;
+      $("filterSeries").value = selectedSeries;
+    }
+
+    function renderTimeline() {
+      const byYear = new Map();
+      for (const post of state.posts) {
+        const date = new Date(post.createdAt);
+        const year = date.getFullYear();
+        const month = date.getMonth();
+        const day = date.getDate();
+        if (!byYear.has(year)) byYear.set(year, new Map());
+        if (!byYear.get(year).has(month)) byYear.get(year).set(month, new Map());
+        const dayMap = byYear.get(year).get(month);
+        dayMap.set(day, (dayMap.get(day) || 0) + 1);
+      }
+
+      const years = [...byYear.keys()].sort((a, b) => b - a);
+      $("timeline").innerHTML = years.length
+        ? years.map((year) => {
+          const months = [...byYear.get(year).keys()].sort((a, b) => b - a);
+          return `
+            <section class="year">
+              <h3>${year}</h3>
+              ${months.map((month) => {
+                const days = byYear.get(year).get(month);
+                const maxDays = new Date(year, month + 1, 0).getDate();
+                const cells = Array.from({ length: 31 }, (_, index) => {
+                  const day = index + 1;
+                  const count = day <= maxDays ? days.get(day) || 0 : 0;
+                  const height = count ? Math.min(24, 8 + count * 5) : 4;
+                  const title = count ? `${monthNames[month]} ${day}, ${year}: ${count} post${count > 1 ? "s" : ""}` : "";
+                  return `<span class="day ${count ? "has-posts" : ""}" title="${escapeHtml(title)}" style="height:${height}px"></span>`;
+                }).join("");
+                return `<div class="month"><div class="month-name">${monthNames[month]}</div><div class="bar">${cells}</div></div>`;
+              }).join("")}
+            </section>
+          `;
+        }).join("")
+        : '<div class="empty">The timeline starts when you write your first post.</div>';
+    }
+
+    function renderCollections() {
+      const groups = [];
+      for (const name of getCollections()) {
+        groups.push({ type: "Collection", name, posts: sortedPosts(state.posts.filter((post) => (post.collections || []).includes(name))) });
+      }
+      for (const name of getSeries()) {
+        groups.push({ type: "Series", name, posts: sortedPosts(state.posts.filter((post) => post.series === name)) });
+      }
+
+      $("collectionsList").innerHTML = groups.length
+        ? groups.map((group) => `
+          <section class="collection-item">
+            <h3>${escapeHtml(group.type)}: ${escapeHtml(group.name)}</h3>
+            <div class="muted">${group.posts.length} post${group.posts.length > 1 ? "s" : ""}</div>
+            <ul>
+              ${group.posts.map((post) => `<li><a data-action="open" data-id="${post.id}">${escapeHtml(post.title)}</a> <span class="muted">${escapeHtml(formatDate(post.createdAt))}</span></li>`).join("")}
+            </ul>
+          </section>
+        `).join("")
+        : '<div class="empty">Add collection names or a series while writing posts.</div>';
+    }
+
+    function buildMarkdownExport() {
+      const header = [
+        "# Mind Archive",
+        "",
+        `Exported: ${new Date().toISOString()}`,
+        `Posts: ${state.posts.length}`,
+        ""
+      ];
+      const posts = sortedPosts(state.posts).map((post) => [
+        `## ${post.title}`,
+        "",
+        `- Created: ${post.createdAt}`,
+        `- Updated: ${post.updatedAt || post.createdAt}`,
+        `- Pinned: ${post.pinned ? "yes" : "no"}`,
+        post.mood ? `- Mood: ${post.mood}` : "",
+        post.place ? `- Place: ${post.place}` : "",
+        post.collections?.length ? `- Collections: ${post.collections.join(", ")}` : "",
+        post.series ? `- Series: ${post.series}` : "",
+        "",
+        post.body,
+        "",
+        "---",
+        ""
+      ].filter((line) => line !== "").join("\n"));
+      return header.concat(posts).join("\n");
+    }
+
+    function buildRss() {
+      const siteUrl = location.href.split("#")[0];
+      const items = sortedPosts().slice(0, 50).map((post) => `
+  <item>
+    <title>${escapeHtml(post.title)}</title>
+    <link>${escapeHtml(siteUrl)}#post-${escapeHtml(post.id)}</link>
+    <guid>${escapeHtml(post.id)}</guid>
+    <pubDate>${new Date(post.createdAt).toUTCString()}</pubDate>
+    <description><![CDATA[${renderMarkdown(post.body)}]]></description>
+  </item>`).join("");
+
+      return `<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+<channel>
+  <title>Mind Archive</title>
+  <link>${escapeHtml(siteUrl)}</link>
+  <description>Personal thoughts and opinions</description>
+  <lastBuildDate>${new Date().toUTCString()}</lastBuildDate>${items}
+</channel>
+</rss>`;
+    }
+
+    function download(filename, content, type) {
+      const blob = new Blob([content], { type });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    function clearEditor() {
+      $("postId").value = "";
+      $("titleInput").value = "";
+      $("moodInput").value = "";
+      $("placeInput").value = "";
+      $("collectionsInput").value = "";
+      $("seriesInput").value = "";
+      $("bodyInput").value = "";
+      $("pinnedInput").checked = false;
+      $("editorTitle").textContent = "Write Post";
+      $("editorStatus").textContent = "";
+      renderPreview();
+    }
+
+    function editPost(id) {
+      const post = state.posts.find((item) => item.id === id);
+      if (!post) return;
+      $("postId").value = post.id;
+      $("titleInput").value = post.title;
+      $("moodInput").value = post.mood || "";
+      $("placeInput").value = post.place || "";
+      $("collectionsInput").value = (post.collections || []).join(", ");
+      $("seriesInput").value = post.series || "";
+      $("bodyInput").value = post.body;
+      $("pinnedInput").checked = Boolean(post.pinned);
+      $("editorTitle").textContent = "Edit Post";
+      $("editorStatus").textContent = `created ${formatDate(post.createdAt)}`;
+      renderPreview();
+      setView("editorView");
+      $("titleInput").focus();
+    }
+
+    function openPost(id) {
+      state.query = "";
+      state.collection = "";
+      state.series = "";
+      state.onlyPinned = false;
+      $("searchInput").value = "";
+      $("onlyPinned").checked = false;
+      setView("postsView");
+      renderAll();
+      requestAnimationFrame(() => {
+        const button = document.querySelector(`#postList [data-action="open"][data-id="${CSS.escape(id)}"]`);
+        const post = button ? button.closest(".post") : null;
+        if (post) post.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    }
+
+    async function deletePost(id) {
+      const post = state.posts.find((item) => item.id === id);
+      if (!post) return;
+      if (!confirm(`Delete "${post.title}"?`)) return;
+      state.posts = state.posts.filter((item) => item.id !== id);
+      await savePosts();
+      renderAll();
+    }
+
+    async function togglePin(id) {
+      const post = state.posts.find((item) => item.id === id);
+      if (!post) return;
+      post.pinned = !post.pinned;
+      post.updatedAt = new Date().toISOString();
+      await savePosts();
+      renderAll();
+    }
+
+    function renderPreview() {
+      const title = $("titleInput").value.trim() || "Untitled";
+      const body = $("bodyInput").value.trim() || "_Nothing written yet._";
+      $("markdownPreview").innerHTML = `<h2>${escapeHtml(title)}</h2>${renderMarkdown(body)}`;
+    }
+
+    function renderTools() {
+      $("rssOutput").value = buildRss();
+    }
+
+    function renderAll() {
+      renderSidebar();
+      renderPosts();
+      if (state.view === "timelineView") renderTimeline();
+      if (state.view === "collectionsView") renderCollections();
+      if (state.view === "toolsView") renderTools();
+    }
+
+    function bindEvents() {
+      $("signinForm").addEventListener("submit", async (event) => {
+        event.preventDefault();
+        $("signinStatus").textContent = "checking...";
+        try {
+          await signIn($("signinUser").value, $("signinPassword").value);
+          $("signinStatus").textContent = "";
+        } catch (error) {
+          $("signinStatus").textContent = error.message;
+        }
+      });
+
+      $("signupForm").addEventListener("submit", async (event) => {
+        event.preventDefault();
+        $("signupStatus").textContent = "creating...";
+        try {
+          await signUp($("signupUser").value, $("signupPassword").value, $("signupPasswordAgain").value);
+          $("signupStatus").textContent = "";
+        } catch (error) {
+          $("signupStatus").textContent = error.message;
+        }
+      });
+
+      $("logoutButton").addEventListener("click", logout);
+      $("privacyButton").addEventListener("click", showPrivacy);
+      $("privacyBackButton").addEventListener("click", leavePrivacy);
+
+      document.querySelectorAll(".tab").forEach((tab) => {
+        tab.addEventListener("click", () => setView(tab.dataset.view));
+      });
+
+      $("newPostTop").addEventListener("click", () => {
+        clearEditor();
+        setView("editorView");
+      });
+
+      $("clearEditor").addEventListener("click", clearEditor);
+      $("titleInput").addEventListener("input", renderPreview);
+      $("bodyInput").addEventListener("input", renderPreview);
+
+      $("postForm").addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const now = new Date().toISOString();
+        const id = $("postId").value || uid();
+        const existing = state.posts.find((post) => post.id === id);
+        const collections = $("collectionsInput").value.split(",").map((name) => name.trim()).filter(Boolean);
+        const post = {
+          id,
+          title: $("titleInput").value.trim(),
+          body: $("bodyInput").value.trim(),
+          mood: $("moodInput").value.trim(),
+          place: $("placeInput").value.trim(),
+          collections,
+          series: $("seriesInput").value.trim(),
+          pinned: $("pinnedInput").checked,
+          createdAt: existing?.createdAt || now,
+          updatedAt: existing ? now : now
+        };
+
+        if (existing) {
+          Object.assign(existing, post);
+        } else {
+          state.posts.push(post);
+        }
+
+        try {
+          await savePosts();
+          $("editorStatus").textContent = "saved";
+          renderAll();
+          setView("postsView");
+        } catch (error) {
+          $("editorStatus").textContent = error.message;
+        }
+      });
+
+      document.body.addEventListener("click", async (event) => {
+        const target = event.target.closest("[data-action]");
+        if (!target) return;
+        const id = target.dataset.id;
+        if (target.dataset.action === "edit") editPost(id);
+        if (target.dataset.action === "delete") await deletePost(id);
+        if (target.dataset.action === "pin") await togglePin(id);
+        if (target.dataset.action === "open") openPost(id);
+      });
+
+      $("searchInput").addEventListener("input", (event) => {
+        state.query = event.target.value;
+        renderPosts();
+      });
+
+      $("filterCollection").addEventListener("change", (event) => {
+        state.collection = event.target.value;
+        renderPosts();
+      });
+
+      $("filterSeries").addEventListener("change", (event) => {
+        state.series = event.target.value;
+        renderPosts();
+      });
+
+      $("onlyPinned").addEventListener("change", (event) => {
+        state.onlyPinned = event.target.checked;
+        renderPosts();
+      });
+
+      $("downloadMarkdown").addEventListener("click", () => download("mind-archive.md", buildMarkdownExport(), "text/markdown"));
+      $("downloadMarkdownTop").addEventListener("click", () => download("mind-archive.md", buildMarkdownExport(), "text/markdown"));
+      $("downloadJson").addEventListener("click", () => download("mind-archive.json", JSON.stringify(state.posts, null, 2), "application/json"));
+      $("downloadRss").addEventListener("click", () => download("feed.xml", buildRss(), "application/rss+xml"));
+      $("printPdf").addEventListener("click", () => window.print());
+      $("printPdfTop").addEventListener("click", () => window.print());
+
+      $("copyRss").addEventListener("click", async () => {
+        try {
+          await navigator.clipboard.writeText(buildRss());
+          $("copyRss").textContent = "Copied";
+          setTimeout(() => $("copyRss").textContent = "Copy RSS", 1200);
+        } catch {
+          $("rssOutput").select();
+        }
+      });
+
+      $("importFile").addEventListener("change", async (event) => {
+        const file = event.target.files[0];
+        if (!file) return;
+        try {
+          const parsed = JSON.parse(await file.text());
+          if (!Array.isArray(parsed)) throw new Error("Backup must be an array.");
+          if (!confirm("Restore this backup? It will replace the current local archive.")) return;
+          state.posts = parsed.map((post) => ({
+            id: post.id || uid(),
+            title: String(post.title || "Untitled"),
+            body: String(post.body || ""),
+            mood: String(post.mood || ""),
+            place: String(post.place || ""),
+            collections: Array.isArray(post.collections) ? post.collections.map(String) : [],
+            series: String(post.series || ""),
+            pinned: Boolean(post.pinned),
+            createdAt: post.createdAt || new Date().toISOString(),
+            updatedAt: post.updatedAt || post.createdAt || new Date().toISOString()
+          }));
+          await savePosts();
+          renderAll();
+          setView("postsView");
+        } catch (error) {
+          alert(`Could not import backup: ${error.message}`);
+        } finally {
+          event.target.value = "";
+        }
+      });
+    }
+
+    bindEvents();
+    renderPreview();
+    showAuth();
+  </script>
+</body>
+</html>
