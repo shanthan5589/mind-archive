@@ -37,7 +37,37 @@ Build command:
 npm install
 ```
 
-## Deploy on Railway
+## Recommended free deploy: Render + Neon
+
+Use Render for the Node web service and Neon for PostgreSQL.
+
+1. Push this repo to GitHub.
+2. Create a Neon PostgreSQL project.
+3. Copy the Neon connection string. It should look like `postgresql://...sslmode=require`.
+4. Create a Render Web Service from this GitHub repo.
+5. Use these Render settings:
+
+```text
+Build Command: npm install
+Start Command: npm start
+Instance Type: Free
+```
+
+6. Set these Render environment variables:
+
+```text
+DATABASE_URL=your Neon PostgreSQL connection string
+SESSION_SECRET=generate-a-long-random-secret
+NODE_ENV=production
+```
+
+7. After deploy, open `/api/health` on the Render URL. It should return:
+
+```json
+{"ok":true,"storage":"postgres"}
+```
+
+## Alternative deploy: Railway
 
 1. Push this repo to GitHub.
 2. Create a Railway project.
