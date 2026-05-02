@@ -433,8 +433,8 @@ async function handleApi(req, res, pathname) {
 }
 
 async function serveStatic(req, res, pathname) {
-  if (pathname !== "/" && pathname !== "/index.html") {
-    text(res, 404, "Not found");
+  if (req.method !== "GET" && req.method !== "HEAD") {
+    text(res, 405, "Method not allowed");
     return;
   }
 
@@ -460,6 +460,10 @@ async function serveStatic(req, res, pathname) {
       ".xml": "application/xml; charset=utf-8"
     };
     res.writeHead(200, securityHeaders({ "content-type": types[ext] || "application/octet-stream" }));
+    if (req.method === "HEAD") {
+      res.end();
+      return;
+    }
     res.end(await fs.readFile(resolved));
   } catch {
     text(res, 404, "Not found");
