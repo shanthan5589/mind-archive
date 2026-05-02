@@ -59,7 +59,7 @@ Railway will provide the public URL after the deploy finishes.
 - Set a long `SESSION_SECRET`.
 - Keep `data/` out of git.
 - Read `/api/health` after deploy to confirm the server is up.
-- Tell users that forgotten passwords cannot be recovered.
+- Tell users to save the recovery key shown during sign-up.
 - Use provider database backups before inviting people you do not know.
 
 ## Privacy model
@@ -67,11 +67,11 @@ Railway will provide the public URL after the deploy finishes.
 The browser derives two values from the user's password:
 
 - A login secret sent to the server for authentication.
-- A separate vault key that never leaves the browser.
+- A password wrap key used to unlock the archive key.
 
-Posts are encrypted in the browser before being uploaded. The server stores encrypted vault blobs and cannot decrypt posts without the user's password.
+Posts are encrypted in the browser before being uploaded. The server stores encrypted vault blobs and cannot decrypt posts without the user's password or recovery key.
 
-If a user forgets their password, their archive cannot be recovered.
+During sign-up, the browser creates a recovery key. The server stores only an encrypted copy of the archive key. If a user forgets their password, they can reset it only if they saved the recovery key.
 
 ## Built-in protections
 

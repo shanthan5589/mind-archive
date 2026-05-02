@@ -181,6 +181,24 @@
       padding: 8px;
     }
 
+    .recovery-box {
+      border: 1px solid #9b7d2c;
+      background: #fff8dd;
+      color: #3f3210;
+      padding: 8px;
+    }
+
+    .recovery-key {
+      width: 100%;
+      border: 1px solid #a68a3a;
+      background: #ffffff;
+      padding: 7px;
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 12px;
+      word-break: break-all;
+      user-select: all;
+    }
+
     .sidebar {
       border-right: 1px solid var(--line);
       background: var(--panel-2);
@@ -590,7 +608,7 @@
           <p>Mind Archive is for private long-term writing: thoughts, feelings, notes, collections, and personal timelines.</p>
           <p>Your posts are encrypted in your browser before they are stored on the server. The server stores encrypted vault data, not readable journal text.</p>
           <p>Your password is used in the browser to unlock your archive. The raw password is not sent to the server.</p>
-          <p>Password recovery is intentionally not available. If you forget the password, the archive cannot be decrypted.</p>
+          <p>Password recovery only works with the recovery key shown during sign-up. The server cannot recover an archive without it.</p>
           <p>Backups matter. Use the Markdown and JSON export tools regularly if the archive is important to you.</p>
           <div class="row wrap">
             <button id="privacyBackButton" type="button">Back</button>
@@ -614,6 +632,7 @@
             </div>
             <div class="row wrap">
               <button type="submit">Sign in</button>
+              <button type="button" id="showRecoverButton">Recover</button>
               <span id="signinStatus" class="muted"></span>
             </div>
           </div>
@@ -638,12 +657,49 @@
               <button type="submit">Create private archive</button>
               <span id="signupStatus" class="muted"></span>
             </div>
+            <div id="recoveryKeyPanel" class="recovery-box hidden">
+              <strong>Save this recovery key now.</strong>
+              <p class="muted">It can reset your password if you forget it. It will not be shown again.</p>
+              <div id="recoveryKeyValue" class="recovery-key"></div>
+              <div class="row wrap" style="margin-top:7px">
+                <button type="button" id="copyRecoveryKey">Copy recovery key</button>
+              </div>
+            </div>
           </div>
         </form>
       </div>
       <div class="auth-note">
-        Each archive is encrypted in your browser before it is stored on the server. Other users cannot open it, and the server cannot read it without your password. If you forget the password, the archive cannot be recovered.
+        Each archive is encrypted in your browser before it is stored on the server. Other users cannot open it, and the server cannot read it without your password or your recovery key.
       </div>
+    </section>
+
+    <section id="recoveryView" class="auth-panel hidden">
+      <form id="recoverForm" class="box">
+        <div class="box-title">Recover Account</div>
+        <div class="box-body stack">
+          <div class="field">
+            <label for="recoverUser">Username</label>
+            <input id="recoverUser" autocomplete="username" required>
+          </div>
+          <div class="field">
+            <label for="recoverKey">Recovery key</label>
+            <input id="recoverKey" required>
+          </div>
+          <div class="field">
+            <label for="recoverPassword">New password</label>
+            <input id="recoverPassword" type="password" autocomplete="new-password" minlength="8" required>
+          </div>
+          <div class="field">
+            <label for="recoverPasswordAgain">Repeat new password</label>
+            <input id="recoverPasswordAgain" type="password" autocomplete="new-password" minlength="8" required>
+          </div>
+          <div class="row wrap">
+            <button type="submit">Reset password</button>
+            <button type="button" id="recoverBackButton">Back</button>
+            <span id="recoverStatus" class="muted"></span>
+          </div>
+        </div>
+      </form>
     </section>
 
     <nav id="appNav" class="nav hidden" aria-label="Main views">
@@ -824,6 +880,7 @@
       onlyPinned: false,
       currentUser: "",
       currentKey: null,
+      currentArchiveKeyRaw: "",
       previousScreen: "auth"
     };
 
@@ -853,6 +910,14 @@
       return bytesToBase64(bytes);
     }
 
+    function formatRecoveryKey(value) {
+      return value.replace(/(.{4})/g, "$1-").replace(/-$/, "");
+    }
+
+    function parseRecoveryKey(value) {
+      return String(value || "").replace(/[^a-zA-Z0-9+/=]/g, "");
+    }
+
     function normalizeUsername(value) {
       return String(value || "").trim().toLowerCase();
     }
@@ -861,6 +926,23 @@
       const material = await cryptoApi.subtle.importKey(
         "raw",
         encoder.encode(`${username}:${password}:vault`),
+        "PBKDF2",
+        false,
+        ["deriveKey"]
+      );
+      return cryptoApi.subtle.deriveKey(
+        { name: "PBKDF2", salt: base64ToBytes(salt), iterations: 250000, hash: "SHA-256" },
+        material,
+        { name: "AES-GCM", length: 256 },
+        false,
+        ["encrypt", "decrypt"]
+      );
+    }
+
+    async function deriveRecoveryWrapKey(recoveryKey, salt) {
+      const material = await cryptoApi.subtle.importKey(
+        "raw",
+        encoder.encode(`recovery:${parseRecoveryKey(recoveryKey)}`),
         "PBKDF2",
         false,
         ["deriveKey"]
@@ -898,6 +980,26 @@
         encoder.encode(JSON.stringify(value))
       );
       return { iv, data: bytesToBase64(encrypted) };
+    }
+
+    async function wrapArchiveKey(wrapKey, archiveKeyRaw) {
+      return encryptJson(wrapKey, { k: archiveKeyRaw });
+    }
+
+    async function unwrapArchiveKey(wrapKey, wrappedKey) {
+      const decoded = await decryptJson(wrapKey, wrappedKey);
+      if (!decoded || typeof decoded.k !== "string") throw new Error("Invalid archive key.");
+      return decoded.k;
+    }
+
+    async function importArchiveKey(rawKey) {
+      return cryptoApi.subtle.importKey(
+        "raw",
+        base64ToBytes(rawKey),
+        { name: "AES-GCM" },
+        false,
+        ["encrypt", "decrypt"]
+      );
     }
 
     async function decryptJson(key, record) {
@@ -953,18 +1055,27 @@
       if (!cryptoApi) throw new Error("This browser does not support Web Crypto.");
 
       const clientSalt = randomBase64(16);
-      const key = await deriveKey(username, password, clientSalt);
+      const recoverySalt = randomBase64(16);
+      const archiveKeyRaw = randomBase64(32);
+      const key = await importArchiveKey(archiveKeyRaw);
+      const passwordWrapKey = await deriveKey(username, password, clientSalt);
+      const recoveryKey = randomBase64(32);
+      const recoveryWrapKey = await deriveRecoveryWrapKey(recoveryKey, recoverySalt);
       const loginSecret = await deriveLoginSecret(username, password, clientSalt);
       let startingPosts = [];
       if (hasLegacyPosts() && confirm("Import the old local archive into this new encrypted account?")) {
         startingPosts = readLegacyPosts();
       }
       const vault = await encryptJson(key, startingPosts);
+      const wrappedKey = await wrapArchiveKey(passwordWrapKey, archiveKeyRaw);
+      const recoveryWrappedKey = await wrapArchiveKey(recoveryWrapKey, archiveKeyRaw);
       const result = await api("/api/signup", {
         method: "POST",
-        body: JSON.stringify({ username, loginSecret, clientSalt, vault })
+        body: JSON.stringify({ username, loginSecret, clientSalt, recoverySalt, vault, wrappedKey, recoveryWrappedKey })
       });
-      unlock(result.username, key, startingPosts);
+      $("recoveryKeyValue").textContent = formatRecoveryKey(recoveryKey);
+      $("recoveryKeyPanel").classList.remove("hidden");
+      unlock(result.username, key, startingPosts, archiveKeyRaw);
     }
 
     async function signIn(usernameValue, password) {
@@ -977,9 +1088,37 @@
         method: "POST",
         body: JSON.stringify({ username, loginSecret })
       });
-      const key = await deriveKey(result.username, password, result.clientSalt);
+      const passwordWrapKey = await deriveKey(result.username, password, result.clientSalt);
+      const archiveKeyRaw = result.wrappedKey
+        ? await unwrapArchiveKey(passwordWrapKey, result.wrappedKey)
+        : "";
+      const key = archiveKeyRaw ? await importArchiveKey(archiveKeyRaw) : passwordWrapKey;
       const posts = result.vault ? await decryptJson(key, result.vault) : [];
-      unlock(result.username, key, Array.isArray(posts) ? posts : []);
+      unlock(result.username, key, Array.isArray(posts) ? posts : [], archiveKeyRaw);
+    }
+
+    async function recoverAccount(usernameValue, recoveryKeyValue, password, passwordAgain) {
+      const username = normalizeUsername(usernameValue);
+      if (password !== passwordAgain) throw new Error("Passwords do not match.");
+      if (!cryptoApi) throw new Error("This browser does not support Web Crypto.");
+
+      const session = await api(`/api/user-salt?username=${encodeURIComponent(username)}`);
+      if (!session.recoverySalt || !session.recoveryWrappedKey) {
+        throw new Error("This account does not have a recovery key.");
+      }
+      const recoveryWrapKey = await deriveRecoveryWrapKey(recoveryKeyValue, session.recoverySalt);
+      const archiveKeyRaw = await unwrapArchiveKey(recoveryWrapKey, session.recoveryWrappedKey);
+      const archiveKey = await importArchiveKey(archiveKeyRaw);
+      const posts = session.vault ? await decryptJson(archiveKey, session.vault) : [];
+      const loginSecret = await deriveLoginSecret(username, password, session.clientSalt);
+      const passwordWrapKey = await deriveKey(username, password, session.clientSalt);
+      const wrappedKey = await wrapArchiveKey(passwordWrapKey, archiveKeyRaw);
+
+      const result = await api("/api/recover", {
+        method: "POST",
+        body: JSON.stringify({ username, loginSecret, recoveryWrappedKey: session.recoveryWrappedKey, wrappedKey })
+      });
+      unlock(result.username, archiveKey, Array.isArray(posts) ? posts : [], archiveKeyRaw);
     }
 
     async function logout() {
@@ -988,15 +1127,17 @@
       } finally {
         state.currentUser = "";
         state.currentKey = null;
+        state.currentArchiveKeyRaw = "";
         state.posts = [];
         clearEditor();
         showAuth();
       }
     }
 
-    function unlock(username, key, posts) {
+    function unlock(username, key, posts, archiveKeyRaw = "") {
       state.currentUser = username;
       state.currentKey = key;
+      state.currentArchiveKeyRaw = archiveKeyRaw;
       state.posts = posts;
       state.query = "";
       state.collection = "";
@@ -1013,6 +1154,7 @@
     function showAuth() {
       state.previousScreen = "auth";
       $("privacyView").classList.add("hidden");
+      $("recoveryView").classList.add("hidden");
       $("authView").classList.remove("hidden");
       $("appNav").classList.add("hidden");
       $("appLayout").classList.add("hidden");
@@ -1026,6 +1168,7 @@
     function showApp() {
       state.previousScreen = "app";
       $("privacyView").classList.add("hidden");
+      $("recoveryView").classList.add("hidden");
       $("authView").classList.add("hidden");
       $("appNav").classList.remove("hidden");
       $("appLayout").classList.remove("hidden");
@@ -1035,9 +1178,18 @@
 
     function showPrivacy() {
       $("authView").classList.add("hidden");
+      $("recoveryView").classList.add("hidden");
       $("appNav").classList.add("hidden");
       $("appLayout").classList.add("hidden");
       $("privacyView").classList.remove("hidden");
+    }
+
+    function showRecovery() {
+      $("authView").classList.add("hidden");
+      $("privacyView").classList.add("hidden");
+      $("appNav").classList.add("hidden");
+      $("appLayout").classList.add("hidden");
+      $("recoveryView").classList.remove("hidden");
     }
 
     function leavePrivacy() {
@@ -1510,6 +1662,34 @@
       $("logoutButton").addEventListener("click", logout);
       $("privacyButton").addEventListener("click", showPrivacy);
       $("privacyBackButton").addEventListener("click", leavePrivacy);
+      $("showRecoverButton").addEventListener("click", showRecovery);
+      $("recoverBackButton").addEventListener("click", showAuth);
+      $("copyRecoveryKey").addEventListener("click", async () => {
+        const value = $("recoveryKeyValue").textContent;
+        try {
+          await navigator.clipboard.writeText(value);
+          $("copyRecoveryKey").textContent = "Copied";
+          setTimeout(() => $("copyRecoveryKey").textContent = "Copy recovery key", 1200);
+        } catch {
+          window.prompt("Recovery key", value);
+        }
+      });
+
+      $("recoverForm").addEventListener("submit", async (event) => {
+        event.preventDefault();
+        $("recoverStatus").textContent = "checking...";
+        try {
+          await recoverAccount(
+            $("recoverUser").value,
+            $("recoverKey").value,
+            $("recoverPassword").value,
+            $("recoverPasswordAgain").value
+          );
+          $("recoverStatus").textContent = "";
+        } catch (error) {
+          $("recoverStatus").textContent = error.message;
+        }
+      });
 
       document.querySelectorAll(".tab").forEach((tab) => {
         tab.addEventListener("click", () => setView(tab.dataset.view));

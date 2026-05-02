@@ -112,6 +112,9 @@ async function ensureData() {
         login_salt text not null,
         login_hash text not null,
         client_salt text not null,
+        recovery_salt text,
+        wrapped_key jsonb,
+        recovery_wrapped_key jsonb,
         vault jsonb not null,
         created_at timestamptz not null default now(),
         updated_at timestamptz not null default now()
@@ -150,6 +153,9 @@ function rowToUser(row) {
     loginSalt: row.login_salt,
     loginHash: row.login_hash,
     clientSalt: row.client_salt,
+    recoverySalt: row.recovery_salt,
+    wrappedKey: typeof row.wrapped_key === "string" ? JSON.parse(row.wrapped_key) : row.wrapped_key,
+    recoveryWrappedKey: typeof row.recovery_wrapped_key === "string" ? JSON.parse(row.recovery_wrapped_key) : row.recovery_wrapped_key,
     vault: typeof row.vault === "string" ? JSON.parse(row.vault) : row.vault,
     createdAt: row.created_at,
     updatedAt: row.updated_at
@@ -172,9 +178,18 @@ async function createUser(username, user) {
   if (pool) {
     try {
       await pool.query(
-        `insert into users (username, login_salt, login_hash, client_salt, vault)
-         values ($1, $2, $3, $4, $5)`,
-        [username, user.loginSalt, user.loginHash, user.clientSalt, JSON.stringify(user.vault)]
+        `insert into users (username, login_salt, login_hash, client_salt, recovery_salt, wrapped_key, recovery_wrapped_key, vault)
+         values ($1, $2, $3, $4, $5, $6, $7, $8)`,
+        [
+          username,
+          user.loginSalt,
+          user.loginHash,
+          user.clientSalt,
+          user.recoverySalt || null,
+          user.wrappedKey ? JSON.stringify(user.wrappedKey) : null,
+          user.recoveryWrappedKey ? JSON.stringify(user.recoveryWrappedKey) : null,
+          JSON.stringify(user.vault)
+        ]
       );
     } catch (error) {
       if (error.code === "23505") error.code = "USER_EXISTS";
@@ -206,6 +221,29 @@ async function updateUserVault(username, vault) {
   const users = await loadUsers();
   if (!users[username]) return false;
   users[username].vault = vault;
+  users[username].updatedAt = new Date().toISOString();
+  await saveUsers(users);
+  return true;
+}
+
+async function updateUserLogin(username, loginSecret, wrappedKey) {
+  await ensureData();
+  const loginSalt = randomToken(18);
+  const loginHash = hashLoginSecret(loginSecret, loginSalt);
+
+  if (pool) {
+    const result = await pool.query(
+      "update users set login_salt = $2, login_hash = $3, wrapped_key = $4, updated_at = now() where username = $1",
+      [username, loginSalt, loginHash, JSON.stringify(wrappedKey)]
+    );
+    return result.rowCount > 0;
+  }
+
+  const users = await loadUsers();
+  if (!users[username]) return false;
+  users[username].loginSalt = loginSalt;
+  users[username].loginHash = loginHash;
+  users[username].wrappedKey = wrappedKey;
   users[username].updatedAt = new Date().toISOString();
   await saveUsers(users);
   return true;
@@ -292,6 +330,15 @@ function validateVault(vault) {
     && vault.data.length < 4_500_000;
 }
 
+function validateWrappedKey(value) {
+  return value
+    && typeof value === "object"
+    && typeof value.iv === "string"
+    && typeof value.data === "string"
+    && value.iv.length < 200
+    && value.data.length < 2000;
+}
+
 async function requireUser(req, res) {
   const token = parseCookies(req)[SESSION_COOKIE];
   const username = verifySessionToken(token);
@@ -337,6 +384,10 @@ async function handleApi(req, res, pathname) {
         json(res, 400, { error: "Missing encrypted vault." });
         return;
       }
+      if (!validateWrappedKey(body.wrappedKey) || !validateWrappedKey(body.recoveryWrappedKey)) {
+        json(res, 400, { error: "Missing recovery metadata." });
+        return;
+      }
 
       if (await getUser(username)) {
         json(res, 409, { error: "That username already exists." });
@@ -348,6 +399,9 @@ async function handleApi(req, res, pathname) {
         loginSalt,
         loginHash: hashLoginSecret(loginSecret, loginSalt),
         clientSalt: String(body.clientSalt || ""),
+        recoverySalt: String(body.recoverySalt || ""),
+        wrappedKey: body.wrappedKey,
+        recoveryWrappedKey: body.recoveryWrappedKey,
         vault: body.vault,
         createdAt: new Date().toISOString()
       };
@@ -362,7 +416,14 @@ async function handleApi(req, res, pathname) {
       }
 
       const token = createSessionToken(username);
-      json(res, 201, { username, clientSalt: user.clientSalt, vault: user.vault }, sessionHeaders(req, token));
+      json(res, 201, {
+        username,
+        clientSalt: user.clientSalt,
+        recoverySalt: user.recoverySalt,
+        vault: user.vault,
+        wrappedKey: user.wrappedKey,
+        recoveryWrappedKey: user.recoveryWrappedKey
+      }, sessionHeaders(req, token));
       return;
     }
 
@@ -374,7 +435,12 @@ async function handleApi(req, res, pathname) {
         json(res, 404, { error: "Wrong username or password." });
         return;
       }
-      json(res, 200, { clientSalt: user.clientSalt });
+      json(res, 200, {
+        clientSalt: user.clientSalt,
+        recoverySalt: user.recoverySalt || "",
+        vault: user.vault,
+        recoveryWrappedKey: user.recoveryWrappedKey || null
+      });
       return;
     }
 
@@ -390,7 +456,47 @@ async function handleApi(req, res, pathname) {
       }
 
       const token = createSessionToken(username);
-      json(res, 200, { username, clientSalt: user.clientSalt, vault: user.vault }, sessionHeaders(req, token));
+      json(res, 200, {
+        username,
+        clientSalt: user.clientSalt,
+        recoverySalt: user.recoverySalt || "",
+        vault: user.vault,
+        wrappedKey: user.wrappedKey || null,
+        recoveryWrappedKey: user.recoveryWrappedKey || null
+      }, sessionHeaders(req, token));
+      return;
+    }
+
+    if (req.method === "POST" && pathname === "/api/recover") {
+      const body = await readJson(req);
+      const username = normalizeUsername(body.username);
+      const loginSecret = String(body.loginSecret || "");
+      const user = await getUser(username);
+
+      if (!user || loginSecret.length < 32) {
+        json(res, 401, { error: "Recovery failed." });
+        return;
+      }
+      if (!validateWrappedKey(body.wrappedKey) || !validateWrappedKey(body.recoveryWrappedKey)) {
+        json(res, 400, { error: "Missing recovery metadata." });
+        return;
+      }
+      if (JSON.stringify(body.recoveryWrappedKey) !== JSON.stringify(user.recoveryWrappedKey || null)) {
+        json(res, 401, { error: "Recovery failed." });
+        return;
+      }
+
+      await updateUserLogin(username, loginSecret, body.wrappedKey);
+      const updated = await getUser(username);
+      const token = createSessionToken(username);
+      json(res, 200, {
+        username,
+        clientSalt: updated.clientSalt,
+        recoverySalt: updated.recoverySalt || "",
+        vault: updated.vault,
+        wrappedKey: updated.wrappedKey || null,
+        recoveryWrappedKey: updated.recoveryWrappedKey || null
+      }, sessionHeaders(req, token));
       return;
     }
 
@@ -402,7 +508,14 @@ async function handleApi(req, res, pathname) {
     if (req.method === "GET" && pathname === "/api/session") {
       const auth = await requireUser(req, res);
       if (!auth) return;
-      json(res, 200, { username: auth.username, clientSalt: auth.user.clientSalt, vault: auth.user.vault });
+      json(res, 200, {
+        username: auth.username,
+        clientSalt: auth.user.clientSalt,
+        recoverySalt: auth.user.recoverySalt || "",
+        vault: auth.user.vault,
+        wrappedKey: auth.user.wrappedKey || null,
+        recoveryWrappedKey: auth.user.recoveryWrappedKey || null
+      });
       return;
     }
 
