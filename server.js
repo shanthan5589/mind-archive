@@ -17,15 +17,14 @@ const gzip = promisify(zlib.gzip);
 const brotliCompress = promisify(zlib.brotliCompress);
 let pool = null;
 let indexCache = null;
+const configErrors = [];
 
 if (IS_PRODUCTION && (!process.env.SESSION_SECRET || SESSION_SECRET.length < 32)) {
-  console.error("SESSION_SECRET must be set to at least 32 characters in production.");
-  process.exit(1);
+  configErrors.push("SESSION_SECRET must be set to at least 32 characters in production.");
 }
 
 if (IS_PRODUCTION && !DATABASE_URL) {
-  console.error("DATABASE_URL must be set in production.");
-  process.exit(1);
+  configErrors.push("DATABASE_URL must be set in production.");
 }
 
 if (DATABASE_URL) {
@@ -401,6 +400,16 @@ async function requireUser(req, res) {
 
 async function handleApi(req, res, pathname) {
   try {
+    if (configErrors.length) {
+      const status = pathname === "/api/health" ? 503 : 500;
+      json(res, status, {
+        ok: false,
+        error: "Server is missing required production configuration.",
+        details: configErrors
+      });
+      return;
+    }
+
     const limit = checkRateLimit(req, pathname);
     if (!limit.ok) {
       json(res, 429, { error: "Too many requests. Try again later." }, { "retry-after": String(limit.retryAfter) });
