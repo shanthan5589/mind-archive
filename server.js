@@ -2,6 +2,8 @@ const crypto = require("crypto");
 const fs = require("fs/promises");
 const http = require("http");
 const path = require("path");
+const { promisify } = require("util");
+const zlib = require("zlib");
 
 const PORT = Number(process.env.PORT || 3000);
 const ROOT = __dirname;
@@ -11,7 +13,10 @@ const SESSION_COOKIE = "mind_archive_session";
 const SESSION_SECRET = process.env.SESSION_SECRET || "dev-only-change-this-session-secret";
 const DATABASE_URL = process.env.DATABASE_URL || "";
 const IS_PRODUCTION = process.env.NODE_ENV === "production";
+const gzip = promisify(zlib.gzip);
+const brotliCompress = promisify(zlib.brotliCompress);
 let pool = null;
+let indexCache = null;
 
 if (IS_PRODUCTION && (!process.env.SESSION_SECRET || SESSION_SECRET.length < 32)) {
   console.error("SESSION_SECRET must be set to at least 32 characters in production.");
@@ -63,6 +68,46 @@ function json(res, status, body, headers = {}) {
 function text(res, status, body) {
   res.writeHead(status, securityHeaders({ "content-type": "text/plain; charset=utf-8" }));
   res.end(body);
+}
+
+function acceptsEncoding(req, encoding) {
+  return String(req.headers["accept-encoding"] || "")
+    .split(",")
+    .some((part) => part.trim().toLowerCase().split(";")[0] === encoding);
+}
+
+async function getIndexAsset() {
+  const filePath = path.join(ROOT, "index.html");
+  const resolved = path.resolve(filePath);
+  if (!resolved.startsWith(ROOT)) {
+    const error = new Error("Forbidden");
+    error.statusCode = 403;
+    throw error;
+  }
+
+  const stat = await fs.stat(resolved);
+  if (!stat.isFile()) {
+    const error = new Error("Not found");
+    error.statusCode = 404;
+    throw error;
+  }
+
+  if (indexCache && indexCache.size === stat.size && indexCache.mtimeMs === stat.mtimeMs) {
+    return indexCache;
+  }
+
+  const body = await fs.readFile(resolved);
+  indexCache = {
+    body,
+    br: await brotliCompress(body, {
+      params: { [zlib.constants.BROTLI_PARAM_QUALITY]: 5 }
+    }),
+    gzip: await gzip(body, { level: 6 }),
+    etag: `W/"${stat.size.toString(16)}-${Math.floor(stat.mtimeMs).toString(16)}"`,
+    mtimeMs: stat.mtimeMs,
+    size: stat.size
+  };
+  return indexCache;
 }
 
 function getClientIp(req) {
@@ -551,49 +596,62 @@ async function serveStatic(req, res, pathname) {
     return;
   }
 
-  const filePath = path.join(ROOT, "index.html");
-  const resolved = path.resolve(filePath);
-  if (!resolved.startsWith(ROOT)) {
-    text(res, 403, "Forbidden");
-    return;
-  }
-
   try {
-    const stat = await fs.stat(resolved);
-    if (!stat.isFile()) {
-      text(res, 404, "Not found");
+    const asset = await getIndexAsset();
+    const baseHeaders = {
+      "content-type": "text/html; charset=utf-8",
+      "cache-control": "public, max-age=0, must-revalidate",
+      "etag": asset.etag,
+      "vary": "Accept-Encoding"
+    };
+
+    if (req.headers["if-none-match"] === asset.etag) {
+      res.writeHead(304, securityHeaders(baseHeaders));
+      res.end();
       return;
     }
-    const ext = path.extname(resolved).toLowerCase();
-    const types = {
-      ".html": "text/html; charset=utf-8",
-      ".css": "text/css; charset=utf-8",
-      ".js": "text/javascript; charset=utf-8",
-      ".json": "application/json; charset=utf-8",
-      ".xml": "application/xml; charset=utf-8"
-    };
-    res.writeHead(200, securityHeaders({ "content-type": types[ext] || "application/octet-stream" }));
+
+    const headers = { ...baseHeaders };
+    let body = asset.body;
+    if (acceptsEncoding(req, "br")) {
+      body = asset.br;
+      headers["content-encoding"] = "br";
+    } else if (acceptsEncoding(req, "gzip")) {
+      body = asset.gzip;
+      headers["content-encoding"] = "gzip";
+    }
+    headers["content-length"] = String(body.length);
+
+    res.writeHead(200, securityHeaders(headers));
     if (req.method === "HEAD") {
       res.end();
       return;
     }
-    res.end(await fs.readFile(resolved));
-  } catch {
-    text(res, 404, "Not found");
+    res.end(body);
+  } catch (error) {
+    text(res, error.statusCode || 404, error.message || "Not found");
   }
 }
 
-const server = http.createServer(async (req, res) => {
+async function handleRequest(req, res) {
   const url = new URL(req.url, `http://${req.headers.host || "localhost"}`);
   if (url.pathname.startsWith("/api/")) {
     await handleApi(req, res, url.pathname);
     return;
   }
   await serveStatic(req, res, url.pathname);
-});
+}
 
-setInterval(cleanRateBuckets, 5 * 60 * 1000).unref();
+if (require.main === module) {
+  const server = http.createServer(handleRequest);
 
-server.listen(PORT, "0.0.0.0", () => {
-  console.log(`Mind Archive running on http://localhost:${PORT}`);
-});
+  setInterval(cleanRateBuckets, 5 * 60 * 1000).unref();
+
+  server.listen(PORT, "0.0.0.0", () => {
+    console.log(`Mind Archive running on http://localhost:${PORT}`);
+  });
+}
+
+module.exports = {
+  handleRequest
+};

@@ -83,6 +83,31 @@ NODE_ENV=production
 
 Railway will provide the public URL after the deploy finishes.
 
+## Alternative deploy: Vercel + Neon
+
+Vercel can host the app with the included `api/index.js` serverless adapter and `vercel.json` routes.
+
+1. Push this repo to GitHub.
+2. Create a Neon PostgreSQL project.
+3. Copy the Neon connection string. It should look like `postgresql://...sslmode=require`.
+4. Import the GitHub repo in Vercel.
+5. Use the default build settings. No build command is required.
+6. Set these Vercel environment variables for Production:
+
+```text
+DATABASE_URL=your Neon PostgreSQL connection string
+SESSION_SECRET=generate-a-long-random-secret
+NODE_ENV=production
+```
+
+7. Deploy, then open `/api/health` on the Vercel URL. It should return:
+
+```json
+{"ok":true,"storage":"postgres"}
+```
+
+Do not use the local `data/users.json` storage on Vercel. Vercel functions do not provide durable local file storage.
+
 ## Public launch checklist
 
 - Use PostgreSQL through `DATABASE_URL`.
@@ -91,6 +116,15 @@ Railway will provide the public URL after the deploy finishes.
 - Read `/api/health` after deploy to confirm the server is up.
 - Tell users to save the recovery key shown during sign-up.
 - Use provider database backups before inviting people you do not know.
+
+## Speed and accessibility checklist
+
+- Deploy to a public web host such as Render or Railway; `localhost` is only visible on your own computer.
+- Keep `NODE_ENV=production` set on the host.
+- Use the built-in compressed HTML responses and ETag revalidation from `server.js` so repeat visits are faster.
+- Test the public URL on a phone network, not only on Wi-Fi.
+- Check keyboard use: Tab should reach the sign-in form, navigation tabs, editor, and backup tools.
+- Run Lighthouse or PageSpeed Insights against the deployed URL and fix any remaining accessibility warnings before sharing widely.
 
 ## Privacy model
 
