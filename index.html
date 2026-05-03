@@ -9,6 +9,10 @@
       --page: #e7e7e7;
       --panel: #ffffff;
       --panel-2: #f3f3f3;
+      --panel-3: #f8fafc;
+      --control: #ffffff;
+      --button: #eeeeee;
+      --button-hover: #e0e7ef;
       --line: #b9c3cf;
       --line-dark: #8c9bad;
       --text: #1f2933;
@@ -18,6 +22,67 @@
       --pin: #7d5200;
       --ok: #1b6f3a;
       --title: #2b5f93;
+      --topbar: #f7f7f7;
+      --nav: #dce5ee;
+      --tab: #edf2f7;
+      --tab-active: #ffffff;
+      --box-title: #e1e9f2;
+      --box-title-text: #2a4f76;
+      --post-head: #f2f5f9;
+      --post-title: #0f2f57;
+      --post-pinned: #fffdf7;
+      --tag: #eef3f9;
+      --tag-text: #334155;
+      --code: #edf1f7;
+      --pre: #f6f8fb;
+      --recovery: #fff8dd;
+      --recovery-text: #3f3210;
+      --focus: #1a4f8f;
+      --day: #d7dee8;
+      --day-active: #6f93bd;
+      --accent: #3b6fa3;
+      --recovery-border: #9b7d2c;
+      --pin-border: #b8872f;
+    }
+
+    :root[data-theme="dark"] {
+      --page: #15171b;
+      --panel: #20242a;
+      --panel-2: #191d23;
+      --panel-3: #252a31;
+      --control: #111418;
+      --button: #2c323a;
+      --button-hover: #38424d;
+      --line: #3d4652;
+      --line-dark: #576170;
+      --text: #e5e7eb;
+      --muted: #a6afbb;
+      --link: #8db7f0;
+      --danger: #ff8f8f;
+      --pin: #f4ca64;
+      --ok: #8fdda6;
+      --title: #9ec5ef;
+      --topbar: #191d23;
+      --nav: #232b35;
+      --tab: #1b222b;
+      --tab-active: #20242a;
+      --box-title: #253140;
+      --box-title-text: #c8dcf3;
+      --post-head: #252b34;
+      --post-title: #c9e0f7;
+      --post-pinned: #292614;
+      --tag: #263447;
+      --tag-text: #d2deea;
+      --code: #303845;
+      --pre: #181d23;
+      --recovery: #3b311a;
+      --recovery-text: #f8e8b2;
+      --focus: #9ec5ef;
+      --day: #303845;
+      --day-active: #7ba1ce;
+      --accent: #4a85c8;
+      --recovery-border: #8a6e22;
+      --pin-border: #9a6d1f;
     }
 
     * {
@@ -47,16 +112,16 @@
     }
 
     button {
-      border: 1px solid #7d8896;
-      background: #eeeeee;
-      color: #17202a;
+      border: 1px solid var(--line-dark);
+      background: var(--button);
+      color: var(--text);
       padding: 3px 8px;
       cursor: pointer;
       min-height: 24px;
     }
 
     button:hover {
-      background: #e0e7ef;
+      background: var(--button-hover);
     }
 
     a:focus-visible,
@@ -64,12 +129,12 @@
     input:focus-visible,
     textarea:focus-visible,
     select:focus-visible {
-      outline: 2px solid #1a4f8f;
+      outline: 2px solid var(--focus);
       outline-offset: 2px;
     }
 
     button:disabled {
-      color: #7d8896;
+      color: var(--muted);
       cursor: not-allowed;
     }
 
@@ -77,8 +142,8 @@
     textarea,
     select {
       width: 100%;
-      border: 1px solid #8793a3;
-      background: #ffffff;
+      border: 1px solid var(--line-dark);
+      background: var(--control);
       color: var(--text);
       padding: 4px 5px;
     }
@@ -103,9 +168,9 @@
       top: 8px;
       z-index: 10;
       transform: translateY(-140%);
-      border: 1px solid #1a4f8f;
-      background: #ffffff;
-      color: #1a4f8f;
+      border: 1px solid var(--focus);
+      background: var(--panel);
+      color: var(--link);
       padding: 6px 8px;
     }
 
@@ -122,9 +187,9 @@
       align-items: center;
       justify-content: space-between;
       gap: 12px;
-      border-top: 4px solid #3b6fa3;
-      border-bottom: 1px solid #9aa8b8;
-      background: #f7f7f7;
+      border-top: 4px solid var(--accent);
+      border-bottom: 1px solid var(--line-dark);
+      background: var(--topbar);
       padding: 6px 9px;
     }
 
@@ -152,13 +217,105 @@
     .top-actions {
       display: flex;
       flex-wrap: wrap;
-      justify-content: flex-end;
-      gap: 6px;
+      justify-content: end;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .top-actions > .session-user {
+      margin-right: 4px;
+    }
+
+    .action-menu {
+      position: relative;
+    }
+
+    .action-menu summary {
+      display: block;
+      border: 1px solid var(--line-dark);
+      background: var(--button);
+      color: var(--text);
+      min-height: 24px;
+      padding: 3px 8px;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .action-menu summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .action-menu[open] summary {
+      background: var(--button-hover);
+    }
+
+    .menu-panel {
+      position: absolute;
+      right: 0;
+      z-index: 30;
+      display: grid;
+      gap: 5px;
+      min-width: 170px;
+      margin-top: 3px;
+      border: 1px solid var(--line-dark);
+      background: var(--panel);
+      padding: 6px;
+    }
+
+    .menu-panel button {
+      width: 100%;
+      text-align: left;
+    }
+
+    .tool-action-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 8px;
+      align-items: start;
+    }
+
+    .tool-action-set {
+      display: grid;
+      gap: 5px;
+      align-content: start;
+    }
+
+    .tool-action-title {
+      color: var(--muted);
+      font-weight: bold;
+      font-size: 12px;
+    }
+
+    .button-stack {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      align-items: center;
+    }
+
+    .form-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      align-items: center;
+    }
+
+    .form-actions .muted,
+    .form-actions .danger,
+    .form-actions .ok {
+      min-height: 18px;
+    }
+
+    .option-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      align-items: center;
     }
 
     .session-user {
       align-self: center;
-      color: #475569;
+      color: var(--muted);
       font-size: 12px;
     }
 
@@ -166,22 +323,23 @@
       display: flex;
       flex-wrap: wrap;
       gap: 2px;
-      border-bottom: 1px solid #aeb9c6;
-      background: #dce5ee;
+      border-bottom: 1px solid var(--line);
+      background: var(--nav);
       padding: 3px 4px 0;
     }
 
     .tab {
-      border: 1px solid #aeb9c6;
+      border: 1px solid var(--line);
       border-bottom: 0;
-      background: #edf2f7;
+      background: var(--tab);
       padding: 4px 8px;
       min-height: auto;
+      text-align: center;
     }
 
     .tab.active {
-      border-color: #8d9caf;
-      background: #ffffff;
+      border-color: var(--line-dark);
+      background: var(--tab-active);
       font-weight: bold;
     }
 
@@ -192,35 +350,53 @@
     }
 
     .auth-panel {
-      max-width: 760px;
+      max-width: 520px;
       margin: 22px auto 30px;
     }
 
-    .auth-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
+    .auth-tabs {
+      display: flex;
+      gap: 0;
+      border-bottom: 1px solid var(--line);
+      background: var(--nav);
+    }
+
+    .auth-tab {
+      border: 0;
+      border-right: 1px solid var(--line);
+      background: var(--tab);
+      min-height: 30px;
+      padding: 5px 10px;
+    }
+
+    .auth-tab.active {
+      background: var(--panel);
+      font-weight: bold;
+    }
+
+    .auth-form {
       gap: 8px;
     }
 
     .auth-note {
-      border: 1px solid #c4ccd6;
-      background: #f8fafc;
-      color: #4b5563;
+      border: 1px solid var(--line);
+      background: var(--panel-3);
+      color: var(--muted);
       margin-top: 8px;
       padding: 8px;
     }
 
     .recovery-box {
-      border: 1px solid #9b7d2c;
-      background: #fff8dd;
-      color: #3f3210;
+      border: 1px solid var(--recovery-border);
+      background: var(--recovery);
+      color: var(--recovery-text);
       padding: 8px;
     }
 
     .recovery-key {
       width: 100%;
-      border: 1px solid #a68a3a;
-      background: #ffffff;
+      border: 1px solid var(--recovery-border);
+      background: var(--control);
       padding: 7px;
       font-family: Consolas, "Courier New", monospace;
       font-size: 12px;
@@ -241,14 +417,14 @@
 
     .box {
       border: 1px solid var(--line);
-      background: #ffffff;
+      background: var(--panel);
       margin-bottom: 8px;
     }
 
     .box-title {
       border-bottom: 1px solid var(--line);
-      background: #e1e9f2;
-      color: #2a4f76;
+      background: var(--box-title);
+      color: var(--box-title-text);
       font-weight: bold;
       padding: 4px 6px;
     }
@@ -282,7 +458,7 @@
     }
 
     .field label {
-      color: #344357;
+      color: var(--text);
       font-weight: bold;
       font-size: 12px;
     }
@@ -299,8 +475,8 @@
     }
 
     .counter {
-      border: 1px solid #c0c9d5;
-      background: #f8fafc;
+      border: 1px solid var(--line);
+      background: var(--panel-3);
       padding: 6px;
       text-align: center;
     }
@@ -308,7 +484,7 @@
     .counter strong {
       display: block;
       font-size: 18px;
-      color: #0f2f57;
+      color: var(--post-title);
     }
 
     .post-list {
@@ -318,12 +494,12 @@
 
     .post {
       border: 1px solid var(--line);
-      background: #ffffff;
+      background: var(--panel);
     }
 
     .post.pinned {
-      border-color: #b8872f;
-      background: #fffdf7;
+      border-color: var(--pin-border);
+      background: var(--post-pinned);
     }
 
     .post-head {
@@ -331,14 +507,14 @@
       align-items: flex-start;
       justify-content: space-between;
       gap: 8px;
-      border-bottom: 1px solid #d7dee8;
-      background: #f2f5f9;
+      border-bottom: 1px solid var(--line);
+      background: var(--post-head);
       padding: 7px;
     }
 
     .post-title {
       margin: 0;
-      color: #0f2f57;
+      color: var(--post-title);
       font-size: 16px;
       line-height: 1.25;
     }
@@ -346,7 +522,7 @@
     .post-title button {
       border: 0;
       background: transparent;
-      color: #0f2f57;
+      color: var(--post-title);
       min-height: 0;
       padding: 0;
       font-weight: bold;
@@ -361,11 +537,17 @@
     }
 
     .post-actions {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: flex-end;
-      gap: 4px;
+      display: grid;
+      justify-items: end;
       flex: 0 0 auto;
+    }
+
+    .post-actions .action-menu {
+      width: max-content;
+    }
+
+    .post-actions .menu-panel {
+      min-width: 120px;
     }
 
     .post-body {
@@ -376,7 +558,7 @@
     .post-body h2,
     .post-body h3 {
       margin: 10px 0 4px;
-      color: #27384c;
+      color: var(--text);
       font-family: Georgia, "Times New Roman", serif;
     }
 
@@ -386,14 +568,14 @@
 
     .post-body pre {
       overflow: auto;
-      border: 1px solid #c7d0dc;
-      background: #f6f8fb;
+      border: 1px solid var(--line);
+      background: var(--pre);
       padding: 8px;
       font-family: Consolas, "Courier New", monospace;
     }
 
     .post-body code {
-      background: #edf1f7;
+      background: var(--code);
       padding: 1px 3px;
       font-family: Consolas, "Courier New", monospace;
     }
@@ -406,9 +588,9 @@
     }
 
     .tag {
-      border: 1px solid #b7c1ce;
-      background: #eef3f9;
-      color: #334155;
+      border: 1px solid var(--line);
+      background: var(--tag);
+      color: var(--tag-text);
       padding: 1px 5px;
       font-size: 12px;
     }
@@ -456,7 +638,7 @@
     }
 
     .year {
-      border-left: 4px solid #6f7e91;
+      border-left: 4px solid var(--line-dark);
       padding-left: 8px;
     }
 
@@ -470,12 +652,12 @@
       display: grid;
       grid-template-columns: 92px 1fr;
       gap: 8px;
-      border-top: 1px solid #d4dbe5;
+      border-top: 1px solid var(--line);
       padding: 6px 0;
     }
 
     .month-name {
-      color: #27384c;
+      color: var(--text);
       font-weight: bold;
     }
 
@@ -489,13 +671,13 @@
 
     .day {
       min-width: 3px;
-      background: #d7dee8;
-      border: 1px solid #c6cfdb;
+      background: var(--day);
+      border: 1px solid var(--line);
     }
 
     .day.has-posts {
-      background: #6f93bd;
-      border-color: #486d98;
+      background: var(--day-active);
+      border-color: var(--line-dark);
     }
 
     .collection-list {
@@ -504,20 +686,20 @@
     }
 
     .collection-item {
-      border: 1px solid #c0c9d5;
-      background: #ffffff;
+      border: 1px solid var(--line);
+      background: var(--panel);
       padding: 7px;
     }
 
     .collection-item h3 {
       margin: 0 0 4px;
       font-size: 15px;
-      color: #0f2f57;
+      color: var(--post-title);
     }
 
     .empty {
-      border: 1px dashed #9aa6b5;
-      background: #fbfcfe;
+      border: 1px dashed var(--line-dark);
+      background: var(--panel-3);
       color: var(--muted);
       padding: 16px;
       text-align: center;
@@ -531,9 +713,27 @@
       font-size: 12px;
     }
 
+    #toolsView {
+      grid-template-columns: minmax(0, 1.45fr) minmax(280px, 0.9fr);
+      gap: 8px;
+      align-items: start;
+    }
+
+    #toolsView:not(.hidden) {
+      display: grid;
+    }
+
+    #toolsView .box {
+      margin-bottom: 0;
+    }
+
+    #toolsView .box:nth-of-type(3) {
+      grid-column: 1 / -1;
+    }
+
     .footer {
       border-top: 1px solid var(--line);
-      background: #eef2f7;
+      background: var(--panel-2);
       color: var(--muted);
       padding: 7px 10px;
       font-size: 12px;
@@ -566,9 +766,26 @@
       }
 
       .layout,
-      .auth-grid,
       .split {
         grid-template-columns: 1fr;
+      }
+
+      .action-menu {
+        position: static;
+      }
+
+      .menu-panel {
+        left: 0;
+        right: auto;
+      }
+
+      #toolsView:not(.hidden) {
+        display: grid;
+        grid-template-columns: 1fr;
+      }
+
+      #toolsView .box:nth-of-type(3) {
+        grid-column: auto;
       }
 
       .sidebar {
@@ -622,12 +839,15 @@
         <span>plain old thoughts, dated and kept</span>
       </div>
       <div class="top-actions">
-        <span class="session-user hidden" id="currentUserLabel"></span>
-        <button id="newPostTop" class="auth-only hidden">New post</button>
-        <button id="downloadMarkdownTop" class="auth-only hidden">Download Markdown</button>
-        <button id="printPdfTop" class="auth-only hidden">Print / PDF</button>
-        <button id="privacyButton">Privacy</button>
-        <button id="logoutButton" class="auth-only hidden">Logout</button>
+        <span class="session-user auth-only hidden" id="currentUserLabel"></span>
+        <details class="action-menu">
+          <summary>App</summary>
+          <div class="menu-panel">
+            <button id="themeButton" type="button">Dark mode</button>
+            <button id="privacyButton">Privacy</button>
+            <button id="logoutButton" class="auth-only hidden">Logout</button>
+          </div>
+        </details>
       </div>
     </header>
 
@@ -650,32 +870,32 @@
     </section>
 
     <section id="authView" class="auth-panel">
-      <div class="auth-grid">
-        <form id="signinForm" class="box">
-          <div class="box-title">Sign in</div>
-          <div class="box-body stack">
+      <div class="box">
+        <div class="auth-tabs" role="tablist" aria-label="Account access">
+          <button id="signinTab" class="auth-tab active" type="button" data-auth-mode="signin" role="tab" aria-controls="signinForm" aria-selected="true">Sign in</button>
+          <button id="signupTab" class="auth-tab" type="button" data-auth-mode="signup" role="tab" aria-controls="signupForm" aria-selected="false">Create account</button>
+        </div>
+        <div class="box-body">
+          <form id="signinForm" class="auth-form stack">
             <div class="field">
-              <label for="signinUser">Username</label>
-              <input id="signinUser" autocomplete="username" required>
+              <label for="signinEmail">Email</label>
+              <input id="signinEmail" type="email" autocomplete="email" required>
             </div>
             <div class="field">
               <label for="signinPassword">Password</label>
               <input id="signinPassword" type="password" autocomplete="current-password" required>
             </div>
-            <div class="row wrap">
+            <div class="form-actions">
               <button type="submit">Sign in</button>
               <button type="button" id="showRecoverButton">Recover</button>
               <span id="signinStatus" class="muted" role="status" aria-live="polite"></span>
             </div>
-          </div>
-        </form>
+          </form>
 
-        <form id="signupForm" class="box">
-          <div class="box-title">Sign up</div>
-          <div class="box-body stack">
+          <form id="signupForm" class="auth-form stack hidden">
             <div class="field">
-              <label for="signupUser">Username</label>
-              <input id="signupUser" autocomplete="username" required>
+              <label for="signupEmail">Email</label>
+              <input id="signupEmail" type="email" autocomplete="email" required>
             </div>
             <div class="field">
               <label for="signupPassword">Password</label>
@@ -685,7 +905,7 @@
               <label for="signupPasswordAgain">Repeat password</label>
               <input id="signupPasswordAgain" type="password" autocomplete="new-password" minlength="8" required>
             </div>
-            <div class="row wrap">
+            <div class="form-actions">
               <button type="submit">Create private archive</button>
               <span id="signupStatus" class="muted" role="status" aria-live="polite"></span>
             </div>
@@ -693,12 +913,12 @@
               <strong>Save this recovery key now.</strong>
               <p class="muted">It can reset your password if you forget it. It will not be shown again.</p>
               <div id="recoveryKeyValue" class="recovery-key"></div>
-              <div class="row wrap" style="margin-top:7px">
+              <div class="form-actions" style="margin-top:7px">
                 <button type="button" id="copyRecoveryKey">Copy recovery key</button>
               </div>
             </div>
-          </div>
-        </form>
+          </form>
+        </div>
       </div>
       <div class="auth-note">
         Each archive is encrypted in your browser before it is stored on the server. Other users cannot open it, and the server cannot read it without your password or your recovery key.
@@ -710,8 +930,8 @@
         <div class="box-title">Recover Account</div>
         <div class="box-body stack">
           <div class="field">
-            <label for="recoverUser">Username</label>
-            <input id="recoverUser" autocomplete="username" required>
+            <label for="recoverEmail">Email</label>
+            <input id="recoverEmail" type="email" autocomplete="email" required>
           </div>
           <div class="field">
             <label for="recoverKey">Recovery key</label>
@@ -725,7 +945,7 @@
             <label for="recoverPasswordAgain">Repeat new password</label>
             <input id="recoverPasswordAgain" type="password" autocomplete="new-password" minlength="8" required>
           </div>
-          <div class="row wrap">
+          <div class="form-actions">
             <button type="submit">Reset password</button>
             <button type="button" id="recoverBackButton">Back</button>
             <span id="recoverStatus" class="muted" role="status" aria-live="polite"></span>
@@ -827,8 +1047,11 @@
                   <label for="bodyInput">Markdown</label>
                   <textarea id="bodyInput" required placeholder="Write exactly what is in your head. Markdown works: # heading, **bold**, *italic*, - list, > quote."></textarea>
                 </div>
-                <label class="row"><input id="pinnedInput" type="checkbox" style="width:auto"> pin this thought</label>
-                <div class="row wrap">
+                <div class="option-list">
+                  <label class="row"><input id="pinnedInput" type="checkbox" style="width:auto"> pin this thought</label>
+                  <label class="row"><input id="rssInput" type="checkbox" style="width:auto"> share in RSS</label>
+                </div>
+                <div class="form-actions">
                   <button type="submit">Save post</button>
                   <button type="button" id="clearEditor">Clear</button>
                   <span class="muted" id="editorStatus" role="status" aria-live="polite"></span>
@@ -865,22 +1088,63 @@
           <div class="box">
             <div class="box-title">RSS Feed</div>
             <div class="box-body stack">
-              <div class="muted">Download this XML and publish it beside the site as <code>feed.xml</code> if you host the page online.</div>
-              <div class="row wrap">
-                <button id="downloadRss">Download feed.xml</button>
-                <button id="copyRss">Copy RSS</button>
+              <div class="muted">Only posts marked for RSS appear in this feed. Private posts stay out of the XML.</div>
+              <div class="field">
+                <label for="publicRssUrl">Public RSS URL</label>
+                <input id="publicRssUrl" readonly>
+              </div>
+              <div class="tool-action-grid">
+                <div class="tool-action-set">
+                  <div class="tool-action-title">Share</div>
+                  <div class="button-stack">
+                    <button id="copyRssUrl">Copy feed URL</button>
+                  </div>
+                </div>
+                <div class="tool-action-set">
+                  <div class="tool-action-title">Feed file</div>
+                  <div class="button-stack">
+                    <button id="downloadRss">Download feed.xml</button>
+                    <button id="copyRss">Copy RSS</button>
+                  </div>
+                </div>
+                <span id="rssStatus" class="muted" role="status" aria-live="polite"></span>
               </div>
               <textarea id="rssOutput" class="rss-output" readonly></textarea>
             </div>
           </div>
 
           <div class="box">
+            <div class="box-title">Subscriptions</div>
+            <div class="box-body stack">
+              <div class="field">
+                <label for="subscribeFeedInput">RSS feed URL</label>
+                <input id="subscribeFeedInput" placeholder="https://example.com/feed/id.xml">
+              </div>
+              <div class="form-actions">
+                <button id="subscribeFeedButton" type="button">Subscribe</button>
+                <span id="subscribeStatus" class="muted" role="status" aria-live="polite"></span>
+              </div>
+              <div id="subscriptionsList" class="muted"></div>
+            </div>
+          </div>
+
+          <div class="box">
             <div class="box-title">Backup</div>
             <div class="box-body stack">
-              <div class="row wrap">
-                <button id="downloadJson">Download JSON backup</button>
-                <button id="downloadMarkdown">Download single Markdown</button>
-                <button id="printPdf">Print / PDF</button>
+              <div class="tool-action-grid">
+                <div class="tool-action-set">
+                  <div class="tool-action-title">Portable files</div>
+                  <div class="button-stack">
+                    <button id="downloadJson">Download JSON backup</button>
+                    <button id="downloadMarkdown">Download single Markdown</button>
+                  </div>
+                </div>
+                <div class="tool-action-set">
+                  <div class="tool-action-title">Readable copy</div>
+                  <div class="button-stack">
+                    <button id="printPdf">Print / PDF</button>
+                  </div>
+                </div>
               </div>
               <div class="field">
                 <label for="importFile">Restore JSON backup</label>
@@ -900,6 +1164,7 @@
 
   <script>
     const LEGACY_STORAGE_KEY = "mind-archive-v1";
+    const THEME_STORAGE_KEY = "mind-archive-theme";
     const cryptoApi = window.crypto && window.crypto.subtle ? window.crypto : null;
     const encoder = new TextEncoder();
     const decoder = new TextDecoder();
@@ -911,13 +1176,30 @@
       series: "",
       onlyPinned: false,
       currentUser: "",
+      currentFeedId: "",
       currentKey: null,
       currentArchiveKeyRaw: "",
-      previousScreen: "auth"
+      previousScreen: "auth",
+      subscriptions: []
     };
 
     const $ = (id) => document.getElementById(id);
     const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+    function getSavedTheme() {
+      const saved = localStorage.getItem(THEME_STORAGE_KEY);
+      if (saved === "light" || saved === "dark") return saved;
+      return window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+    }
+
+    function applyTheme(theme) {
+      const nextTheme = theme === "dark" ? "dark" : "light";
+      document.documentElement.dataset.theme = nextTheme;
+      localStorage.setItem(THEME_STORAGE_KEY, nextTheme);
+      if ($("themeButton")) {
+        $("themeButton").textContent = nextTheme === "dark" ? "Light mode" : "Dark mode";
+      }
+    }
 
     function uid() {
       return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
@@ -950,14 +1232,14 @@
       return String(value || "").replace(/[^a-zA-Z0-9+/=]/g, "");
     }
 
-    function normalizeUsername(value) {
+    function normalizeEmail(value) {
       return String(value || "").trim().toLowerCase();
     }
 
-    async function deriveKey(username, password, salt) {
+    async function deriveKey(email, password, salt) {
       const material = await cryptoApi.subtle.importKey(
         "raw",
-        encoder.encode(`${username}:${password}:vault`),
+        encoder.encode(`${email}:${password}:vault`),
         "PBKDF2",
         false,
         ["deriveKey"]
@@ -988,10 +1270,10 @@
       );
     }
 
-    async function deriveLoginSecret(username, password, salt) {
+    async function deriveLoginSecret(email, password, salt) {
       const material = await cryptoApi.subtle.importKey(
         "raw",
-        encoder.encode(`${username}:${password}:login`),
+        encoder.encode(`${email}:${password}:login`),
         "PBKDF2",
         false,
         ["deriveBits"]
@@ -1054,6 +1336,51 @@
       return body;
     }
 
+    function getFeedUrl() {
+      return state.currentFeedId ? `${location.origin}/feed/${encodeURIComponent(state.currentFeedId)}.xml` : "";
+    }
+
+    function getPublicPosts() {
+      return sortedPosts(state.posts.filter((post) => post.rssPublic)).slice(0, 50).map((post) => ({
+        id: post.id,
+        title: post.title,
+        body: post.body,
+        mood: post.mood || "",
+        place: post.place || "",
+        collections: Array.isArray(post.collections) ? post.collections : [],
+        series: post.series || "",
+        createdAt: post.createdAt,
+        updatedAt: post.updatedAt || post.createdAt
+      }));
+    }
+
+    async function syncPublicFeed() {
+      if (!state.currentFeedId) return;
+      await api("/api/public-feed", {
+        method: "PUT",
+        body: JSON.stringify({ posts: getPublicPosts() })
+      });
+    }
+
+    function schedulePublicFeedSync() {
+      syncPublicFeed().catch(() => {});
+    }
+
+    async function loadSubscriptions() {
+      const result = await api("/api/subscriptions");
+      state.subscriptions = Array.isArray(result.subscriptions) ? result.subscriptions : [];
+      if (state.view === "toolsView") renderTools();
+    }
+
+    async function subscribeToFeed(feedUrl) {
+      const result = await api("/api/subscribe-feed", {
+        method: "POST",
+        body: JSON.stringify({ feedUrl })
+      });
+      await loadSubscriptions();
+      return result;
+    }
+
     async function savePosts() {
       if (!state.currentUser || !state.currentKey) return;
       const vault = await encryptJson(state.currentKey, state.posts);
@@ -1061,6 +1388,7 @@
         method: "PUT",
         body: JSON.stringify({ vault })
       });
+      await syncPublicFeed();
     }
 
     function hasLegacyPosts() {
@@ -1081,8 +1409,8 @@
       }
     }
 
-    async function signUp(usernameValue, password, passwordAgain) {
-      const username = normalizeUsername(usernameValue);
+    async function signUp(emailValue, password, passwordAgain) {
+      const email = normalizeEmail(emailValue);
       if (password !== passwordAgain) throw new Error("Passwords do not match.");
       if (!cryptoApi) throw new Error("This browser does not support Web Crypto.");
 
@@ -1090,10 +1418,10 @@
       const recoverySalt = randomBase64(16);
       const archiveKeyRaw = randomBase64(32);
       const key = await importArchiveKey(archiveKeyRaw);
-      const passwordWrapKey = await deriveKey(username, password, clientSalt);
+      const passwordWrapKey = await deriveKey(email, password, clientSalt);
       const recoveryKey = randomBase64(32);
       const recoveryWrapKey = await deriveRecoveryWrapKey(recoveryKey, recoverySalt);
-      const loginSecret = await deriveLoginSecret(username, password, clientSalt);
+      const loginSecret = await deriveLoginSecret(email, password, clientSalt);
       let startingPosts = [];
       if (hasLegacyPosts() && confirm("Import the old local archive into this new encrypted account?")) {
         startingPosts = readLegacyPosts();
@@ -1103,38 +1431,40 @@
       const recoveryWrappedKey = await wrapArchiveKey(recoveryWrapKey, archiveKeyRaw);
       const result = await api("/api/signup", {
         method: "POST",
-        body: JSON.stringify({ username, loginSecret, clientSalt, recoverySalt, vault, wrappedKey, recoveryWrappedKey })
+        body: JSON.stringify({ email, loginSecret, clientSalt, recoverySalt, vault, wrappedKey, recoveryWrappedKey })
       });
       $("recoveryKeyValue").textContent = formatRecoveryKey(recoveryKey);
       $("recoveryKeyPanel").classList.remove("hidden");
-      unlock(result.username, key, startingPosts, archiveKeyRaw);
+      unlock(result.email, result.feedId, key, startingPosts, archiveKeyRaw);
+      schedulePublicFeedSync();
     }
 
-    async function signIn(usernameValue, password) {
-      const username = normalizeUsername(usernameValue);
+    async function signIn(emailValue, password) {
+      const email = normalizeEmail(emailValue);
       if (!cryptoApi) throw new Error("This browser does not support Web Crypto.");
 
-      const session = await api(`/api/user-salt?username=${encodeURIComponent(username)}`);
-      const loginSecret = await deriveLoginSecret(username, password, session.clientSalt);
+      const session = await api(`/api/user-salt?email=${encodeURIComponent(email)}`);
+      const loginSecret = await deriveLoginSecret(email, password, session.clientSalt);
       const result = await api("/api/signin", {
         method: "POST",
-        body: JSON.stringify({ username, loginSecret })
+        body: JSON.stringify({ email, loginSecret })
       });
-      const passwordWrapKey = await deriveKey(result.username, password, result.clientSalt);
+      const passwordWrapKey = await deriveKey(result.email, password, result.clientSalt);
       const archiveKeyRaw = result.wrappedKey
         ? await unwrapArchiveKey(passwordWrapKey, result.wrappedKey)
         : "";
       const key = archiveKeyRaw ? await importArchiveKey(archiveKeyRaw) : passwordWrapKey;
       const posts = result.vault ? await decryptJson(key, result.vault) : [];
-      unlock(result.username, key, Array.isArray(posts) ? posts : [], archiveKeyRaw);
+      unlock(result.email, result.feedId, key, Array.isArray(posts) ? posts : [], archiveKeyRaw);
+      schedulePublicFeedSync();
     }
 
-    async function recoverAccount(usernameValue, recoveryKeyValue, password, passwordAgain) {
-      const username = normalizeUsername(usernameValue);
+    async function recoverAccount(emailValue, recoveryKeyValue, password, passwordAgain) {
+      const email = normalizeEmail(emailValue);
       if (password !== passwordAgain) throw new Error("Passwords do not match.");
       if (!cryptoApi) throw new Error("This browser does not support Web Crypto.");
 
-      const session = await api(`/api/user-salt?username=${encodeURIComponent(username)}`);
+      const session = await api(`/api/user-salt?email=${encodeURIComponent(email)}`);
       if (!session.recoverySalt || !session.recoveryWrappedKey) {
         throw new Error("This account does not have a recovery key.");
       }
@@ -1142,15 +1472,16 @@
       const archiveKeyRaw = await unwrapArchiveKey(recoveryWrapKey, session.recoveryWrappedKey);
       const archiveKey = await importArchiveKey(archiveKeyRaw);
       const posts = session.vault ? await decryptJson(archiveKey, session.vault) : [];
-      const loginSecret = await deriveLoginSecret(username, password, session.clientSalt);
-      const passwordWrapKey = await deriveKey(username, password, session.clientSalt);
+      const loginSecret = await deriveLoginSecret(email, password, session.clientSalt);
+      const passwordWrapKey = await deriveKey(email, password, session.clientSalt);
       const wrappedKey = await wrapArchiveKey(passwordWrapKey, archiveKeyRaw);
 
       const result = await api("/api/recover", {
         method: "POST",
-        body: JSON.stringify({ username, loginSecret, recoveryWrappedKey: session.recoveryWrappedKey, wrappedKey })
+        body: JSON.stringify({ email, loginSecret, recoveryWrappedKey: session.recoveryWrappedKey, wrappedKey })
       });
-      unlock(result.username, archiveKey, Array.isArray(posts) ? posts : [], archiveKeyRaw);
+      unlock(result.email, result.feedId, archiveKey, Array.isArray(posts) ? posts : [], archiveKeyRaw);
+      schedulePublicFeedSync();
     }
 
     async function logout() {
@@ -1158,16 +1489,19 @@
         await api("/api/logout", { method: "POST", body: "{}" });
       } finally {
         state.currentUser = "";
+        state.currentFeedId = "";
         state.currentKey = null;
         state.currentArchiveKeyRaw = "";
         state.posts = [];
+        state.subscriptions = [];
         clearEditor();
         showAuth();
       }
     }
 
-    function unlock(username, key, posts, archiveKeyRaw = "") {
-      state.currentUser = username;
+    function unlock(email, feedId, key, posts, archiveKeyRaw = "") {
+      state.currentUser = email;
+      state.currentFeedId = feedId || "";
       state.currentKey = key;
       state.currentArchiveKeyRaw = archiveKeyRaw;
       state.posts = posts;
@@ -1177,10 +1511,11 @@
       state.onlyPinned = false;
       $("searchInput").value = "";
       $("onlyPinned").checked = false;
-      $("currentUserLabel").textContent = `signed in: ${username}`;
+      $("currentUserLabel").textContent = `signed in: ${email}`;
       showApp();
       renderAll();
       setView("postsView");
+      loadSubscriptions().catch(() => {});
     }
 
     function showAuth() {
@@ -1232,6 +1567,18 @@
       } else {
         showAuth();
       }
+    }
+
+    function setAuthMode(mode) {
+      const isSignup = mode === "signup";
+      $("signinForm").classList.toggle("hidden", isSignup);
+      $("signupForm").classList.toggle("hidden", !isSignup);
+      $("signinTab").classList.toggle("active", !isSignup);
+      $("signupTab").classList.toggle("active", isSignup);
+      $("signinTab").setAttribute("aria-selected", isSignup ? "false" : "true");
+      $("signupTab").setAttribute("aria-selected", isSignup ? "true" : "false");
+      $("signinStatus").textContent = "";
+      $("signupStatus").textContent = "";
     }
 
     function escapeHtml(value) {
@@ -1408,12 +1755,19 @@
       if (view === "toolsView") renderTools();
     }
 
+    function closeActionMenus(except = null) {
+      document.querySelectorAll("details.action-menu[open]").forEach((menu) => {
+        if (menu !== except) menu.removeAttribute("open");
+      });
+    }
+
     function renderPost(post) {
       const tags = [
         post.mood ? `mood: ${post.mood}` : "",
         post.place ? `place: ${post.place}` : "",
         ...(post.collections || []).map((name) => `collection: ${name}`),
-        post.series ? `series: ${post.series}` : ""
+        post.series ? `series: ${post.series}` : "",
+        post.rssPublic ? "RSS shared" : ""
       ].filter(Boolean);
 
       return `
@@ -1423,15 +1777,21 @@
               <h2 class="post-title"><button type="button" data-action="open" data-id="${post.id}">${escapeHtml(post.title)}</button></h2>
               <div class="post-meta">
                 ${post.pinned ? '<span class="pin">pinned</span> &middot; ' : ""}
+                ${post.rssPublic ? '<span class="ok">RSS</span> &middot; ' : ""}
                 written ${escapeHtml(formatDate(post.createdAt))}
                 ${post.updatedAt && post.updatedAt !== post.createdAt ? ` &middot; edited ${escapeHtml(formatDate(post.updatedAt))}` : ""}
                 &middot; ${wordsIn(post.body)} words
               </div>
             </div>
             <div class="post-actions">
-              <button type="button" data-action="pin" data-id="${post.id}">${post.pinned ? "Unpin" : "Pin"}</button>
-              <button type="button" data-action="edit" data-id="${post.id}">Edit</button>
-              <button type="button" data-action="delete" data-id="${post.id}" class="danger">Delete</button>
+              <details class="action-menu">
+                <summary>Post</summary>
+                <div class="menu-panel">
+                  <button type="button" data-action="pin" data-id="${post.id}">${post.pinned ? "Unpin" : "Pin"}</button>
+                  <button type="button" data-action="edit" data-id="${post.id}">Edit</button>
+                  <button type="button" data-action="delete" data-id="${post.id}" class="danger">Delete</button>
+                </div>
+              </details>
             </div>
           </div>
           <div class="post-body">${renderMarkdown(post.body)}</div>
@@ -1541,6 +1901,7 @@
         `- Created: ${post.createdAt}`,
         `- Updated: ${post.updatedAt || post.createdAt}`,
         `- Pinned: ${post.pinned ? "yes" : "no"}`,
+        `- Shared in RSS: ${post.rssPublic ? "yes" : "no"}`,
         post.mood ? `- Mood: ${post.mood}` : "",
         post.place ? `- Place: ${post.place}` : "",
         post.collections?.length ? `- Collections: ${post.collections.join(", ")}` : "",
@@ -1555,22 +1916,22 @@
     }
 
     function buildRss() {
-      const siteUrl = location.href.split("#")[0];
-      const items = sortedPosts().slice(0, 50).map((post) => `
+      const feedUrl = getFeedUrl() || location.href.split("#")[0];
+      const items = getPublicPosts().map((post) => `
   <item>
     <title>${escapeHtml(post.title)}</title>
-    <link>${escapeHtml(siteUrl)}#post-${escapeHtml(post.id)}</link>
+    <link>${escapeHtml(feedUrl)}#post-${escapeHtml(post.id)}</link>
     <guid>${escapeHtml(post.id)}</guid>
     <pubDate>${new Date(post.createdAt).toUTCString()}</pubDate>
-    <description><![CDATA[${renderMarkdown(post.body)}]]></description>
+    <description>${escapeHtml(post.body)}</description>
   </item>`).join("");
 
       return `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0">
 <channel>
   <title>Mind Archive</title>
-  <link>${escapeHtml(siteUrl)}</link>
-  <description>Personal thoughts and opinions</description>
+  <link>${escapeHtml(feedUrl)}</link>
+  <description>Shared thoughts and opinions</description>
   <lastBuildDate>${new Date().toUTCString()}</lastBuildDate>${items}
 </channel>
 </rss>`;
@@ -1597,6 +1958,7 @@
       $("seriesInput").value = "";
       $("bodyInput").value = "";
       $("pinnedInput").checked = false;
+      $("rssInput").checked = false;
       $("editorTitle").textContent = "Write Post";
       $("editorStatus").textContent = "";
       renderPreview();
@@ -1613,6 +1975,7 @@
       $("seriesInput").value = post.series || "";
       $("bodyInput").value = post.body;
       $("pinnedInput").checked = Boolean(post.pinned);
+      $("rssInput").checked = Boolean(post.rssPublic);
       $("editorTitle").textContent = "Edit Post";
       $("editorStatus").textContent = `created ${formatDate(post.createdAt)}`;
       renderPreview();
@@ -1661,7 +2024,14 @@
     }
 
     function renderTools() {
+      const sharedCount = state.posts.filter((post) => post.rssPublic).length;
+      const feedUrl = getFeedUrl();
+      $("publicRssUrl").value = feedUrl;
+      $("rssStatus").textContent = feedUrl ? `${sharedCount} shared and synced on save` : `${sharedCount} shared`;
       $("rssOutput").value = buildRss();
+      $("subscriptionsList").innerHTML = state.subscriptions.length
+        ? state.subscriptions.map((item) => `<div><a href="/feed/${encodeURIComponent(item.feedId)}.xml" target="_blank" rel="noopener">${escapeHtml(item.feedId)}</a></div>`).join("")
+        : "No subscriptions yet.";
     }
 
     function renderAll() {
@@ -1677,7 +2047,7 @@
         event.preventDefault();
         $("signinStatus").textContent = "checking...";
         try {
-          await signIn($("signinUser").value, $("signinPassword").value);
+          await signIn($("signinEmail").value, $("signinPassword").value);
           $("signinStatus").textContent = "";
         } catch (error) {
           $("signinStatus").textContent = error.message;
@@ -1688,14 +2058,21 @@
         event.preventDefault();
         $("signupStatus").textContent = "creating...";
         try {
-          await signUp($("signupUser").value, $("signupPassword").value, $("signupPasswordAgain").value);
+          await signUp($("signupEmail").value, $("signupPassword").value, $("signupPasswordAgain").value);
           $("signupStatus").textContent = "";
         } catch (error) {
           $("signupStatus").textContent = error.message;
         }
       });
 
+      document.querySelectorAll("[data-auth-mode]").forEach((button) => {
+        button.addEventListener("click", () => setAuthMode(button.dataset.authMode));
+      });
+
       $("logoutButton").addEventListener("click", logout);
+      $("themeButton").addEventListener("click", () => {
+        applyTheme(document.documentElement.dataset.theme === "dark" ? "light" : "dark");
+      });
       $("privacyButton").addEventListener("click", showPrivacy);
       $("privacyBackButton").addEventListener("click", leavePrivacy);
       $("showRecoverButton").addEventListener("click", showRecovery);
@@ -1716,7 +2093,7 @@
         $("recoverStatus").textContent = "checking...";
         try {
           await recoverAccount(
-            $("recoverUser").value,
+            $("recoverEmail").value,
             $("recoverKey").value,
             $("recoverPassword").value,
             $("recoverPasswordAgain").value
@@ -1728,12 +2105,23 @@
       });
 
       document.querySelectorAll(".tab").forEach((tab) => {
-        tab.addEventListener("click", () => setView(tab.dataset.view));
+        tab.addEventListener("click", () => {
+          if (tab.dataset.view === "editorView") clearEditor();
+          setView(tab.dataset.view);
+        });
       });
 
-      $("newPostTop").addEventListener("click", () => {
-        clearEditor();
-        setView("editorView");
+      document.addEventListener("toggle", (event) => {
+        const menu = event.target.closest?.("details.action-menu");
+        if (menu && menu.open) closeActionMenus(menu);
+      }, true);
+
+      document.addEventListener("click", (event) => {
+        if (!event.target.closest("details.action-menu")) closeActionMenus();
+      });
+
+      document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") closeActionMenus();
       });
 
       $("clearEditor").addEventListener("click", clearEditor);
@@ -1755,6 +2143,7 @@
           collections,
           series: $("seriesInput").value.trim(),
           pinned: $("pinnedInput").checked,
+          rssPublic: $("rssInput").checked,
           createdAt: existing?.createdAt || now,
           updatedAt: existing ? now : now
         };
@@ -1806,11 +2195,32 @@
       });
 
       $("downloadMarkdown").addEventListener("click", () => download("mind-archive.md", buildMarkdownExport(), "text/markdown"));
-      $("downloadMarkdownTop").addEventListener("click", () => download("mind-archive.md", buildMarkdownExport(), "text/markdown"));
       $("downloadJson").addEventListener("click", () => download("mind-archive.json", JSON.stringify(state.posts, null, 2), "application/json"));
       $("downloadRss").addEventListener("click", () => download("feed.xml", buildRss(), "application/rss+xml"));
+      $("copyRssUrl").addEventListener("click", async () => {
+        const value = getFeedUrl();
+        if (!value) return;
+        try {
+          await navigator.clipboard.writeText(value);
+          $("copyRssUrl").textContent = "Copied";
+          setTimeout(() => $("copyRssUrl").textContent = "Copy feed URL", 1200);
+        } catch {
+          $("publicRssUrl").select();
+        }
+      });
+      $("subscribeFeedButton").addEventListener("click", async () => {
+        $("subscribeStatus").textContent = "subscribing...";
+        try {
+          const result = await subscribeToFeed($("subscribeFeedInput").value);
+          $("subscribeFeedInput").value = "";
+          $("subscribeStatus").textContent = result.emailConfigured
+            ? "subscribed"
+            : "subscribed; email sending needs server email config";
+        } catch (error) {
+          $("subscribeStatus").textContent = error.message;
+        }
+      });
       $("printPdf").addEventListener("click", () => window.print());
-      $("printPdfTop").addEventListener("click", () => window.print());
 
       $("copyRss").addEventListener("click", async () => {
         try {
@@ -1838,6 +2248,7 @@
             collections: Array.isArray(post.collections) ? post.collections.map(String) : [],
             series: String(post.series || ""),
             pinned: Boolean(post.pinned),
+            rssPublic: Boolean(post.rssPublic),
             createdAt: post.createdAt || new Date().toISOString(),
             updatedAt: post.updatedAt || post.createdAt || new Date().toISOString()
           }));
@@ -1852,7 +2263,9 @@
       });
     }
 
+    applyTheme(getSavedTheme());
     bindEvents();
+    setAuthMode("signin");
     renderPreview();
     showAuth();
   </script>

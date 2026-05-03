@@ -13,6 +13,18 @@ Open `http://localhost:3000`.
 
 Without `DATABASE_URL`, the server uses `data/users.json` for local development only.
 
+For local email testing, create a `.env` file in the repo root. It is ignored by git and is loaded automatically by `npm start`:
+
+```text
+SESSION_SECRET=replace-with-a-long-random-string
+RESEND_API_KEY=re_...
+EMAIL_FROM=Mind Archive <onboarding@resend.dev>
+APP_URL=http://localhost:3000
+PORT=3000
+```
+
+`onboarding@resend.dev` is useful only for Resend test sending. To email real users, verify your own sending domain in Resend and use an address on that domain.
+
 ## Production setup
 
 Use PostgreSQL for real users. File storage is not reliable on most app hosts because files can disappear on deploys or restarts.
@@ -22,6 +34,9 @@ Required environment variables:
 ```text
 DATABASE_URL=postgres://...
 SESSION_SECRET=use-a-long-random-secret
+RESEND_API_KEY=re_...
+EMAIL_FROM=Mind Archive <posts@your-domain.com>
+APP_URL=https://your-site.com
 NODE_ENV=production
 ```
 
@@ -58,6 +73,9 @@ Instance Type: Free
 ```text
 DATABASE_URL=your Neon PostgreSQL connection string
 SESSION_SECRET=generate-a-long-random-secret
+RESEND_API_KEY=your Resend API key
+EMAIL_FROM=Mind Archive <posts@your-domain.com>
+APP_URL=https://your Render URL
 NODE_ENV=production
 ```
 
@@ -78,6 +96,9 @@ NODE_ENV=production
 ```text
 DATABASE_URL=${{Postgres.DATABASE_URL}}
 SESSION_SECRET=generate-a-long-random-secret
+RESEND_API_KEY=your Resend API key
+EMAIL_FROM=Mind Archive <posts@your-domain.com>
+APP_URL=https://your Railway URL
 NODE_ENV=production
 ```
 
@@ -97,6 +118,9 @@ Vercel can host the app with the included `api/index.js` serverless adapter and 
 ```text
 DATABASE_URL=your Neon PostgreSQL connection string
 SESSION_SECRET=generate-a-long-random-secret
+RESEND_API_KEY=your Resend API key
+EMAIL_FROM=Mind Archive <posts@your-domain.com>
+APP_URL=https://your Vercel URL
 NODE_ENV=production
 ```
 
@@ -112,6 +136,7 @@ Do not use the local `data/users.json` storage on Vercel. Vercel functions do no
 
 - Use PostgreSQL through `DATABASE_URL`.
 - Set a long `SESSION_SECRET`.
+- Set `RESEND_API_KEY`, `EMAIL_FROM`, and `APP_URL` so RSS subscriptions can send email with working feed and unsubscribe links.
 - Keep `data/` out of git.
 - Read `/api/health` after deploy to confirm the server is up.
 - Tell users to save the recovery key shown during sign-up.
