@@ -35,6 +35,12 @@ const USERS_FILE = path.join(DATA_DIR, "users.json");
 const PUBLIC_POSTS_FILE = path.join(DATA_DIR, "public-posts.json");
 const SUBSCRIPTIONS_FILE = path.join(DATA_DIR, "subscriptions.json");
 const EMAIL_DELIVERIES_FILE = path.join(DATA_DIR, "email-deliveries.json");
+const DB_TABLES = {
+  users: "mind_archive_users",
+  feedSubscriptions: "mind_archive_feed_subscriptions",
+  publicPosts: "mind_archive_public_posts",
+  emailDeliveries: "mind_archive_email_deliveries"
+};
 const SESSION_COOKIE = "mind_archive_session";
 const SESSION_SECRET = process.env.SESSION_SECRET || "dev-only-change-this-session-secret";
 const DATABASE_URL = process.env.DATABASE_URL || "";
@@ -215,7 +221,7 @@ function cleanRateBuckets() {
 async function ensureData() {
   if (pool) {
     await pool.query(`
-      create table if not exists users (
+      create table if not exists ${DB_TABLES.users} (
         email text primary key,
         login_salt text not null,
         login_hash text not null,
@@ -230,21 +236,21 @@ async function ensureData() {
         updated_at timestamptz not null default now()
       )
     `);
-    await pool.query("alter table users add column if not exists feed_id text unique");
-    await pool.query("alter table users add column if not exists public_feed jsonb");
+    await pool.query(`alter table ${DB_TABLES.users} add column if not exists feed_id text unique`);
+    await pool.query(`alter table ${DB_TABLES.users} add column if not exists public_feed jsonb`);
     await pool.query(`
-      create table if not exists feed_subscriptions (
-        feed_id text not null references users(feed_id) on delete cascade,
-        subscriber_email text not null references users(email) on delete cascade,
+      create table if not exists ${DB_TABLES.feedSubscriptions} (
+        feed_id text not null references ${DB_TABLES.users}(feed_id) on delete cascade,
+        subscriber_email text not null references ${DB_TABLES.users}(email) on delete cascade,
         unsubscribe_token text unique,
         created_at timestamptz not null default now(),
         primary key (feed_id, subscriber_email)
       )
     `);
-    await pool.query("alter table feed_subscriptions add column if not exists unsubscribe_token text unique");
+    await pool.query(`alter table ${DB_TABLES.feedSubscriptions} add column if not exists unsubscribe_token text unique`);
     await pool.query(`
-      create table if not exists public_posts (
-        feed_id text not null references users(feed_id) on delete cascade,
+      create table if not exists ${DB_TABLES.publicPosts} (
+        feed_id text not null references ${DB_TABLES.users}(feed_id) on delete cascade,
         post_id text not null,
         title text not null,
         body text not null,
@@ -259,7 +265,7 @@ async function ensureData() {
       )
     `);
     await pool.query(`
-      create table if not exists email_deliveries (
+      create table if not exists ${DB_TABLES.emailDeliveries} (
         feed_id text not null,
         post_id text not null,
         subscriber_email text not null,
@@ -366,7 +372,7 @@ function rowToUser(row) {
 async function getUser(email) {
   await ensureData();
   if (pool) {
-    const result = await pool.query("select * from users where email = $1", [email]);
+    const result = await pool.query(`select * from ${DB_TABLES.users} where email = $1`, [email]);
     return rowToUser(result.rows[0]);
   }
 
@@ -379,7 +385,7 @@ async function createUser(email, user) {
   if (pool) {
     try {
       await pool.query(
-        `insert into users (email, login_salt, login_hash, client_salt, recovery_salt, wrapped_key, recovery_wrapped_key, vault, feed_id)
+        `insert into ${DB_TABLES.users} (email, login_salt, login_hash, client_salt, recovery_salt, wrapped_key, recovery_wrapped_key, vault, feed_id)
          values ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
         [
           email,
@@ -415,7 +421,7 @@ async function ensureFeedId(email, user) {
   const feedId = randomToken(16);
 
   if (pool) {
-    await pool.query("update users set feed_id = $2, updated_at = now() where email = $1", [email, feedId]);
+    await pool.query(`update ${DB_TABLES.users} set feed_id = $2, updated_at = now() where email = $1`, [email, feedId]);
     user.feedId = feedId;
     return feedId;
   }
@@ -433,7 +439,7 @@ async function updateUserVault(email, vault) {
   await ensureData();
   if (pool) {
     const result = await pool.query(
-      "update users set vault = $2, updated_at = now() where email = $1",
+      `update ${DB_TABLES.users} set vault = $2, updated_at = now() where email = $1`,
       [email, JSON.stringify(vault)]
     );
     return result.rowCount > 0;
@@ -452,14 +458,14 @@ async function getPublicPosts(feedId) {
   if (pool) {
     const result = await pool.query(
       `select post_id, title, body, mood, place, collections, series, created_at, updated_at
-       from public_posts
+       from ${DB_TABLES.publicPosts}
        where feed_id = $1
        order by created_at desc
        limit $2`,
       [feedId, PUBLIC_POST_LIMIT]
     );
     if (!result.rows.length) {
-      const legacy = await pool.query("select public_feed from users where feed_id = $1", [feedId]);
+      const legacy = await pool.query(`select public_feed from ${DB_TABLES.users} where feed_id = $1`, [feedId]);
       const publicFeed = typeof legacy.rows[0]?.public_feed === "string" ? JSON.parse(legacy.rows[0].public_feed) : legacy.rows[0]?.public_feed;
       return Array.isArray(publicFeed?.posts) ? publicFeed.posts.slice(0, PUBLIC_POST_LIMIT) : [];
     }
@@ -494,7 +500,7 @@ async function getPublicPosts(feedId) {
 async function getFeedOwner(feedId) {
   await ensureData();
   if (pool) {
-    const result = await pool.query("select email, feed_id from users where feed_id = $1", [feedId]);
+    const result = await pool.query(`select email, feed_id from ${DB_TABLES.users} where feed_id = $1`, [feedId]);
     const row = result.rows[0];
     return row ? { ownerEmail: row.email, feedId: row.feed_id } : null;
   }
@@ -514,13 +520,13 @@ async function setPublicPosts(email, feedId, posts) {
     try {
       const currentIds = posts.map((post) => post.id);
       if (currentIds.length) {
-        await pool.query("delete from public_posts where feed_id = $1 and not (post_id = any($2))", [feedId, currentIds]);
+        await pool.query(`delete from ${DB_TABLES.publicPosts} where feed_id = $1 and not (post_id = any($2))`, [feedId, currentIds]);
       } else {
-        await pool.query("delete from public_posts where feed_id = $1", [feedId]);
+        await pool.query(`delete from ${DB_TABLES.publicPosts} where feed_id = $1`, [feedId]);
       }
       for (const post of posts) {
         await pool.query(
-          `insert into public_posts (feed_id, post_id, title, body, mood, place, collections, series, created_at, updated_at, synced_at)
+          `insert into ${DB_TABLES.publicPosts} (feed_id, post_id, title, body, mood, place, collections, series, created_at, updated_at, synced_at)
            values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, now())
            on conflict (feed_id, post_id) do update set
              title = excluded.title,
@@ -546,7 +552,7 @@ async function setPublicPosts(email, feedId, posts) {
           ]
         );
       }
-      await pool.query("update users set updated_at = now() where email = $1", [email]);
+      await pool.query(`update ${DB_TABLES.users} set updated_at = now() where email = $1`, [email]);
       await pool.query("commit");
     } catch (error) {
       await pool.query("rollback");
@@ -595,10 +601,10 @@ async function subscribeToFeed(subscriberEmail, feedId) {
   if (pool) {
     const token = randomToken(18);
     await pool.query(
-      `insert into feed_subscriptions (feed_id, subscriber_email, unsubscribe_token)
+      `insert into ${DB_TABLES.feedSubscriptions} (feed_id, subscriber_email, unsubscribe_token)
        values ($1, $2, $3)
        on conflict (feed_id, subscriber_email) do update set
-         unsubscribe_token = coalesce(feed_subscriptions.unsubscribe_token, excluded.unsubscribe_token)`,
+         unsubscribe_token = coalesce(${DB_TABLES.feedSubscriptions}.unsubscribe_token, excluded.unsubscribe_token)`,
       [feedId, subscriberEmail, token]
     );
     return feed;
@@ -630,7 +636,7 @@ async function getSubscriptions(subscriberEmail) {
   if (pool) {
     const result = await pool.query(
       `select s.feed_id, s.created_at
-       from feed_subscriptions s
+       from ${DB_TABLES.feedSubscriptions} s
        where s.subscriber_email = $1
        order by s.created_at desc`,
       [subscriberEmail]
@@ -647,7 +653,7 @@ async function getSubscriptions(subscriberEmail) {
 async function getFeedSubscribers(feedId) {
   await ensureData();
   if (pool) {
-    const result = await pool.query("select subscriber_email, unsubscribe_token from feed_subscriptions where feed_id = $1", [feedId]);
+    const result = await pool.query(`select subscriber_email, unsubscribe_token from ${DB_TABLES.feedSubscriptions} where feed_id = $1`, [feedId]);
     return result.rows.map((row) => ({ email: row.subscriber_email, token: row.unsubscribe_token || "" }));
   }
 
@@ -665,7 +671,7 @@ async function unsubscribeByToken(token) {
   if (!cleanToken) return false;
 
   if (pool) {
-    const result = await pool.query("delete from feed_subscriptions where unsubscribe_token = $1", [cleanToken]);
+    const result = await pool.query(`delete from ${DB_TABLES.feedSubscriptions} where unsubscribe_token = $1`, [cleanToken]);
     return result.rowCount > 0;
   }
 
@@ -690,7 +696,7 @@ async function updateUserLogin(email, loginSecret, wrappedKey) {
 
   if (pool) {
     const result = await pool.query(
-      "update users set login_salt = $2, login_hash = $3, wrapped_key = $4, updated_at = now() where email = $1",
+      `update ${DB_TABLES.users} set login_salt = $2, login_hash = $3, wrapped_key = $4, updated_at = now() where email = $1`,
       [email, loginSalt, loginHash, JSON.stringify(wrappedKey)]
     );
     return result.rowCount > 0;
@@ -881,7 +887,7 @@ async function createPendingDeliveries(feedId, posts, subscribers) {
     for (const post of posts) {
       for (const subscriber of subscribers) {
         const result = await pool.query(
-          `insert into email_deliveries (feed_id, post_id, subscriber_email, status)
+          `insert into ${DB_TABLES.emailDeliveries} (feed_id, post_id, subscriber_email, status)
            values ($1, $2, $3, 'pending')
            on conflict do nothing
            returning feed_id, post_id, subscriber_email`,
@@ -923,9 +929,9 @@ async function getPendingDeliveries(limit = 100) {
     const result = await pool.query(
       `select d.feed_id, d.post_id, d.subscriber_email, s.unsubscribe_token,
               p.title, p.body, p.mood, p.place, p.collections, p.series, p.created_at, p.updated_at
-       from email_deliveries d
-       join public_posts p on p.feed_id = d.feed_id and p.post_id = d.post_id
-       left join feed_subscriptions s on s.feed_id = d.feed_id and s.subscriber_email = d.subscriber_email
+       from ${DB_TABLES.emailDeliveries} d
+       join ${DB_TABLES.publicPosts} p on p.feed_id = d.feed_id and p.post_id = d.post_id
+       left join ${DB_TABLES.feedSubscriptions} s on s.feed_id = d.feed_id and s.subscriber_email = d.subscriber_email
        where d.status = 'pending'
        order by d.created_at
        limit $1`,
@@ -975,7 +981,7 @@ async function getPendingDeliveries(limit = 100) {
 async function recordDelivery(entry, status, details = {}) {
   if (pool) {
     await pool.query(
-      `update email_deliveries
+      `update ${DB_TABLES.emailDeliveries}
        set status = $4, provider_id = $5, error = $6, updated_at = now()
        where feed_id = $1 and post_id = $2 and subscriber_email = $3`,
       [entry.feedId, entry.postId, entry.subscriberEmail, status, details.providerId || null, details.error || null]
