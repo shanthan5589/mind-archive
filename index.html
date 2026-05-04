@@ -43,6 +43,10 @@
       --accent: #3b6fa3;
       --recovery-border: #9b7d2c;
       --pin-border: #b8872f;
+      --post-aged: #fffdf5;
+      --age-new: #1b6f3a;
+      --age-year: #3b6fa3;
+      --age-old: #9b7d2c;
     }
 
     :root[data-theme="dark"] {
@@ -83,6 +87,10 @@
       --accent: #4a85c8;
       --recovery-border: #8a6e22;
       --pin-border: #9a6d1f;
+      --post-aged: #1c1a13;
+      --age-new: #8fdda6;
+      --age-year: #4a85c8;
+      --age-old: #c9a84c;
     }
 
     * {
@@ -115,9 +123,9 @@
       border: 1px solid var(--line-dark);
       background: var(--button);
       color: var(--text);
-      padding: 3px 8px;
+      padding: 4px 10px;
       cursor: pointer;
-      min-height: 24px;
+      min-height: 26px;
     }
 
     button:hover {
@@ -219,85 +227,28 @@
       flex-wrap: wrap;
       justify-content: end;
       align-items: center;
-      gap: 4px;
+      gap: 6px;
     }
 
     .top-actions > .session-user {
       margin-right: 4px;
     }
 
-    .action-menu {
-      position: relative;
-    }
-
-    .action-menu summary {
-      display: block;
-      border: 1px solid var(--line-dark);
-      background: var(--button);
-      color: var(--text);
-      min-height: 24px;
-      padding: 3px 8px;
-      cursor: pointer;
-      user-select: none;
-    }
-
-    .action-menu summary::-webkit-details-marker {
-      display: none;
-    }
-
-    .action-menu[open] summary {
-      background: var(--button-hover);
-    }
-
-    .menu-panel {
-      position: absolute;
-      right: 0;
-      z-index: 30;
-      display: grid;
-      gap: 5px;
-      min-width: 170px;
-      margin-top: 3px;
-      border: 1px solid var(--line-dark);
-      background: var(--panel);
-      padding: 6px;
-    }
-
-    .menu-panel button {
-      width: 100%;
-      text-align: left;
-    }
-
-    .tool-action-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-      gap: 8px;
-      align-items: start;
-    }
-
-    .tool-action-set {
-      display: grid;
-      gap: 5px;
-      align-content: start;
-    }
-
-    .tool-action-title {
-      color: var(--muted);
-      font-weight: bold;
-      font-size: 12px;
-    }
-
-    .button-stack {
+    .button-row {
       display: flex;
       flex-wrap: wrap;
-      gap: 4px;
+      gap: 6px;
       align-items: center;
     }
 
     .form-actions {
       display: flex;
       flex-wrap: wrap;
-      gap: 5px;
+      gap: 6px;
       align-items: center;
+      padding-top: 8px;
+      border-top: 1px solid var(--line);
+      margin-top: 2px;
     }
 
     .form-actions .muted,
@@ -309,8 +260,9 @@
     .option-list {
       display: flex;
       flex-wrap: wrap;
-      gap: 5px;
+      gap: 8px;
       align-items: center;
+      padding: 4px 0;
     }
 
     .session-user {
@@ -527,7 +479,22 @@
       padding: 0;
       font-weight: bold;
       text-align: left;
+      cursor: pointer;
       text-decoration: underline;
+    }
+
+    .post-title button::before {
+      content: "▶";
+      display: inline-block;
+      font-size: 8px;
+      color: var(--muted);
+      margin-right: 6px;
+      vertical-align: middle;
+      text-decoration: none;
+    }
+
+    .post.expanded .post-title button::before {
+      content: "▼";
     }
 
     .post-meta {
@@ -537,17 +504,18 @@
     }
 
     .post-actions {
-      display: grid;
-      justify-items: end;
+      display: flex;
+      gap: 4px;
+      align-items: flex-start;
       flex: 0 0 auto;
     }
 
-    .post-actions .action-menu {
-      width: max-content;
+    .post-content {
+      display: none;
     }
 
-    .post-actions .menu-panel {
-      min-width: 120px;
+    .post.expanded .post-content {
+      display: block;
     }
 
     .post-body {
@@ -770,15 +738,6 @@
         grid-template-columns: 1fr;
       }
 
-      .action-menu {
-        position: static;
-      }
-
-      .menu-panel {
-        left: 0;
-        right: auto;
-      }
-
       #toolsView:not(.hidden) {
         display: grid;
         grid-template-columns: 1fr;
@@ -796,6 +755,118 @@
       .month {
         grid-template-columns: 1fr;
       }
+    }
+
+    body.focus-mode .topbar,
+    body.focus-mode .nav,
+    body.focus-mode .sidebar,
+    body.focus-mode .footer {
+      display: none !important;
+    }
+
+    body.focus-mode .layout {
+      grid-template-columns: 1fr;
+    }
+
+    body.focus-mode #editorView .split {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .draft-banner {
+      border: 1px solid var(--recovery-border);
+      background: var(--recovery);
+      color: var(--recovery-text);
+      padding: 7px 9px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 4px;
+    }
+
+    /* Age-based left border — not applied to pinned (which has its own border colour) */
+    .post:not(.pinned).age-month { border-left: 3px solid var(--age-new); }
+    .post:not(.pinned).age-year  { border-left: 3px solid var(--age-year); }
+    .post:not(.pinned).age-old   { border-left: 3px solid var(--age-old); }
+    .post.age-old                { background: var(--post-aged); }
+
+    .today-badge {
+      display: inline-block;
+      border: 1px solid var(--age-new);
+      color: var(--age-new);
+      font-size: 10px;
+      padding: 0 4px;
+      margin-right: 3px;
+      vertical-align: middle;
+    }
+
+    .fav-star {
+      color: var(--pin);
+      font-size: 13px;
+    }
+
+    .tag-dot {
+      display: inline-block;
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      margin-right: 4px;
+      vertical-align: middle;
+      flex-shrink: 0;
+    }
+
+    .editor-wordcount {
+      text-align: right;
+      color: var(--muted);
+      font-size: 11px;
+      margin-top: 2px;
+    }
+
+    /* Keyboard shortcuts overlay */
+    .shortcuts-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.45);
+      z-index: 200;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .shortcuts-box {
+      min-width: 300px;
+      border: 1px solid var(--line-dark);
+      background: var(--panel);
+    }
+
+    .shortcuts-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .shortcuts-table td {
+      padding: 5px 8px;
+      vertical-align: middle;
+    }
+
+    .shortcuts-table tr + tr td {
+      border-top: 1px solid var(--line);
+    }
+
+    .shortcuts-table td:first-child {
+      white-space: nowrap;
+      width: 1%;
+    }
+
+    kbd {
+      display: inline-block;
+      border: 1px solid var(--line-dark);
+      background: var(--button);
+      color: var(--text);
+      padding: 1px 6px;
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 11px;
     }
 
     @media print {
@@ -840,14 +911,10 @@
       </div>
       <div class="top-actions">
         <span class="session-user auth-only hidden" id="currentUserLabel"></span>
-        <details class="action-menu">
-          <summary>App</summary>
-          <div class="menu-panel">
-            <button id="themeButton" type="button">Dark mode</button>
-            <button id="privacyButton">Privacy</button>
-            <button id="logoutButton" class="auth-only hidden">Logout</button>
-          </div>
-        </details>
+        <button id="themeButton" type="button">Dark mode</button>
+        <button id="privacyButton" type="button">Privacy</button>
+        <button id="shortcutsButton" type="button" title="Keyboard shortcuts">?</button>
+        <button id="logoutButton" class="auth-only hidden" type="button">Logout</button>
       </div>
     </header>
 
@@ -986,8 +1053,36 @@
             <select id="filterSeries" aria-label="Filter by series">
               <option value="">all series</option>
             </select>
+            <div class="field">
+              <label for="searchFrom">From</label>
+              <input id="searchFrom" type="date">
+            </div>
+            <div class="field">
+              <label for="searchTo">To</label>
+              <input id="searchTo" type="date">
+            </div>
+            <div class="field">
+              <label for="minWords">Min words</label>
+              <input id="minWords" type="number" min="0" placeholder="e.g. 200">
+            </div>
+            <div class="field">
+              <label for="sortPosts">Sort</label>
+              <select id="sortPosts">
+                <option value="newest">Newest first</option>
+                <option value="oldest">Oldest first</option>
+                <option value="longest">Longest first</option>
+                <option value="shortest">Shortest first</option>
+              </select>
+            </div>
             <label class="row"><input id="onlyPinned" type="checkbox" style="width:auto"> pinned only</label>
+            <label class="row"><input id="onlyFavourite" type="checkbox" style="width:auto"> ★ favourites only</label>
+            <button type="button" id="clearFilters" class="hidden">× clear filters</button>
           </div>
+        </section>
+
+        <section class="box" id="onThisDayBox" style="display:none">
+          <div class="box-title">On This Day</div>
+          <div class="box-body" id="onThisDayList"></div>
         </section>
 
         <section class="box">
@@ -1006,7 +1101,13 @@
       <main class="main">
         <section id="postsView" class="view" role="tabpanel">
           <div class="box">
-            <div class="box-title">Posts</div>
+            <div class="box-title" style="display:flex;align-items:center;justify-content:space-between;">
+              <span id="postsBoxTitle">Posts</span>
+              <div style="display:flex;gap:4px;">
+                <button type="button" id="randomPostButton" style="font-size:11px;padding:2px 7px;min-height:0;">Random</button>
+                <button type="button" id="newPostButton" style="font-size:11px;padding:2px 7px;min-height:0;">+ New post</button>
+              </div>
+            </div>
             <div class="box-body">
               <div id="postList" class="post-list"></div>
             </div>
@@ -1016,8 +1117,16 @@
         <section id="editorView" class="view hidden" role="tabpanel">
           <div class="split">
             <form id="postForm" class="box">
-              <div class="box-title" id="editorTitle">Write Post</div>
+              <div class="box-title" style="display:flex;align-items:center;justify-content:space-between;">
+                <span id="editorTitle">Write Post</span>
+                <button type="button" id="focusButton" style="font-size:11px;padding:2px 7px;min-height:0;">Focus</button>
+              </div>
               <div class="box-body stack">
+                <div id="draftBanner" class="draft-banner hidden">
+                  <span>You have an unsaved draft.</span>
+                  <button type="button" id="restoreDraft">Restore</button>
+                  <button type="button" id="discardDraft">Discard</button>
+                </div>
                 <input id="postId" type="hidden">
                 <div class="field">
                   <label for="titleInput">Title</label>
@@ -1046,6 +1155,7 @@
                 <div class="field">
                   <label for="bodyInput">Markdown</label>
                   <textarea id="bodyInput" required placeholder="Write exactly what is in your head. Markdown works: # heading, **bold**, *italic*, - list, > quote."></textarea>
+                  <div class="editor-wordcount" id="editorWordCount">0 words</div>
                 </div>
                 <div class="option-list">
                   <label class="row"><input id="pinnedInput" type="checkbox" style="width:auto"> pin this thought</label>
@@ -1054,6 +1164,7 @@
                 <div class="form-actions">
                   <button type="submit">Save post</button>
                   <button type="button" id="clearEditor">Clear</button>
+                  <button type="button" id="cancelEdit" class="hidden">Cancel</button>
                   <span class="muted" id="editorStatus" role="status" aria-live="polite"></span>
                 </div>
               </div>
@@ -1093,20 +1204,10 @@
                 <label for="publicRssUrl">Public RSS URL</label>
                 <input id="publicRssUrl" readonly>
               </div>
-              <div class="tool-action-grid">
-                <div class="tool-action-set">
-                  <div class="tool-action-title">Share</div>
-                  <div class="button-stack">
-                    <button id="copyRssUrl">Copy feed URL</button>
-                  </div>
-                </div>
-                <div class="tool-action-set">
-                  <div class="tool-action-title">Feed file</div>
-                  <div class="button-stack">
-                    <button id="downloadRss">Download feed.xml</button>
-                    <button id="copyRss">Copy RSS</button>
-                  </div>
-                </div>
+              <div class="button-row">
+                <button id="copyRssUrl">Copy feed URL</button>
+                <button id="downloadRss">Download feed.xml</button>
+                <button id="copyRss">Copy RSS</button>
                 <span id="rssStatus" class="muted" role="status" aria-live="polite"></span>
               </div>
               <textarea id="rssOutput" class="rss-output" readonly></textarea>
@@ -1131,20 +1232,10 @@
           <div class="box">
             <div class="box-title">Backup</div>
             <div class="box-body stack">
-              <div class="tool-action-grid">
-                <div class="tool-action-set">
-                  <div class="tool-action-title">Portable files</div>
-                  <div class="button-stack">
-                    <button id="downloadJson">Download JSON backup</button>
-                    <button id="downloadMarkdown">Download single Markdown</button>
-                  </div>
-                </div>
-                <div class="tool-action-set">
-                  <div class="tool-action-title">Readable copy</div>
-                  <div class="button-stack">
-                    <button id="printPdf">Print / PDF</button>
-                  </div>
-                </div>
+              <div class="button-row">
+                <button id="downloadJson">Download JSON backup</button>
+                <button id="downloadMarkdown">Download Markdown</button>
+                <button id="printPdf">Print / PDF</button>
               </div>
               <div class="field">
                 <label for="importFile">Restore JSON backup</label>
@@ -1162,6 +1253,24 @@
     </footer>
   </div>
 
+  <div id="shortcutsOverlay" class="shortcuts-overlay hidden" role="dialog" aria-modal="true" aria-label="Keyboard shortcuts">
+    <div class="shortcuts-box">
+      <div class="box-title" style="display:flex;align-items:center;justify-content:space-between;">
+        <span>Keyboard Shortcuts</span>
+        <button type="button" id="closeShortcuts" style="border:0;background:transparent;font-size:16px;cursor:pointer;padding:0 4px;">×</button>
+      </div>
+      <div class="box-body">
+        <table class="shortcuts-table">
+          <tr><td><kbd>n</kbd></td><td>New post</td></tr>
+          <tr><td><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>F</kbd></td><td>Toggle focus mode</td></tr>
+          <tr><td><kbd>Ctrl</kbd> + <kbd>/</kbd></td><td>Jump to search</td></tr>
+          <tr><td><kbd>Escape</kbd></td><td>Exit focus mode · collapse all posts · cancel edit</td></tr>
+          <tr><td><kbd>?</kbd></td><td>Show / hide this panel</td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+
   <script>
     const LEGACY_STORAGE_KEY = "mind-archive-v1";
     const THEME_STORAGE_KEY = "mind-archive-theme";
@@ -1175,6 +1284,11 @@
       collection: "",
       series: "",
       onlyPinned: false,
+      searchFrom: "",
+      searchTo: "",
+      minWords: "",
+      sort: "newest",
+      onlyFavourite: false,
       currentUser: "",
       currentFeedId: "",
       currentKey: null,
@@ -1711,7 +1825,12 @@
     function sortedPosts(posts = state.posts) {
       return [...posts].sort((a, b) => {
         if (a.pinned !== b.pinned) return a.pinned ? -1 : 1;
-        return new Date(b.createdAt) - new Date(a.createdAt);
+        switch (state.sort) {
+          case "oldest":   return new Date(a.createdAt) - new Date(b.createdAt);
+          case "longest":  return wordsIn(b.body) - wordsIn(a.body);
+          case "shortest": return wordsIn(a.body) - wordsIn(b.body);
+          default:         return new Date(b.createdAt) - new Date(a.createdAt);
+        }
       });
     }
 
@@ -1730,6 +1849,43 @@
       return String(text || "").trim().split(/\s+/).filter(Boolean).length;
     }
 
+    function readTime(body) {
+      return Math.max(1, Math.ceil(wordsIn(body) / 200));
+    }
+
+    function relativeDate(isoString) {
+      const now = new Date();
+      const d = new Date(isoString);
+      const days = Math.floor((now - d) / 86400000);
+      if (days === 0) return "today";
+      if (days === 1) return "yesterday";
+      if (days < 7) return `${days} days ago`;
+      if (days < 30) { const w = Math.floor(days / 7); return `${w} week${w > 1 ? "s" : ""} ago`; }
+      if (days < 365) { const m = Math.floor(days / 30); return `${m} month${m > 1 ? "s" : ""} ago`; }
+      const y = Math.floor(days / 365);
+      return `${y} year${y > 1 ? "s" : ""} ago`;
+    }
+
+    function collectionColor(name) {
+      let h = 0;
+      for (let i = 0; i < name.length; i++) h = name.charCodeAt(i) + ((h << 5) - h);
+      return `hsl(${Math.abs(h) % 360}, 55%, 45%)`;
+    }
+
+    function postAgeClass(createdAt) {
+      const now = new Date();
+      const d = new Date(createdAt);
+      if (now - d < 30 * 86400000) return "age-month";
+      if (d.getFullYear() === now.getFullYear()) return "age-year";
+      return "age-old";
+    }
+
+    function isToday(isoString) {
+      const d = new Date(isoString);
+      const n = new Date();
+      return d.getFullYear() === n.getFullYear() && d.getMonth() === n.getMonth() && d.getDate() === n.getDate();
+    }
+
     function filteredPosts() {
       const q = state.query.toLowerCase();
       return sortedPosts().filter((post) => {
@@ -1738,6 +1894,14 @@
         if (state.collection && !(post.collections || []).includes(state.collection)) return false;
         if (state.series && post.series !== state.series) return false;
         if (state.onlyPinned && !post.pinned) return false;
+        if (state.searchFrom && new Date(post.createdAt) < new Date(state.searchFrom)) return false;
+        if (state.searchTo) {
+          const to = new Date(state.searchTo);
+          to.setUTCHours(23, 59, 59, 999);
+          if (new Date(post.createdAt) > to) return false;
+        }
+        if (state.minWords && wordsIn(post.body) < parseInt(state.minWords, 10)) return false;
+        if (state.onlyFavourite && !post.favourite) return false;
         return true;
       });
     }
@@ -1753,6 +1917,7 @@
       if (view === "timelineView") renderTimeline();
       if (view === "collectionsView") renderCollections();
       if (view === "toolsView") renderTools();
+      if (view === "editorView" && !$("postId").value) checkDraft();
     }
 
     function closeActionMenus(except = null) {
@@ -1763,45 +1928,55 @@
 
     function renderPost(post) {
       const tags = [
-        post.mood ? `mood: ${post.mood}` : "",
-        post.place ? `place: ${post.place}` : "",
-        ...(post.collections || []).map((name) => `collection: ${name}`),
-        post.series ? `series: ${post.series}` : "",
-        post.rssPublic ? "RSS shared" : ""
-      ].filter(Boolean);
+        ...(post.mood ? [{ text: `mood: ${post.mood}`, color: null }] : []),
+        ...(post.place ? [{ text: `place: ${post.place}`, color: null }] : []),
+        ...(post.collections || []).map((name) => ({ text: `collection: ${name}`, color: collectionColor(name) })),
+        ...(post.series ? [{ text: `series: ${post.series}`, color: null }] : []),
+        ...(post.rssPublic ? [{ text: "RSS shared", color: null }] : []),
+      ];
+
+      const ageClass = postAgeClass(post.createdAt);
+      const todayPost = isToday(post.createdAt);
+      const absDate = escapeHtml(formatDate(post.createdAt));
+      const relDate = relativeDate(post.createdAt);
 
       return `
-        <article class="post ${post.pinned ? "pinned" : ""}" id="post-${escapeHtml(post.id)}">
+        <article class="post ${post.pinned ? "pinned" : ""} ${ageClass}" id="post-${escapeHtml(post.id)}">
           <div class="post-head">
             <div>
-              <h2 class="post-title"><button type="button" data-action="open" data-id="${post.id}">${escapeHtml(post.title)}</button></h2>
+              <h2 class="post-title"><button type="button" data-action="toggle" data-id="${post.id}">${escapeHtml(post.title)}</button></h2>
               <div class="post-meta">
-                ${post.pinned ? '<span class="pin">pinned</span> &middot; ' : ""}
+                ${todayPost ? '<span class="today-badge">today</span>' : ""}
+                ${post.pinned ? '<span class="pin">📌 pinned</span> &middot; ' : ""}
+                ${post.favourite ? '<span class="fav-star">★</span> &middot; ' : ""}
                 ${post.rssPublic ? '<span class="ok">RSS</span> &middot; ' : ""}
-                written ${escapeHtml(formatDate(post.createdAt))}
-                ${post.updatedAt && post.updatedAt !== post.createdAt ? ` &middot; edited ${escapeHtml(formatDate(post.updatedAt))}` : ""}
-                &middot; ${wordsIn(post.body)} words
+                <time title="${absDate}">${relDate}</time>
+                ${post.updatedAt && post.updatedAt !== post.createdAt ? ` &middot; edited` : ""}
+                &middot; ${wordsIn(post.body)} words &middot; ~${readTime(post.body)} min read
               </div>
             </div>
             <div class="post-actions">
-              <details class="action-menu">
-                <summary>Post</summary>
-                <div class="menu-panel">
-                  <button type="button" data-action="pin" data-id="${post.id}">${post.pinned ? "Unpin" : "Pin"}</button>
-                  <button type="button" data-action="edit" data-id="${post.id}">Edit</button>
-                  <button type="button" data-action="delete" data-id="${post.id}" class="danger">Delete</button>
-                </div>
-              </details>
+              <button type="button" data-action="favourite" data-id="${post.id}" title="${post.favourite ? "Remove favourite" : "Mark as favourite"}">${post.favourite ? "★" : "☆"}</button>
+              <button type="button" data-action="pin" data-id="${post.id}">📌 ${post.pinned ? "Unpin" : "Pin"}</button>
+              <button type="button" data-action="edit" data-id="${post.id}">Edit</button>
+              <button type="button" data-action="delete" data-id="${post.id}" class="danger">Delete</button>
             </div>
           </div>
-          <div class="post-body">${renderMarkdown(post.body)}</div>
-          ${tags.length ? `<div class="tags">${tags.map((tag) => `<span class="tag">${escapeHtml(tag)}</span>`).join("")}</div>` : ""}
+          <div class="post-content">
+            <div class="post-body">${renderMarkdown(post.body)}</div>
+            ${tags.length ? `<div class="tags">${tags.map((t) => t.color ? `<span class="tag"><span class="tag-dot" style="background:${t.color}"></span>${escapeHtml(t.text)}</span>` : `<span class="tag">${escapeHtml(t.text)}</span>`).join("")}</div>` : ""}
+          </div>
         </article>
       `;
     }
 
     function renderPosts() {
       const posts = filteredPosts();
+      const isFiltered = state.query || state.collection || state.series || state.onlyPinned || state.onlyFavourite || state.searchFrom || state.searchTo || state.minWords;
+      $("postsBoxTitle").textContent = isFiltered
+        ? `Posts · ${posts.length} of ${state.posts.length}`
+        : "Posts";
+      $("clearFilters").classList.toggle("hidden", !isFiltered);
       $("postList").innerHTML = posts.length
         ? posts.map(renderPost).join("")
         : '<div class="empty">No thoughts found. Write one.</div>';
@@ -1825,6 +2000,28 @@
       $("filterSeries").innerHTML = '<option value="">all series</option>' + getSeries().map((name) => `<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`).join("");
       $("filterCollection").value = selectedCollection;
       $("filterSeries").value = selectedSeries;
+
+      const today = new Date();
+      const todayM = today.getMonth();
+      const todayD = today.getDate();
+      const onThisDay = state.posts
+        .filter((post) => {
+          const d = new Date(post.createdAt);
+          return d.getMonth() === todayM && d.getDate() === todayD && d.getFullYear() !== today.getFullYear();
+        })
+        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      const otdBox = $("onThisDayBox");
+      if (onThisDay.length) {
+        otdBox.style.display = "";
+        $("onThisDayList").innerHTML = onThisDay
+          .map((post) => {
+            const year = new Date(post.createdAt).getFullYear();
+            return `<div><a data-action="open" data-id="${post.id}">${escapeHtml(post.title)}</a><div class="muted">${year}</div></div>`;
+          })
+          .join("<hr>");
+      } else {
+        otdBox.style.display = "none";
+      }
     }
 
     function renderTimeline() {
@@ -1961,6 +2158,8 @@
       $("rssInput").checked = false;
       $("editorTitle").textContent = "Write Post";
       $("editorStatus").textContent = "";
+      $("cancelEdit").classList.add("hidden");
+      $("draftBanner").classList.add("hidden");
       renderPreview();
     }
 
@@ -1978,9 +2177,60 @@
       $("rssInput").checked = Boolean(post.rssPublic);
       $("editorTitle").textContent = "Edit Post";
       $("editorStatus").textContent = `created ${formatDate(post.createdAt)}`;
+      $("cancelEdit").classList.remove("hidden");
+      clearDraft();
       renderPreview();
       setView("editorView");
       $("titleInput").focus();
+    }
+
+    const DRAFT_KEY = "mind-archive-draft";
+
+    function saveDraft() {
+      if ($("postId").value) return;
+      const title = $("titleInput").value;
+      const body = $("bodyInput").value;
+      if (!title && !body) return;
+      localStorage.setItem(DRAFT_KEY, JSON.stringify({
+        title, body,
+        mood: $("moodInput").value,
+        place: $("placeInput").value,
+        collections: $("collectionsInput").value,
+        series: $("seriesInput").value,
+      }));
+    }
+
+    function clearDraft() {
+      localStorage.removeItem(DRAFT_KEY);
+      $("draftBanner").classList.add("hidden");
+    }
+
+    function checkDraft() {
+      if ($("postId").value) return;
+      try {
+        const raw = localStorage.getItem(DRAFT_KEY);
+        if (!raw) return;
+        const draft = JSON.parse(raw);
+        if (draft.title || draft.body) $("draftBanner").classList.remove("hidden");
+      } catch {
+        clearDraft();
+      }
+    }
+
+    function toggleFocusMode() {
+      const on = document.body.classList.toggle("focus-mode");
+      $("focusButton").textContent = on ? "Exit focus" : "Focus";
+    }
+
+    function randomPost() {
+      if (!state.posts.length) return;
+      const post = state.posts[Math.floor(Math.random() * state.posts.length)];
+      openPost(post.id);
+    }
+
+    function togglePost(id) {
+      const article = document.getElementById(`post-${id}`);
+      if (article) article.classList.toggle("expanded");
     }
 
     function openPost(id) {
@@ -1993,9 +2243,11 @@
       setView("postsView");
       renderAll();
       requestAnimationFrame(() => {
-        const button = document.querySelector(`#postList [data-action="open"][data-id="${CSS.escape(id)}"]`);
-        const post = button ? button.closest(".post") : null;
-        if (post) post.scrollIntoView({ behavior: "smooth", block: "start" });
+        const article = document.getElementById(`post-${CSS.escape(id)}`);
+        if (article) {
+          article.classList.add("expanded");
+          article.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
       });
     }
 
@@ -2017,10 +2269,19 @@
       renderAll();
     }
 
+    async function toggleFavourite(id) {
+      const post = state.posts.find((item) => item.id === id);
+      if (!post) return;
+      post.favourite = !post.favourite;
+      await savePosts();
+      renderAll();
+    }
+
     function renderPreview() {
       const title = $("titleInput").value.trim() || "Untitled";
-      const body = $("bodyInput").value.trim() || "_Nothing written yet._";
-      $("markdownPreview").innerHTML = `<h2>${escapeHtml(title)}</h2>${renderMarkdown(body)}`;
+      const body = $("bodyInput").value;
+      $("editorWordCount").textContent = `${wordsIn(body)} words`;
+      $("markdownPreview").innerHTML = `<h2>${escapeHtml(title)}</h2>${renderMarkdown(body.trim() || "_Nothing written yet._")}`;
     }
 
     function renderTools() {
@@ -2106,7 +2367,7 @@
 
       document.querySelectorAll(".tab").forEach((tab) => {
         tab.addEventListener("click", () => {
-          if (tab.dataset.view === "editorView") clearEditor();
+          if (tab.dataset.view === "editorView" && !$("postId").value) clearEditor();
           setView(tab.dataset.view);
         });
       });
@@ -2120,11 +2381,67 @@
         if (!event.target.closest("details.action-menu")) closeActionMenus();
       });
 
+      function toggleShortcuts() {
+        $("shortcutsOverlay").classList.toggle("hidden");
+      }
+
+      $("shortcutsButton").addEventListener("click", toggleShortcuts);
+      $("closeShortcuts").addEventListener("click", toggleShortcuts);
+      $("shortcutsOverlay").addEventListener("click", (e) => {
+        if (e.target === $("shortcutsOverlay")) toggleShortcuts();
+      });
+
       document.addEventListener("keydown", (event) => {
-        if (event.key === "Escape") closeActionMenus();
+        const inInput = ["INPUT", "TEXTAREA", "SELECT"].includes(event.target.tagName);
+        if (event.key === "Escape") {
+          if (!$("shortcutsOverlay").classList.contains("hidden")) { toggleShortcuts(); return; }
+          if (document.body.classList.contains("focus-mode")) { toggleFocusMode(); return; }
+          closeActionMenus();
+          if (inInput) return;
+          document.querySelectorAll(".post.expanded").forEach((el) => el.classList.remove("expanded"));
+        }
+        if (event.ctrlKey && event.shiftKey && event.key === "F") { event.preventDefault(); toggleFocusMode(); return; }
+        if (event.ctrlKey && event.key === "/") { event.preventDefault(); $("searchInput").focus(); return; }
+        if (inInput) return;
+        if (event.key === "n") { clearEditor(); setView("editorView"); $("titleInput").focus(); }
+        if (event.key === "?") toggleShortcuts();
       });
 
       $("clearEditor").addEventListener("click", clearEditor);
+
+      $("cancelEdit").addEventListener("click", () => {
+        const id = $("postId").value;
+        clearEditor();
+        openPost(id);
+      });
+
+      $("newPostButton").addEventListener("click", () => {
+        clearEditor();
+        setView("editorView");
+        $("titleInput").focus();
+      });
+
+      $("clearFilters").addEventListener("click", () => {
+        state.query = "";
+        state.collection = "";
+        state.series = "";
+        state.onlyPinned = false;
+        state.onlyFavourite = false;
+        state.searchFrom = "";
+        state.searchTo = "";
+        state.minWords = "";
+        state.sort = "newest";
+        $("searchInput").value = "";
+        $("filterCollection").value = "";
+        $("filterSeries").value = "";
+        $("onlyPinned").checked = false;
+        $("onlyFavourite").checked = false;
+        $("searchFrom").value = "";
+        $("searchTo").value = "";
+        $("minWords").value = "";
+        $("sortPosts").value = "newest";
+        renderPosts();
+      });
       $("titleInput").addEventListener("input", renderPreview);
       $("bodyInput").addEventListener("input", renderPreview);
 
@@ -2144,6 +2461,7 @@
           series: $("seriesInput").value.trim(),
           pinned: $("pinnedInput").checked,
           rssPublic: $("rssInput").checked,
+          favourite: existing?.favourite || false,
           createdAt: existing?.createdAt || now,
           updatedAt: existing ? now : now
         };
@@ -2156,6 +2474,7 @@
 
         try {
           await savePosts();
+          clearDraft();
           $("editorStatus").textContent = "saved";
           renderAll();
           setView("postsView");
@@ -2168,6 +2487,8 @@
         const target = event.target.closest("[data-action]");
         if (!target) return;
         const id = target.dataset.id;
+        if (target.dataset.action === "toggle") togglePost(id);
+        if (target.dataset.action === "favourite") await toggleFavourite(id);
         if (target.dataset.action === "edit") editPost(id);
         if (target.dataset.action === "delete") await deletePost(id);
         if (target.dataset.action === "pin") await togglePin(id);
@@ -2193,6 +2514,53 @@
         state.onlyPinned = event.target.checked;
         renderPosts();
       });
+
+      $("onlyFavourite").addEventListener("change", (event) => {
+        state.onlyFavourite = event.target.checked;
+        renderPosts();
+      });
+
+      $("sortPosts").addEventListener("change", (event) => {
+        state.sort = event.target.value;
+        renderPosts();
+      });
+
+      $("searchFrom").addEventListener("change", (event) => {
+        state.searchFrom = event.target.value;
+        renderPosts();
+      });
+
+      $("searchTo").addEventListener("change", (event) => {
+        state.searchTo = event.target.value;
+        renderPosts();
+      });
+
+      $("minWords").addEventListener("input", (event) => {
+        state.minWords = event.target.value;
+        renderPosts();
+      });
+
+      $("focusButton").addEventListener("click", toggleFocusMode);
+
+      $("randomPostButton").addEventListener("click", randomPost);
+
+      $("restoreDraft").addEventListener("click", () => {
+        try {
+          const draft = JSON.parse(localStorage.getItem(DRAFT_KEY) || "{}");
+          $("titleInput").value = draft.title || "";
+          $("bodyInput").value = draft.body || "";
+          $("moodInput").value = draft.mood || "";
+          $("placeInput").value = draft.place || "";
+          $("collectionsInput").value = draft.collections || "";
+          $("seriesInput").value = draft.series || "";
+          renderPreview();
+        } catch {}
+        clearDraft();
+      });
+
+      $("discardDraft").addEventListener("click", clearDraft);
+
+      setInterval(saveDraft, 8000);
 
       $("downloadMarkdown").addEventListener("click", () => download("mind-archive.md", buildMarkdownExport(), "text/markdown"));
       $("downloadJson").addEventListener("click", () => download("mind-archive.json", JSON.stringify(state.posts, null, 2), "application/json"));
