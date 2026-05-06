@@ -53,6 +53,7 @@ const brotliCompress = promisify(zlib.brotliCompress);
 let pool = null;
 let indexCache = null;
 const feedXmlCache = new Map();
+const sessionCache = new Map(); // token_tail -> { email, user, expiresAt }
 let emailQueueRunning = false;
 let emailQueueScheduled = false;
 const configErrors = [];
@@ -77,8 +78,12 @@ if (DATABASE_URL) {
   const { Pool } = require("pg");
   pool = new Pool({
     connectionString: DATABASE_URL,
-    ssl: process.env.PGSSLMODE === "disable" ? false : { rejectUnauthorized: false }
+    ssl: process.env.PGSSLMODE === "disable" ? false : { rejectUnauthorized: false },
+    max: 5,
+    idleTimeoutMillis: 15000,
+    connectionTimeoutMillis: 5000
   });
+  pool.on("error", (err) => console.error("Idle pool client error:", err));
 }
 
 const rateBuckets = new Map();
@@ -216,9 +221,19 @@ function cleanRateBuckets() {
   for (const [key, bucket] of rateBuckets.entries()) {
     if (now > bucket.resetAt) rateBuckets.delete(key);
   }
+  for (const [key, entry] of sessionCache.entries()) {
+    if (now > entry.expiresAt) sessionCache.delete(key);
+  }
 }
 
+let ensureDataPromise = null;
 async function ensureData() {
+  if (ensureDataPromise) return ensureDataPromise;
+  ensureDataPromise = _ensureData();
+  return ensureDataPromise;
+}
+
+async function _ensureData() {
   if (pool) {
     await pool.query(`
       create table if not exists ${DB_TABLES.users} (
@@ -238,6 +253,8 @@ async function ensureData() {
     `);
     await pool.query(`alter table ${DB_TABLES.users} add column if not exists feed_id text unique`);
     await pool.query(`alter table ${DB_TABLES.users} add column if not exists public_feed jsonb`);
+    await pool.query(`alter table ${DB_TABLES.users} add column if not exists first_name text`);
+    await pool.query(`alter table ${DB_TABLES.users} add column if not exists last_name text`);
     await pool.query(`
       create table if not exists ${DB_TABLES.feedSubscriptions} (
         feed_id text not null references ${DB_TABLES.users}(feed_id) on delete cascade,
@@ -277,6 +294,11 @@ async function ensureData() {
         primary key (feed_id, post_id, subscriber_email)
       )
     `);
+    await pool.query(`create index if not exists idx_public_posts_feed_id on ${DB_TABLES.publicPosts}(feed_id)`);
+    await pool.query(`create index if not exists idx_subscriptions_feed_id on ${DB_TABLES.feedSubscriptions}(feed_id)`);
+    await pool.query(`create index if not exists idx_subscriptions_subscriber on ${DB_TABLES.feedSubscriptions}(subscriber_email)`);
+    await pool.query(`create index if not exists idx_users_feed_id on ${DB_TABLES.users}(feed_id)`);
+    await pool.query(`create index if not exists idx_email_deliveries_status on ${DB_TABLES.emailDeliveries}(status) where status = 'pending'`);
     return;
   }
 
@@ -363,6 +385,8 @@ function rowToUser(row) {
     recoveryWrappedKey: typeof row.recovery_wrapped_key === "string" ? JSON.parse(row.recovery_wrapped_key) : row.recovery_wrapped_key,
     vault: typeof row.vault === "string" ? JSON.parse(row.vault) : row.vault,
     feedId: row.feed_id || "",
+    firstName: row.first_name || "",
+    lastName: row.last_name || "",
     publicFeed: typeof row.public_feed === "string" ? JSON.parse(row.public_feed) : row.public_feed,
     createdAt: row.created_at,
     updatedAt: row.updated_at
@@ -385,8 +409,8 @@ async function createUser(email, user) {
   if (pool) {
     try {
       await pool.query(
-        `insert into ${DB_TABLES.users} (email, login_salt, login_hash, client_salt, recovery_salt, wrapped_key, recovery_wrapped_key, vault, feed_id)
-         values ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+        `insert into ${DB_TABLES.users} (email, login_salt, login_hash, client_salt, recovery_salt, wrapped_key, recovery_wrapped_key, vault, feed_id, first_name, last_name)
+         values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
         [
           email,
           user.loginSalt,
@@ -396,7 +420,9 @@ async function createUser(email, user) {
           user.wrappedKey ? JSON.stringify(user.wrappedKey) : null,
           user.recoveryWrappedKey ? JSON.stringify(user.recoveryWrappedKey) : null,
           JSON.stringify(user.vault),
-          user.feedId
+          user.feedId,
+          user.firstName || null,
+          user.lastName || null
         ]
       );
     } catch (error) {
@@ -500,22 +526,23 @@ async function getPublicPosts(feedId) {
 async function getFeedOwner(feedId) {
   await ensureData();
   if (pool) {
-    const result = await pool.query(`select email, feed_id from ${DB_TABLES.users} where feed_id = $1`, [feedId]);
+    const result = await pool.query(`select email, feed_id, first_name, last_name from ${DB_TABLES.users} where feed_id = $1`, [feedId]);
     const row = result.rows[0];
-    return row ? { ownerEmail: row.email, feedId: row.feed_id } : null;
+    return row ? { ownerEmail: row.email, feedId: row.feed_id, firstName: row.first_name || "", lastName: row.last_name || "" } : null;
   }
 
   const users = await loadUsers();
   const entry = Object.entries(users).find(([, item]) => item && item.feedId === feedId);
-  return entry ? { ownerEmail: entry[0], feedId } : null;
+  return entry ? { ownerEmail: entry[0], feedId, firstName: entry[1].firstName || "", lastName: entry[1].lastName || "" } : null;
 }
 
 async function setPublicPosts(email, feedId, posts) {
   await ensureData();
-  const previousIds = new Set((await getPublicPosts(feedId)).map((post) => post.id));
   feedXmlCache.delete(feedId);
 
   if (pool) {
+    const existingRows = await pool.query(`select post_id from ${DB_TABLES.publicPosts} where feed_id = $1`, [feedId]);
+    const previousIds = new Set(existingRows.rows.map((r) => r.post_id));
     await pool.query("begin");
     try {
       const currentIds = posts.map((post) => post.id);
@@ -524,32 +551,25 @@ async function setPublicPosts(email, feedId, posts) {
       } else {
         await pool.query(`delete from ${DB_TABLES.publicPosts} where feed_id = $1`, [feedId]);
       }
-      for (const post of posts) {
+      if (posts.length > 0) {
+        const placeholders = posts.map((_, i) => {
+          const b = i * 10;
+          return `($${b+1},$${b+2},$${b+3},$${b+4},$${b+5},$${b+6},$${b+7},$${b+8},$${b+9},$${b+10},now())`;
+        });
+        const values = posts.flatMap((post) => [
+          feedId, post.id, post.title, post.body,
+          post.mood || null, post.place || null,
+          JSON.stringify(post.collections || []),
+          post.series || null, post.createdAt, post.updatedAt
+        ]);
         await pool.query(
-          `insert into ${DB_TABLES.publicPosts} (feed_id, post_id, title, body, mood, place, collections, series, created_at, updated_at, synced_at)
-           values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, now())
-           on conflict (feed_id, post_id) do update set
-             title = excluded.title,
-             body = excluded.body,
-             mood = excluded.mood,
-             place = excluded.place,
-             collections = excluded.collections,
-             series = excluded.series,
-             created_at = excluded.created_at,
-             updated_at = excluded.updated_at,
-             synced_at = now()`,
-          [
-            feedId,
-            post.id,
-            post.title,
-            post.body,
-            post.mood || null,
-            post.place || null,
-            JSON.stringify(post.collections || []),
-            post.series || null,
-            post.createdAt,
-            post.updatedAt
-          ]
+          `insert into ${DB_TABLES.publicPosts} (feed_id,post_id,title,body,mood,place,collections,series,created_at,updated_at,synced_at)
+           values ${placeholders.join(",")}
+           on conflict (feed_id,post_id) do update set
+             title=excluded.title, body=excluded.body, mood=excluded.mood, place=excluded.place,
+             collections=excluded.collections, series=excluded.series,
+             created_at=excluded.created_at, updated_at=excluded.updated_at, synced_at=now()`,
+          values
         );
       }
       await pool.query(`update ${DB_TABLES.users} set updated_at = now() where email = $1`, [email]);
@@ -558,18 +578,19 @@ async function setPublicPosts(email, feedId, posts) {
       await pool.query("rollback");
       throw error;
     }
-  } else {
-    const store = await loadPublicPosts();
-    store[feedId] = posts;
-    await savePublicPosts(store);
-    const users = await loadUsers();
-    if (users[email]) {
-      users[email].updatedAt = new Date().toISOString();
-      delete users[email].publicFeed;
-      await saveUsers(users);
-    }
+    return posts.filter((post) => !previousIds.has(post.id));
   }
 
+  const previousIds = new Set((await getPublicPosts(feedId)).map((post) => post.id));
+  const store = await loadPublicPosts();
+  store[feedId] = posts;
+  await savePublicPosts(store);
+  const users = await loadUsers();
+  if (users[email]) {
+    users[email].updatedAt = new Date().toISOString();
+    delete users[email].publicFeed;
+    await saveUsers(users);
+  }
   return posts.filter((post) => !previousIds.has(post.id));
 }
 
@@ -635,18 +656,35 @@ async function getSubscriptions(subscriberEmail) {
   await ensureData();
   if (pool) {
     const result = await pool.query(
-      `select s.feed_id, s.created_at
+      `select s.feed_id, s.created_at, u.first_name, u.last_name
        from ${DB_TABLES.feedSubscriptions} s
+       join ${DB_TABLES.users} u on u.feed_id = s.feed_id
        where s.subscriber_email = $1
        order by s.created_at desc`,
       [subscriberEmail]
     );
-    return result.rows.map((row) => ({ feedId: row.feed_id, createdAt: row.created_at }));
+    return result.rows.map((row) => ({
+      feedId: row.feed_id,
+      createdAt: row.created_at,
+      authorFirstName: row.first_name || "",
+      authorLastName: row.last_name || ""
+    }));
   }
 
   const subscriptions = await loadSubscriptionsStore();
+  const users = await loadUsers();
   return (Array.isArray(subscriptions[subscriberEmail]) ? subscriptions[subscriberEmail] : [])
-    .map((item) => typeof item === "string" ? { feedId: item, createdAt: "" } : item)
+    .map((item) => {
+      const feedId = typeof item === "string" ? item : item.feedId;
+      const createdAt = typeof item === "object" ? item.createdAt || "" : "";
+      const ownerEntry = Object.entries(users).find(([, u]) => u && u.feedId === feedId);
+      return {
+        feedId,
+        createdAt,
+        authorFirstName: ownerEntry?.[1]?.firstName || "",
+        authorLastName: ownerEntry?.[1]?.lastName || ""
+      };
+    })
     .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
 }
 
@@ -832,9 +870,10 @@ function normalizePublicPosts(posts) {
   });
 }
 
-function renderPublicFeedXml(req, feedId, publicFeed) {
+function renderPublicFeedXml(req, feedId, publicFeed, ownerName = "") {
   const origin = `${isHttps(req) ? "https" : "http"}://${req.headers.host || "localhost"}`;
   const feedUrl = `${origin}/feed/${encodeURIComponent(feedId)}.xml`;
+  const feedTitle = ownerName ? `${ownerName}'s Archive` : "Mind Archive";
   const posts = Array.isArray(publicFeed.posts) ? publicFeed.posts : [];
   const items = posts.map((post) => {
     const postUrl = `${feedUrl}#post-${encodeURIComponent(post.id)}`;
@@ -851,7 +890,7 @@ function renderPublicFeedXml(req, feedId, publicFeed) {
   return `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0">
 <channel>
-  <title>Mind Archive</title>
+  <title>${escapeXml(feedTitle)}</title>
   <link>${escapeXml(feedUrl)}</link>
   <description>Shared thoughts and opinions</description>
   <lastBuildDate>${new Date(publicFeed.updatedAt || Date.now()).toUTCString()}</lastBuildDate>${items}
@@ -884,21 +923,23 @@ async function createPendingDeliveries(feedId, posts, subscribers) {
   const entries = [];
 
   if (pool) {
-    for (const post of posts) {
-      for (const subscriber of subscribers) {
-        const result = await pool.query(
-          `insert into ${DB_TABLES.emailDeliveries} (feed_id, post_id, subscriber_email, status)
-           values ($1, $2, $3, 'pending')
-           on conflict do nothing
-           returning feed_id, post_id, subscriber_email`,
-          [feedId, post.id, subscriber.email]
-        );
-        if (result.rows[0]) {
-          entries.push({ feedId, postId: post.id, subscriberEmail: subscriber.email });
-        }
-      }
-    }
-    return entries;
+    const placeholders = [];
+    const values = [];
+    posts.forEach((post) => {
+      subscribers.forEach((subscriber) => {
+        const b = values.length;
+        placeholders.push(`($${b+1},$${b+2},$${b+3},'pending')`);
+        values.push(feedId, post.id, subscriber.email);
+      });
+    });
+    const result = await pool.query(
+      `insert into ${DB_TABLES.emailDeliveries} (feed_id,post_id,subscriber_email,status)
+       values ${placeholders.join(",")}
+       on conflict do nothing
+       returning feed_id, post_id, subscriber_email`,
+      values
+    );
+    return result.rows.map((row) => ({ feedId: row.feed_id, postId: row.post_id, subscriberEmail: row.subscriber_email }));
   }
 
   const deliveries = await loadDeliveries();
@@ -1028,16 +1069,33 @@ async function sendDeliveryBatch(entries) {
 
   if (!response.ok) {
     const error = await response.text().catch(() => "");
-    for (const entry of entries) {
-      await recordDelivery(entry, "failed", { error });
+    if (pool) {
+      const keys = entries.map((e) => [e.feedId, e.postId, e.subscriberEmail]);
+      await pool.query(
+        `update ${DB_TABLES.emailDeliveries} set status='failed', error=$1, updated_at=now()
+         where (feed_id,post_id,subscriber_email) in (${keys.map((_, i) => `($${i*3+2},$${i*3+3},$${i*3+4})`).join(",")})`,
+        [error, ...keys.flat()]
+      );
+    } else {
+      for (const entry of entries) await recordDelivery(entry, "failed", { error });
     }
     return { sent: 0, skipped: 0, failed: entries.length };
   }
 
   const body = await response.json().catch(() => ({}));
   const ids = Array.isArray(body.data) ? body.data : [];
-  for (let index = 0; index < entries.length; index += 1) {
-    await recordDelivery(entries[index], "sent", { providerId: ids[index]?.id || "" });
+  if (pool) {
+    for (let index = 0; index < entries.length; index += 1) {
+      await pool.query(
+        `update ${DB_TABLES.emailDeliveries} set status='sent', provider_id=$4, updated_at=now()
+         where feed_id=$1 and post_id=$2 and subscriber_email=$3`,
+        [entries[index].feedId, entries[index].postId, entries[index].subscriberEmail, ids[index]?.id || null]
+      );
+    }
+  } else {
+    for (let index = 0; index < entries.length; index += 1) {
+      await recordDelivery(entries[index], "sent", { providerId: ids[index]?.id || "" });
+    }
   }
   return { sent: entries.length, skipped: 0, failed: 0 };
 }
@@ -1077,6 +1135,55 @@ async function processEmailQueue() {
   }
 }
 
+async function getSubscribedPosts(subscriberEmail) {
+  await ensureData();
+  if (pool) {
+    const result = await pool.query(
+      `select p.feed_id, p.post_id, p.title, p.body, p.mood, p.place, p.collections, p.series, p.created_at, p.updated_at,
+              u.first_name, u.last_name
+       from ${DB_TABLES.feedSubscriptions} s
+       join ${DB_TABLES.publicPosts} p on p.feed_id = s.feed_id
+       join ${DB_TABLES.users} u on u.feed_id = s.feed_id
+       where s.subscriber_email = $1
+       order by p.created_at desc
+       limit 100`,
+      [subscriberEmail]
+    );
+    return result.rows.map((row) => ({
+      feedId: row.feed_id,
+      postId: row.post_id,
+      title: row.title,
+      body: row.body,
+      mood: row.mood || "",
+      place: row.place || "",
+      collections: typeof row.collections === "string" ? JSON.parse(row.collections) : row.collections || [],
+      series: row.series || "",
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+      authorFirstName: row.first_name || "",
+      authorLastName: row.last_name || ""
+    }));
+  }
+
+  const subscriptions = await loadSubscriptionsStore();
+  const publicPosts = await loadPublicPosts();
+  const users = await loadUsers();
+  const userSubs = (Array.isArray(subscriptions[subscriberEmail]) ? subscriptions[subscriberEmail] : [])
+    .map((item) => (typeof item === "string" ? item : item.feedId));
+
+  const posts = [];
+  for (const feedId of userSubs) {
+    const feedPosts = Array.isArray(publicPosts[feedId]) ? publicPosts[feedId] : [];
+    const ownerEntry = Object.entries(users).find(([, u]) => u && u.feedId === feedId);
+    const authorFirstName = ownerEntry?.[1]?.firstName || "";
+    const authorLastName = ownerEntry?.[1]?.lastName || "";
+    for (const post of feedPosts) {
+      posts.push({ ...post, feedId, authorFirstName, authorLastName });
+    }
+  }
+  return posts.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).slice(0, 100);
+}
+
 async function requireUser(req, res) {
   const token = parseCookies(req)[SESSION_COOKIE];
   const email = verifySessionToken(token);
@@ -1084,12 +1191,19 @@ async function requireUser(req, res) {
     json(res, 401, { error: "Not signed in." });
     return null;
   }
+  const cacheKey = token.slice(-32);
+  const cached = sessionCache.get(cacheKey);
+  if (cached && cached.email === email && Date.now() < cached.expiresAt) {
+    return { email, user: cached.user };
+  }
   const user = await getUser(email);
   if (!user) {
     json(res, 401, { error: "Session no longer exists." }, clearSessionHeaders());
+    sessionCache.delete(cacheKey);
     return null;
   }
   await ensureFeedId(email, user);
+  sessionCache.set(cacheKey, { email, user, expiresAt: Date.now() + 2 * 60 * 1000 });
   return { email, user };
 }
 
@@ -1120,7 +1234,17 @@ async function handleApi(req, res, pathname) {
       const body = await readJson(req);
       const email = normalizeEmail(body.email);
       const loginSecret = String(body.loginSecret || "");
+      const firstName = String(body.firstName || "").trim().slice(0, 80);
+      const lastName = String(body.lastName || "").trim().slice(0, 80);
 
+      if (!firstName) {
+        json(res, 400, { error: "First name is required." });
+        return;
+      }
+      if (!lastName) {
+        json(res, 400, { error: "Last name is required." });
+        return;
+      }
       if (!isValidEmail(email)) {
         json(res, 400, { error: "Enter a valid email address." });
         return;
@@ -1153,6 +1277,8 @@ async function handleApi(req, res, pathname) {
         recoveryWrappedKey: body.recoveryWrappedKey,
         vault: body.vault,
         feedId: randomToken(16),
+        firstName,
+        lastName,
         createdAt: new Date().toISOString()
       };
       try {
@@ -1168,6 +1294,8 @@ async function handleApi(req, res, pathname) {
       const token = createSessionToken(email);
       json(res, 201, {
         email,
+        firstName: user.firstName,
+        lastName: user.lastName,
         clientSalt: user.clientSalt,
         recoverySalt: user.recoverySalt,
         vault: user.vault,
@@ -1209,6 +1337,8 @@ async function handleApi(req, res, pathname) {
       const token = createSessionToken(email);
       json(res, 200, {
         email,
+        firstName: user.firstName || "",
+        lastName: user.lastName || "",
         clientSalt: user.clientSalt,
         recoverySalt: user.recoverySalt || "",
         vault: user.vault,
@@ -1239,21 +1369,25 @@ async function handleApi(req, res, pathname) {
       }
 
       await updateUserLogin(email, loginSecret, body.wrappedKey);
-      const updated = await getUser(email);
       const token = createSessionToken(email);
+      const feedId = await ensureFeedId(email, user);
       json(res, 200, {
         email,
-        clientSalt: updated.clientSalt,
-        recoverySalt: updated.recoverySalt || "",
-        vault: updated.vault,
-        wrappedKey: updated.wrappedKey || null,
-        recoveryWrappedKey: updated.recoveryWrappedKey || null,
-        feedId: await ensureFeedId(email, updated)
+        firstName: user.firstName || "",
+        lastName: user.lastName || "",
+        clientSalt: user.clientSalt,
+        recoverySalt: user.recoverySalt || "",
+        vault: user.vault,
+        wrappedKey: body.wrappedKey,
+        recoveryWrappedKey: user.recoveryWrappedKey || null,
+        feedId
       }, sessionHeaders(req, token));
       return;
     }
 
     if (req.method === "POST" && pathname === "/api/logout") {
+      const token = parseCookies(req)[SESSION_COOKIE];
+      if (token) sessionCache.delete(token.slice(-32));
       json(res, 200, { ok: true }, clearSessionHeaders());
       return;
     }
@@ -1263,6 +1397,8 @@ async function handleApi(req, res, pathname) {
       if (!auth) return;
       json(res, 200, {
         email: auth.email,
+        firstName: auth.user.firstName || "",
+        lastName: auth.user.lastName || "",
         clientSalt: auth.user.clientSalt,
         recoverySalt: auth.user.recoverySalt || "",
         vault: auth.user.vault,
@@ -1277,6 +1413,13 @@ async function handleApi(req, res, pathname) {
       const auth = await requireUser(req, res);
       if (!auth) return;
       json(res, 200, { subscriptions: await getSubscriptions(auth.email) });
+      return;
+    }
+
+    if (req.method === "GET" && pathname === "/api/subscribed-posts") {
+      const auth = await requireUser(req, res);
+      if (!auth) return;
+      json(res, 200, { posts: await getSubscribedPosts(auth.email) });
       return;
     }
 
@@ -1334,6 +1477,8 @@ async function handleApi(req, res, pathname) {
         return;
       }
       await updateUserVault(auth.email, body.vault);
+      const token = parseCookies(req)[SESSION_COOKIE];
+      if (token) sessionCache.delete(token.slice(-32));
       json(res, 200, { ok: true });
       return;
     }
@@ -1403,7 +1548,8 @@ async function handlePublicFeed(req, res, feedId) {
   const updatedAt = record.publicFeed.updatedAt || "";
   let cached = feedXmlCache.get(cacheKey);
   if (!cached || cached.updatedAt !== updatedAt) {
-    const body = renderPublicFeedXml(req, feedId, record.publicFeed);
+    const ownerName = [record.firstName || "", record.lastName || ""].filter(Boolean).join(" ");
+    const body = renderPublicFeedXml(req, feedId, record.publicFeed, ownerName);
     cached = {
       body,
       etag: `W/"${crypto.createHash("sha256").update(body).digest("base64url").slice(0, 24)}"`,

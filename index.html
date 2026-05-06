@@ -695,7 +695,7 @@
       margin-bottom: 0;
     }
 
-    #toolsView .box:nth-of-type(3) {
+    #toolsView .box:nth-of-type(n+3) {
       grid-column: 1 / -1;
     }
 
@@ -899,6 +899,137 @@
         padding: 0;
       }
     }
+
+    .reading-post {
+      padding: 16px 0;
+    }
+
+    .reading-post-header {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      margin-bottom: 6px;
+      flex-wrap: wrap;
+    }
+
+    .reading-author {
+      font-weight: 600;
+      color: var(--title);
+      font-size: 14px;
+    }
+
+    .reading-post-title {
+      font-size: 17px;
+      font-weight: 600;
+      color: var(--post-title);
+      margin: 0 0 10px 0;
+    }
+
+    .reading-divider {
+      border: 0;
+      border-top: 1px solid var(--line);
+      margin: 0;
+    }
+
+    .reading-empty {
+      color: var(--muted);
+      padding: 12px 0;
+    }
+
+    /* Lock screen */
+    .lock-screen {
+      position: fixed;
+      inset: 0;
+      z-index: 600;
+      background: var(--page);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .lock-box {
+      border: 1px solid var(--line-dark);
+      background: var(--panel);
+      padding: 36px 52px;
+      text-align: center;
+      width: 280px;
+    }
+
+    .lock-label {
+      font-size: 18px;
+      font-weight: bold;
+      color: var(--title);
+      font-family: Georgia, "Times New Roman", serif;
+      margin-bottom: 8px;
+    }
+
+    .lock-hint {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    /* Blur overlay (tab switch) */
+    .blur-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 500;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      background: rgba(0, 0, 0, 0.08);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+
+    .blur-reveal-hint {
+      border: 1px solid var(--line-dark);
+      background: var(--panel);
+      padding: 10px 18px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .tag-hidden {
+      border-color: var(--danger);
+      color: var(--danger);
+    }
+
+    /* Collapsible sidebar boxes */
+    .box-collapsible .box-title {
+      cursor: pointer;
+      user-select: none;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .box-collapsible .box-title::after {
+      content: "▾";
+      font-size: 10px;
+      color: var(--muted);
+      flex-shrink: 0;
+      margin-left: 4px;
+    }
+
+    .box-collapsible.collapsed .box-title::after {
+      content: "▸";
+    }
+
+    .box-collapsible.collapsed .box-body {
+      display: none;
+    }
+
+    .find-active-dot {
+      display: inline-block;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--accent);
+      margin-left: 6px;
+      vertical-align: middle;
+      flex-shrink: 0;
+    }
   </style>
 </head>
 <body>
@@ -914,6 +1045,7 @@
         <button id="themeButton" type="button">Dark mode</button>
         <button id="privacyButton" type="button">Privacy</button>
         <button id="shortcutsButton" type="button" title="Keyboard shortcuts">?</button>
+        <button id="lockButton" class="auth-only hidden" type="button" title="Lock screen">Lock</button>
         <button id="logoutButton" class="auth-only hidden" type="button">Logout</button>
       </div>
     </header>
@@ -954,12 +1086,24 @@
             </div>
             <div class="form-actions">
               <button type="submit">Sign in</button>
-              <button type="button" id="showRecoverButton">Recover</button>
               <span id="signinStatus" class="muted" role="status" aria-live="polite"></span>
+            </div>
+            <div style="margin-top:6px;">
+              <button type="button" id="showRecoverButton" style="background:none;border:none;color:var(--muted);font-size:12px;cursor:pointer;text-decoration:underline;padding:0;">Forgot password?</button>
             </div>
           </form>
 
           <form id="signupForm" class="auth-form stack hidden">
+            <div class="row wrap">
+              <div class="field" style="flex:1 1 140px">
+                <label for="signupFirstName">First name</label>
+                <input id="signupFirstName" type="text" autocomplete="given-name" maxlength="80" required>
+              </div>
+              <div class="field" style="flex:1 1 140px">
+                <label for="signupLastName">Last name</label>
+                <input id="signupLastName" type="text" autocomplete="family-name" maxlength="80" required>
+              </div>
+            </div>
             <div class="field">
               <label for="signupEmail">Email</label>
               <input id="signupEmail" type="email" autocomplete="email" required>
@@ -1027,6 +1171,7 @@
       <button class="tab" data-view="timelineView" role="tab" aria-controls="timelineView" aria-selected="false">What I Was Thinking</button>
       <button class="tab" data-view="collectionsView" role="tab" aria-controls="collectionsView" aria-selected="false">Collections</button>
       <button class="tab" data-view="toolsView" role="tab" aria-controls="toolsView" aria-selected="false">RSS / Backup</button>
+      <button class="tab" data-view="readingView" role="tab" aria-controls="readingView" aria-selected="false">Reading</button>
     </nav>
 
     <div id="appLayout" class="layout hidden">
@@ -1043,9 +1188,9 @@
           </div>
         </section>
 
-        <section class="box">
-          <div class="box-title">Find</div>
-          <div class="box-body stack">
+        <section class="box box-collapsible collapsed" id="findBox">
+          <div class="box-title" id="findBoxTitle" role="button" tabindex="0" aria-expanded="false" aria-controls="findBoxBody">Find <span id="findActiveDot" class="find-active-dot" style="display:none"></span></div>
+          <div class="box-body stack" id="findBoxBody">
             <input id="searchInput" type="search" placeholder="search thoughts">
             <select id="filterCollection" aria-label="Filter by collection">
               <option value="">all collections</option>
@@ -1090,12 +1235,6 @@
           <div class="box-body" id="pinnedList"></div>
         </section>
 
-        <section class="box">
-          <div class="box-title">Local Note</div>
-          <div class="box-body muted">
-            Your encrypted archive is stored on the server. Use backups if you want extra copies that can survive account or hosting problems.
-          </div>
-        </section>
       </aside>
 
       <main class="main">
@@ -1104,6 +1243,7 @@
             <div class="box-title" style="display:flex;align-items:center;justify-content:space-between;">
               <span id="postsBoxTitle">Posts</span>
               <div style="display:flex;gap:4px;">
+                <button type="button" id="toggleHiddenButton" style="font-size:11px;padding:2px 7px;min-height:0;">Show hidden</button>
                 <button type="button" id="randomPostButton" style="font-size:11px;padding:2px 7px;min-height:0;">Random</button>
                 <button type="button" id="newPostButton" style="font-size:11px;padding:2px 7px;min-height:0;">+ New post</button>
               </div>
@@ -1160,6 +1300,7 @@
                 <div class="option-list">
                   <label class="row"><input id="pinnedInput" type="checkbox" style="width:auto"> pin this thought</label>
                   <label class="row"><input id="rssInput" type="checkbox" style="width:auto"> share in RSS</label>
+                  <label class="row"><input id="hiddenInput" type="checkbox" style="width:auto"> keep hidden</label>
                 </div>
                 <div class="form-actions">
                   <button type="submit">Save post</button>
@@ -1197,32 +1338,31 @@
 
         <section id="toolsView" class="view hidden" role="tabpanel">
           <div class="box">
-            <div class="box-title">RSS Feed</div>
+            <div class="box-title">Your Feed</div>
             <div class="box-body stack">
-              <div class="muted">Only posts marked for RSS appear in this feed. Private posts stay out of the XML.</div>
+              <div class="muted">Share this link with anyone you want to follow your writing. Only posts marked <strong>share in RSS</strong> are included — everything else stays private.</div>
               <div class="field">
-                <label for="publicRssUrl">Public RSS URL</label>
+                <label for="publicRssUrl">Feed URL</label>
                 <input id="publicRssUrl" readonly>
               </div>
               <div class="button-row">
-                <button id="copyRssUrl">Copy feed URL</button>
-                <button id="downloadRss">Download feed.xml</button>
-                <button id="copyRss">Copy RSS</button>
+                <button id="copyRssUrl">Copy link</button>
+                <button id="downloadRss">Download XML</button>
                 <span id="rssStatus" class="muted" role="status" aria-live="polite"></span>
               </div>
-              <textarea id="rssOutput" class="rss-output" readonly></textarea>
             </div>
           </div>
 
           <div class="box">
-            <div class="box-title">Subscriptions</div>
+            <div class="box-title">Follow a Writer</div>
             <div class="box-body stack">
+              <div class="muted">Paste a feed link from someone who uses Mind Archive. Their shared posts will appear in your <strong>Reading</strong> tab.</div>
               <div class="field">
-                <label for="subscribeFeedInput">RSS feed URL</label>
-                <input id="subscribeFeedInput" placeholder="https://example.com/feed/id.xml">
+                <label for="subscribeFeedInput">Feed URL</label>
+                <input id="subscribeFeedInput" placeholder="https://…/feed/….xml">
               </div>
-              <div class="form-actions">
-                <button id="subscribeFeedButton" type="button">Subscribe</button>
+              <div class="button-row">
+                <button id="subscribeFeedButton" type="button">Follow</button>
                 <span id="subscribeStatus" class="muted" role="status" aria-live="polite"></span>
               </div>
               <div id="subscriptionsList" class="muted"></div>
@@ -1230,18 +1370,45 @@
           </div>
 
           <div class="box">
-            <div class="box-title">Backup</div>
+            <div class="box-title">Privacy</div>
+            <div class="box-body stack">
+              <div class="muted">Auto-lock closes the screen after 15 minutes of no activity. Use the Lock button in the toolbar to lock instantly. Your password is required to unlock.</div>
+              <div class="field">
+                <label for="tabTitleInput">Browser tab title</label>
+                <input id="tabTitleInput" type="text" maxlength="60" placeholder="Mind Archive">
+              </div>
+              <div class="button-row">
+                <button id="saveTabTitle" type="button">Save title</button>
+                <span id="tabTitleStatus" class="muted" role="status" aria-live="polite"></span>
+              </div>
+            </div>
+          </div>
+
+          <div class="box">
+            <div class="box-title">Backup &amp; Restore</div>
             <div class="box-body stack">
               <div class="button-row">
-                <button id="downloadJson">Download JSON backup</button>
-                <button id="downloadMarkdown">Download Markdown</button>
+                <button id="downloadJson">Export JSON</button>
+                <button id="downloadMarkdown">Export Markdown</button>
                 <button id="printPdf">Print / PDF</button>
               </div>
               <div class="field">
-                <label for="importFile">Restore JSON backup</label>
+                <label for="importFile">Import JSON backup</label>
                 <input id="importFile" type="file" accept="application/json">
               </div>
-              <div class="muted">Markdown is best for reading anywhere. JSON is best for restoring this website exactly.</div>
+            </div>
+          </div>
+        </section>
+
+        <section id="readingView" class="view hidden" role="tabpanel">
+          <div class="box">
+            <div class="box-title" style="display:flex;align-items:center;justify-content:space-between;">
+              <span>Reading</span>
+              <button type="button" id="refreshReadingButton" style="font-size:11px;padding:2px 8px;min-height:0;">Refresh</button>
+            </div>
+            <div class="box-body stack">
+              <div class="muted">Posts from writers you follow appear here. Subscribe to a feed in the RSS / Backup tab — paste their link and you'll see every post they share here, automatically.</div>
+              <div id="readingFeedList"><div class="reading-empty">Loading...</div></div>
             </div>
           </div>
         </section>
@@ -1249,8 +1416,61 @@
     </div>
 
     <footer class="footer">
-      Stored locally in your browser as encrypted profile vaults. Back up regularly.
+      Your posts are encrypted in your browser. The server cannot read them. Export a backup regularly.
     </footer>
+  </div>
+
+  <div id="lockScreen" class="lock-screen hidden" role="dialog" aria-modal="true" aria-label="Screen locked">
+    <div class="lock-box">
+      <div class="lock-label" id="lockTitle">Locked</div>
+
+      <!-- Password unlock form -->
+      <div id="lockUnlockSection">
+        <form id="lockUnlockForm" autocomplete="off">
+          <div class="field" style="margin-top:16px;">
+            <input id="lockPasswordInput" type="password" placeholder="Enter your password" autocomplete="current-password" style="width:100%;box-sizing:border-box;">
+          </div>
+          <div id="lockError" style="font-size:12px;color:var(--danger,#c0392b);min-height:16px;margin-top:6px;text-align:center;"></div>
+          <div style="margin-top:10px;">
+            <button type="submit" style="width:100%;">Unlock</button>
+          </div>
+        </form>
+        <div style="margin-top:14px;text-align:center;">
+          <button type="button" id="lockForgotButton" style="background:none;border:none;color:var(--muted);font-size:12px;cursor:pointer;text-decoration:underline;padding:0;">Forgot password?</button>
+        </div>
+      </div>
+
+      <!-- Inline recovery form (shown when Forgot password? is clicked) -->
+      <div id="lockRecoverSection" class="hidden">
+        <form id="lockRecoverForm" autocomplete="off">
+          <div class="field" style="margin-top:16px;">
+            <input id="lockRecoverKey" placeholder="Recovery key" style="width:100%;box-sizing:border-box;">
+          </div>
+          <div class="field" style="margin-top:8px;">
+            <input id="lockRecoverPassword" type="password" placeholder="New password" autocomplete="new-password" style="width:100%;box-sizing:border-box;">
+          </div>
+          <div class="field" style="margin-top:8px;">
+            <input id="lockRecoverPasswordAgain" type="password" placeholder="Repeat new password" autocomplete="new-password" style="width:100%;box-sizing:border-box;">
+          </div>
+          <div id="lockRecoverError" style="font-size:12px;color:var(--danger,#c0392b);min-height:16px;margin-top:6px;text-align:center;"></div>
+          <div style="margin-top:10px;">
+            <button type="submit" style="width:100%;">Recover account</button>
+          </div>
+        </form>
+        <div style="margin-top:14px;text-align:center;">
+          <button type="button" id="lockRecoverBackButton" style="background:none;border:none;color:var(--muted);font-size:12px;cursor:pointer;text-decoration:underline;padding:0;">← Back to unlock</button>
+        </div>
+      </div>
+
+      <!-- Sign out divider — always visible, below both sections -->
+      <div style="margin-top:24px;border-top:1px solid var(--line);padding-top:14px;text-align:center;">
+        <button type="button" id="lockSignOutButton" style="background:none;border:none;color:var(--muted);font-size:11px;cursor:pointer;text-decoration:underline;padding:0;">Sign out of this device</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="blurOverlay" class="blur-overlay hidden" aria-hidden="true">
+    <div class="blur-reveal-hint">Click to continue</div>
   </div>
 
   <div id="shortcutsOverlay" class="shortcuts-overlay hidden" role="dialog" aria-modal="true" aria-label="Keyboard shortcuts">
@@ -1274,6 +1494,10 @@
   <script>
     const LEGACY_STORAGE_KEY = "mind-archive-v1";
     const THEME_STORAGE_KEY = "mind-archive-theme";
+    const SESSION_KEY_STORAGE = "mind-archive-session-key";
+    const TAB_TITLE_KEY = "mind-archive-tab-title";
+    const AUTO_LOCK_MS = 15 * 60 * 1000;
+    let lastActivity = Date.now();
     const cryptoApi = window.crypto && window.crypto.subtle ? window.crypto : null;
     const encoder = new TextEncoder();
     const decoder = new TextDecoder();
@@ -1291,10 +1515,19 @@
       onlyFavourite: false,
       currentUser: "",
       currentFeedId: "",
+      currentFirstName: "",
+      currentLastName: "",
       currentKey: null,
       currentArchiveKeyRaw: "",
+      currentClientSalt: "",
+      currentWrappedKey: null,
       previousScreen: "auth",
-      subscriptions: []
+      subscriptions: [],
+      subscriptionsLoaded: false,
+      readingPosts: [],
+      readingLoaded: false,
+      locked: false,
+      showHidden: false
     };
 
     const $ = (id) => document.getElementById(id);
@@ -1303,7 +1536,7 @@
     function getSavedTheme() {
       const saved = localStorage.getItem(THEME_STORAGE_KEY);
       if (saved === "light" || saved === "dark") return saved;
-      return window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+      return "light";
     }
 
     function applyTheme(theme) {
@@ -1455,7 +1688,7 @@
     }
 
     function getPublicPosts() {
-      return sortedPosts(state.posts.filter((post) => post.rssPublic)).slice(0, 50).map((post) => ({
+      return sortedPosts(state.posts.filter((post) => post.rssPublic && !post.hidden)).slice(0, 50).map((post) => ({
         id: post.id,
         title: post.title,
         body: post.body,
@@ -1480,10 +1713,46 @@
       syncPublicFeed().catch(() => {});
     }
 
-    async function loadSubscriptions() {
+    async function loadSubscriptions(force = false) {
+      if (!force && state.subscriptionsLoaded) return;
       const result = await api("/api/subscriptions");
       state.subscriptions = Array.isArray(result.subscriptions) ? result.subscriptions : [];
+      state.subscriptionsLoaded = true;
       if (state.view === "toolsView") renderTools();
+    }
+
+    async function loadReadingFeed() {
+      const result = await api("/api/subscribed-posts");
+      state.readingPosts = Array.isArray(result.posts) ? result.posts : [];
+      state.readingLoaded = true;
+      if (state.view === "readingView") renderReading();
+    }
+
+    function renderReading() {
+      const container = $("readingFeedList");
+      if (!state.readingLoaded) {
+        container.innerHTML = '<div class="reading-empty">Loading...</div>';
+        return;
+      }
+      if (!state.subscriptions.length) {
+        container.innerHTML = '<div class="reading-empty">You haven\'t subscribed to any feeds yet. Go to <strong>RSS / Backup</strong> and paste someone\'s feed link to follow them.</div>';
+        return;
+      }
+      if (!state.readingPosts.length) {
+        container.innerHTML = '<div class="reading-empty">Nothing to read yet — the writers you follow haven\'t shared any posts.</div>';
+        return;
+      }
+      container.innerHTML = state.readingPosts.map((post, index) => {
+        const author = [post.authorFirstName, post.authorLastName].filter(Boolean).join(" ") || post.feedId;
+        return `${index > 0 ? '<hr class="reading-divider">' : ""}<article class="reading-post">
+          <div class="reading-post-header">
+            <span class="reading-author">${escapeHtml(author)}</span>
+            <span class="muted" style="font-size:12px">${relativeDate(post.createdAt)}</span>
+          </div>
+          <h3 class="reading-post-title">${escapeHtml(post.title)}</h3>
+          <div class="post-body">${renderMarkdown(post.body)}</div>
+        </article>`;
+      }).join("");
     }
 
     async function subscribeToFeed(feedUrl) {
@@ -1491,7 +1760,9 @@
         method: "POST",
         body: JSON.stringify({ feedUrl })
       });
-      await loadSubscriptions();
+      await loadSubscriptions(true);
+      state.readingLoaded = false;
+      loadReadingFeed().catch(() => {});
       return result;
     }
 
@@ -1523,7 +1794,7 @@
       }
     }
 
-    async function signUp(emailValue, password, passwordAgain) {
+    async function signUp(firstName, lastName, emailValue, password, passwordAgain) {
       const email = normalizeEmail(emailValue);
       if (password !== passwordAgain) throw new Error("Passwords do not match.");
       if (!cryptoApi) throw new Error("This browser does not support Web Crypto.");
@@ -1545,12 +1816,13 @@
       const recoveryWrappedKey = await wrapArchiveKey(recoveryWrapKey, archiveKeyRaw);
       const result = await api("/api/signup", {
         method: "POST",
-        body: JSON.stringify({ email, loginSecret, clientSalt, recoverySalt, vault, wrappedKey, recoveryWrappedKey })
+        body: JSON.stringify({ firstName, lastName, email, loginSecret, clientSalt, recoverySalt, vault, wrappedKey, recoveryWrappedKey })
       });
       $("recoveryKeyValue").textContent = formatRecoveryKey(recoveryKey);
       $("recoveryKeyPanel").classList.remove("hidden");
-      unlock(result.email, result.feedId, key, startingPosts, archiveKeyRaw);
-      schedulePublicFeedSync();
+      unlock(result.email, result.feedId, result.firstName || firstName, result.lastName || lastName, key, startingPosts, archiveKeyRaw);
+      state.currentClientSalt = result.clientSalt || clientSalt;
+      state.currentWrappedKey = result.wrappedKey || wrappedKey;
     }
 
     async function signIn(emailValue, password) {
@@ -1569,8 +1841,9 @@
         : "";
       const key = archiveKeyRaw ? await importArchiveKey(archiveKeyRaw) : passwordWrapKey;
       const posts = result.vault ? await decryptJson(key, result.vault) : [];
-      unlock(result.email, result.feedId, key, Array.isArray(posts) ? posts : [], archiveKeyRaw);
-      schedulePublicFeedSync();
+      unlock(result.email, result.feedId, result.firstName || "", result.lastName || "", key, Array.isArray(posts) ? posts : [], archiveKeyRaw);
+      state.currentClientSalt = result.clientSalt || "";
+      state.currentWrappedKey = result.wrappedKey || null;
     }
 
     async function recoverAccount(emailValue, recoveryKeyValue, password, passwordAgain) {
@@ -1594,38 +1867,186 @@
         method: "POST",
         body: JSON.stringify({ email, loginSecret, recoveryWrappedKey: session.recoveryWrappedKey, wrappedKey })
       });
-      unlock(result.email, result.feedId, archiveKey, Array.isArray(posts) ? posts : [], archiveKeyRaw);
-      schedulePublicFeedSync();
+      unlock(result.email, result.feedId, result.firstName || "", result.lastName || "", archiveKey, Array.isArray(posts) ? posts : [], archiveKeyRaw);
+      state.currentClientSalt = result.clientSalt || "";
+      state.currentWrappedKey = result.wrappedKey || null;
     }
 
     async function logout() {
       try {
         await api("/api/logout", { method: "POST", body: "{}" });
       } finally {
+        localStorage.removeItem(SESSION_KEY_STORAGE);
+        localStorage.removeItem(DRAFT_KEY);
+        clearTabBlur();
+        $("lockScreen").classList.add("hidden");
         state.currentUser = "";
         state.currentFeedId = "";
+        state.currentFirstName = "";
+        state.currentLastName = "";
         state.currentKey = null;
         state.currentArchiveKeyRaw = "";
+        state.currentClientSalt = "";
+        state.currentWrappedKey = null;
         state.posts = [];
         state.subscriptions = [];
+        state.subscriptionsLoaded = false;
+        state.readingPosts = [];
+        state.readingLoaded = false;
+        state.locked = false;
+        state.showHidden = false;
         clearEditor();
         showAuth();
       }
     }
 
-    function unlock(email, feedId, key, posts, archiveKeyRaw = "") {
+    async function tryRestoreSession() {
+      const archiveKeyRaw = localStorage.getItem(SESSION_KEY_STORAGE);
+      if (!archiveKeyRaw) return false;
+      try {
+        const result = await api("/api/session");
+        const key = await importArchiveKey(archiveKeyRaw);
+        const posts = result.vault ? await decryptJson(key, result.vault) : [];
+        unlock(result.email, result.feedId, result.firstName || "", result.lastName || "", key, Array.isArray(posts) ? posts : [], archiveKeyRaw);
+        state.currentClientSalt = result.clientSalt || "";
+        state.currentWrappedKey = result.wrappedKey || null;
+        return true;
+      } catch {
+        localStorage.removeItem(SESSION_KEY_STORAGE);
+        return false;
+      }
+    }
+
+    function showLockPasswordSection() {
+      $("lockTitle").textContent = "Locked";
+      $("lockUnlockSection").classList.remove("hidden");
+      $("lockRecoverSection").classList.add("hidden");
+      $("lockPasswordInput").value = "";
+      $("lockError").textContent = "";
+      setTimeout(() => $("lockPasswordInput").focus(), 50);
+    }
+
+    function showLockRecoverSection() {
+      $("lockTitle").textContent = "Recover Account";
+      $("lockUnlockSection").classList.add("hidden");
+      $("lockRecoverSection").classList.remove("hidden");
+      $("lockRecoverKey").value = "";
+      $("lockRecoverPassword").value = "";
+      $("lockRecoverPasswordAgain").value = "";
+      $("lockRecoverError").textContent = "";
+      setTimeout(() => $("lockRecoverKey").focus(), 50);
+    }
+
+    function lockScreen() {
+      if (!state.currentUser) return;
+      state.locked = true;
+      clearTabBlur();
+      showLockPasswordSection();
+      $("lockScreen").classList.remove("hidden");
+    }
+
+    function unlockScreen() {
+      state.locked = false;
+      $("lockScreen").classList.add("hidden");
+      showLockPasswordSection();
+      lastActivity = Date.now();
+    }
+
+    async function tryUnlockWithPassword(password) {
+      try {
+        const passwordWrapKey = await deriveKey(state.currentUser, password, state.currentClientSalt);
+        const archiveKeyRaw = await unwrapArchiveKey(passwordWrapKey, state.currentWrappedKey);
+        if (archiveKeyRaw === state.currentArchiveKeyRaw) {
+          unlockScreen();
+        } else {
+          $("lockError").textContent = "Incorrect password.";
+          $("lockPasswordInput").value = "";
+          $("lockPasswordInput").focus();
+        }
+      } catch {
+        $("lockError").textContent = "Incorrect password.";
+        $("lockPasswordInput").value = "";
+        $("lockPasswordInput").focus();
+      }
+    }
+
+    async function tryLockScreenRecover(recoveryKeyValue, newPassword, newPasswordAgain) {
+      if (newPassword !== newPasswordAgain) {
+        $("lockRecoverError").textContent = "Passwords do not match.";
+        return;
+      }
+      if (newPassword.length < 8) {
+        $("lockRecoverError").textContent = "Password must be at least 8 characters.";
+        return;
+      }
+      $("lockRecoverError").textContent = "Recovering...";
+      try {
+        const email = state.currentUser;
+        const session = await api(`/api/user-salt?email=${encodeURIComponent(email)}`);
+        if (!session.recoverySalt || !session.recoveryWrappedKey) {
+          $("lockRecoverError").textContent = "No recovery key found for this account.";
+          return;
+        }
+        const recoveryWrapKey = await deriveRecoveryWrapKey(parseRecoveryKey(recoveryKeyValue), session.recoverySalt);
+        const archiveKeyRaw = await unwrapArchiveKey(recoveryWrapKey, session.recoveryWrappedKey);
+        if (archiveKeyRaw !== state.currentArchiveKeyRaw) {
+          $("lockRecoverError").textContent = "Incorrect recovery key.";
+          $("lockRecoverKey").value = "";
+          $("lockRecoverKey").focus();
+          return;
+        }
+        const loginSecret = await deriveLoginSecret(email, newPassword, session.clientSalt);
+        const passwordWrapKey = await deriveKey(email, newPassword, session.clientSalt);
+        const wrappedKey = await wrapArchiveKey(passwordWrapKey, archiveKeyRaw);
+        const result = await api("/api/recover", {
+          method: "POST",
+          body: JSON.stringify({ email, loginSecret, recoveryWrappedKey: session.recoveryWrappedKey, wrappedKey })
+        });
+        state.currentClientSalt = result.clientSalt || session.clientSalt;
+        state.currentWrappedKey = result.wrappedKey || wrappedKey;
+        unlockScreen();
+      } catch (err) {
+        $("lockRecoverError").textContent = err.message || "Recovery failed.";
+        $("lockRecoverKey").focus();
+      }
+    }
+
+    function applyTabBlur() {
+      if (!state.currentUser || state.locked) return;
+      $("blurOverlay").classList.remove("hidden");
+    }
+
+    function clearTabBlur() {
+      $("blurOverlay").classList.add("hidden");
+    }
+
+    function applyTabTitle() {
+      const saved = localStorage.getItem(TAB_TITLE_KEY);
+      document.title = saved || "Mind Archive";
+    }
+
+    function unlock(email, feedId, firstName, lastName, key, posts, archiveKeyRaw = "") {
+      if (archiveKeyRaw) localStorage.setItem(SESSION_KEY_STORAGE, archiveKeyRaw);
+      lastActivity = Date.now();
       state.currentUser = email;
       state.currentFeedId = feedId || "";
+      state.currentFirstName = firstName || "";
+      state.currentLastName = lastName || "";
       state.currentKey = key;
       state.currentArchiveKeyRaw = archiveKeyRaw;
       state.posts = posts;
+      state.readingPosts = [];
+      state.readingLoaded = false;
+      state.locked = false;
+      state.showHidden = false;
       state.query = "";
       state.collection = "";
       state.series = "";
       state.onlyPinned = false;
       $("searchInput").value = "";
       $("onlyPinned").checked = false;
-      $("currentUserLabel").textContent = `signed in: ${email}`;
+      const displayName = [firstName, lastName].filter(Boolean).join(" ") || email;
+      $("currentUserLabel").textContent = `signed in as ${displayName}`;
       showApp();
       renderAll();
       setView("postsView");
@@ -1642,6 +2063,8 @@
       $("currentUserLabel").classList.add("hidden");
       document.querySelectorAll(".auth-only").forEach((el) => el.classList.add("hidden"));
       $("signinPassword").value = "";
+      $("signupFirstName").value = "";
+      $("signupLastName").value = "";
       $("signupPassword").value = "";
       $("signupPasswordAgain").value = "";
     }
@@ -1889,6 +2312,7 @@
     function filteredPosts() {
       const q = state.query.toLowerCase();
       return sortedPosts().filter((post) => {
+        if (post.hidden && !state.showHidden) return false;
         const haystack = `${post.title} ${post.body} ${post.mood} ${post.place} ${(post.collections || []).join(" ")} ${post.series}`.toLowerCase();
         if (q && !haystack.includes(q)) return false;
         if (state.collection && !(post.collections || []).includes(state.collection)) return false;
@@ -1917,6 +2341,14 @@
       if (view === "timelineView") renderTimeline();
       if (view === "collectionsView") renderCollections();
       if (view === "toolsView") renderTools();
+      if (view === "readingView") {
+        if (!state.readingLoaded) {
+          renderReading();
+          loadReadingFeed().catch(() => {});
+        } else {
+          renderReading();
+        }
+      }
       if (view === "editorView" && !$("postId").value) checkDraft();
     }
 
@@ -1928,6 +2360,7 @@
 
     function renderPost(post) {
       const tags = [
+        ...(post.hidden ? [{ text: "hidden", hidden: true }] : []),
         ...(post.mood ? [{ text: `mood: ${post.mood}`, color: null }] : []),
         ...(post.place ? [{ text: `place: ${post.place}`, color: null }] : []),
         ...(post.collections || []).map((name) => ({ text: `collection: ${name}`, color: collectionColor(name) })),
@@ -1964,7 +2397,7 @@
           </div>
           <div class="post-content">
             <div class="post-body">${renderMarkdown(post.body)}</div>
-            ${tags.length ? `<div class="tags">${tags.map((t) => t.color ? `<span class="tag"><span class="tag-dot" style="background:${t.color}"></span>${escapeHtml(t.text)}</span>` : `<span class="tag">${escapeHtml(t.text)}</span>`).join("")}</div>` : ""}
+            ${tags.length ? `<div class="tags">${tags.map((t) => t.color ? `<span class="tag"><span class="tag-dot" style="background:${t.color}"></span>${escapeHtml(t.text)}</span>` : `<span class="tag${t.hidden ? " tag-hidden" : ""}">${escapeHtml(t.text)}</span>`).join("")}</div>` : ""}
           </div>
         </article>
       `;
@@ -1977,6 +2410,12 @@
         ? `Posts · ${posts.length} of ${state.posts.length}`
         : "Posts";
       $("clearFilters").classList.toggle("hidden", !isFiltered);
+      const dot = $("findActiveDot");
+      if (dot) dot.style.display = isFiltered ? "inline-block" : "none";
+      if (isFiltered && $("findBox") && $("findBox").classList.contains("collapsed")) {
+        $("findBox").classList.remove("collapsed");
+        $("findBoxTitle").setAttribute("aria-expanded", "true");
+      }
       $("postList").innerHTML = posts.length
         ? posts.map(renderPost).join("")
         : '<div class="empty">No thoughts found. Write one.</div>';
@@ -2156,6 +2595,7 @@
       $("bodyInput").value = "";
       $("pinnedInput").checked = false;
       $("rssInput").checked = false;
+      $("hiddenInput").checked = false;
       $("editorTitle").textContent = "Write Post";
       $("editorStatus").textContent = "";
       $("cancelEdit").classList.add("hidden");
@@ -2175,6 +2615,7 @@
       $("bodyInput").value = post.body;
       $("pinnedInput").checked = Boolean(post.pinned);
       $("rssInput").checked = Boolean(post.rssPublic);
+      $("hiddenInput").checked = Boolean(post.hidden);
       $("editorTitle").textContent = "Edit Post";
       $("editorStatus").textContent = `created ${formatDate(post.createdAt)}`;
       $("cancelEdit").classList.remove("hidden");
@@ -2285,14 +2726,19 @@
     }
 
     function renderTools() {
-      const sharedCount = state.posts.filter((post) => post.rssPublic).length;
+      $("tabTitleInput").value = localStorage.getItem(TAB_TITLE_KEY) || "";
+      const sharedCount = state.posts.filter((post) => post.rssPublic && !post.hidden).length;
       const feedUrl = getFeedUrl();
       $("publicRssUrl").value = feedUrl;
-      $("rssStatus").textContent = feedUrl ? `${sharedCount} shared and synced on save` : `${sharedCount} shared`;
-      $("rssOutput").value = buildRss();
+      $("rssStatus").textContent = feedUrl ? `${sharedCount} post${sharedCount === 1 ? "" : "s"} shared` : "";
       $("subscriptionsList").innerHTML = state.subscriptions.length
-        ? state.subscriptions.map((item) => `<div><a href="/feed/${encodeURIComponent(item.feedId)}.xml" target="_blank" rel="noopener">${escapeHtml(item.feedId)}</a></div>`).join("")
-        : "No subscriptions yet.";
+        ? state.subscriptions.map((item) => {
+            const label = item.authorFirstName || item.authorLastName
+              ? `${escapeHtml([item.authorFirstName, item.authorLastName].filter(Boolean).join(" "))}`
+              : escapeHtml(item.feedId);
+            return `<div style="padding:4px 0"><a href="/feed/${encodeURIComponent(item.feedId)}.xml" target="_blank" rel="noopener">${label}</a></div>`;
+          }).join("")
+        : "No subscriptions yet. Paste a feed link above to follow a writer.";
     }
 
     function renderAll() {
@@ -2301,6 +2747,7 @@
       if (state.view === "timelineView") renderTimeline();
       if (state.view === "collectionsView") renderCollections();
       if (state.view === "toolsView") renderTools();
+      if (state.view === "readingView") renderReading();
     }
 
     function bindEvents() {
@@ -2319,7 +2766,13 @@
         event.preventDefault();
         $("signupStatus").textContent = "creating...";
         try {
-          await signUp($("signupEmail").value, $("signupPassword").value, $("signupPasswordAgain").value);
+          await signUp(
+            $("signupFirstName").value.trim(),
+            $("signupLastName").value.trim(),
+            $("signupEmail").value,
+            $("signupPassword").value,
+            $("signupPasswordAgain").value
+          );
           $("signupStatus").textContent = "";
         } catch (error) {
           $("signupStatus").textContent = error.message;
@@ -2330,6 +2783,28 @@
         button.addEventListener("click", () => setAuthMode(button.dataset.authMode));
       });
 
+      $("lockButton").addEventListener("click", lockScreen);
+      $("lockUnlockForm").addEventListener("submit", (e) => {
+        e.preventDefault();
+        const pw = $("lockPasswordInput").value;
+        if (pw) tryUnlockWithPassword(pw);
+      });
+      $("lockForgotButton").addEventListener("click", showLockRecoverSection);
+      $("lockRecoverBackButton").addEventListener("click", showLockPasswordSection);
+      $("lockSignOutButton").addEventListener("click", () => {
+        if (confirm("Sign out of this device?\n\nYour encrypted archive stays on the server — you can sign back in any time.")) {
+          logout();
+        }
+      });
+      $("lockRecoverForm").addEventListener("submit", (e) => {
+        e.preventDefault();
+        tryLockScreenRecover(
+          $("lockRecoverKey").value,
+          $("lockRecoverPassword").value,
+          $("lockRecoverPasswordAgain").value
+        );
+      });
+      $("blurOverlay").addEventListener("click", clearTabBlur);
       $("logoutButton").addEventListener("click", logout);
       $("themeButton").addEventListener("click", () => {
         applyTheme(document.documentElement.dataset.theme === "dark" ? "light" : "dark");
@@ -2392,6 +2867,7 @@
       });
 
       document.addEventListener("keydown", (event) => {
+        if (state.locked) return;
         const inInput = ["INPUT", "TEXTAREA", "SELECT"].includes(event.target.tagName);
         if (event.key === "Escape") {
           if (!$("shortcutsOverlay").classList.contains("hidden")) { toggleShortcuts(); return; }
@@ -2419,6 +2895,18 @@
         clearEditor();
         setView("editorView");
         $("titleInput").focus();
+      });
+
+      // Collapsible Find box
+      const findBox = $("findBox");
+      const findTitle = $("findBoxTitle");
+      function toggleFind() {
+        const collapsed = findBox.classList.toggle("collapsed");
+        findTitle.setAttribute("aria-expanded", collapsed ? "false" : "true");
+      }
+      findTitle.addEventListener("click", toggleFind);
+      findTitle.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggleFind(); }
       });
 
       $("clearFilters").addEventListener("click", () => {
@@ -2460,7 +2948,8 @@
           collections,
           series: $("seriesInput").value.trim(),
           pinned: $("pinnedInput").checked,
-          rssPublic: $("rssInput").checked,
+          rssPublic: $("rssInput").checked && !$("hiddenInput").checked,
+          hidden: $("hiddenInput").checked,
           favourite: existing?.favourite || false,
           createdAt: existing?.createdAt || now,
           updatedAt: existing ? now : now
@@ -2544,6 +3033,12 @@
 
       $("randomPostButton").addEventListener("click", randomPost);
 
+      $("toggleHiddenButton").addEventListener("click", () => {
+        state.showHidden = !state.showHidden;
+        $("toggleHiddenButton").textContent = state.showHidden ? "Hide hidden" : "Show hidden";
+        renderPosts();
+      });
+
       $("restoreDraft").addEventListener("click", () => {
         try {
           const draft = JSON.parse(localStorage.getItem(DRAFT_KEY) || "{}");
@@ -2560,7 +3055,15 @@
 
       $("discardDraft").addEventListener("click", clearDraft);
 
-      setInterval(saveDraft, 8000);
+      // Save draft immediately on any edit, debounced to avoid hammering localStorage
+      let draftSaveTimer = null;
+      ["titleInput", "bodyInput", "moodInput", "placeInput", "collectionsInput", "seriesInput"].forEach((id) => {
+        $(id).addEventListener("input", () => {
+          clearTimeout(draftSaveTimer);
+          draftSaveTimer = setTimeout(saveDraft, 1000);
+        });
+      });
+      window.addEventListener("beforeunload", saveDraft);
 
       $("downloadMarkdown").addEventListener("click", () => download("mind-archive.md", buildMarkdownExport(), "text/markdown"));
       $("downloadJson").addEventListener("click", () => download("mind-archive.json", JSON.stringify(state.posts, null, 2), "application/json"));
@@ -2571,33 +3074,57 @@
         try {
           await navigator.clipboard.writeText(value);
           $("copyRssUrl").textContent = "Copied";
-          setTimeout(() => $("copyRssUrl").textContent = "Copy feed URL", 1200);
+          setTimeout(() => $("copyRssUrl").textContent = "Copy link", 1200);
         } catch {
           $("publicRssUrl").select();
         }
       });
+      $("refreshReadingButton").addEventListener("click", () => {
+        state.readingLoaded = false;
+        renderReading();
+        loadReadingFeed().catch(() => {});
+      });
+
       $("subscribeFeedButton").addEventListener("click", async () => {
         $("subscribeStatus").textContent = "subscribing...";
         try {
           const result = await subscribeToFeed($("subscribeFeedInput").value);
           $("subscribeFeedInput").value = "";
-          $("subscribeStatus").textContent = result.emailConfigured
-            ? "subscribed"
-            : "subscribed; email sending needs server email config";
+          $("subscribeStatus").textContent = "following — posts will appear in your Reading tab";
         } catch (error) {
           $("subscribeStatus").textContent = error.message;
         }
       });
       $("printPdf").addEventListener("click", () => window.print());
 
-      $("copyRss").addEventListener("click", async () => {
-        try {
-          await navigator.clipboard.writeText(buildRss());
-          $("copyRss").textContent = "Copied";
-          setTimeout(() => $("copyRss").textContent = "Copy RSS", 1200);
-        } catch {
-          $("rssOutput").select();
+      $("saveTabTitle").addEventListener("click", () => {
+        const value = $("tabTitleInput").value.trim();
+        if (value) {
+          localStorage.setItem(TAB_TITLE_KEY, value);
+        } else {
+          localStorage.removeItem(TAB_TITLE_KEY);
         }
+        applyTabTitle();
+        $("tabTitleStatus").textContent = "saved";
+        setTimeout(() => { $("tabTitleStatus").textContent = ""; }, 1500);
+      });
+
+      // Auto-lock: check every 30s, trigger after 15 min inactivity
+      setInterval(() => {
+        if (state.currentUser && !state.locked && Date.now() - lastActivity > AUTO_LOCK_MS) {
+          lockScreen();
+        }
+      }, 30000);
+
+
+      // Reset inactivity timer on any user interaction
+      ["mousemove", "keydown", "click", "touchstart", "scroll"].forEach((evt) => {
+        document.addEventListener(evt, () => { lastActivity = Date.now(); }, { passive: true });
+      });
+
+      // Blur content when returning to tab (tab switch protection)
+      document.addEventListener("visibilitychange", () => {
+        if (!document.hidden && state.currentUser && !state.locked) applyTabBlur();
       });
 
       $("importFile").addEventListener("change", async (event) => {
@@ -2632,10 +3159,13 @@
     }
 
     applyTheme(getSavedTheme());
+    applyTabTitle();
     bindEvents();
     setAuthMode("signin");
     renderPreview();
-    showAuth();
+    tryRestoreSession()
+      .then((restored) => { if (!restored) showAuth(); })
+      .catch(() => showAuth());
   </script>
 </body>
 </html>
