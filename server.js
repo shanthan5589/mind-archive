@@ -1,125 +1,32 @@
 const crypto = require("crypto");
-const fsSync = require("fs");
 const fs = require("fs/promises");
 const http = require("http");
 const path = require("path");
-const { promisify } = require("util");
-const zlib = require("zlib");
 
-const ROOT = __dirname;
+const {
+  ROOT, PORT, SESSION_COOKIE, SESSION_SECRET,
+  configErrors, gzip, brotliCompress, pool,
+  PUBLIC_POST_LIMIT, PUBLIC_BODY_LIMIT, RESEND_API_KEY, EMAIL_FROM
+} = require("./lib/config");
+const { normalizeEmail, isValidEmail, escapeXml, escapeHtml, randomToken, hashLoginSecret } = require("./lib/utils");
+const {
+  getUser, createUser, ensureFeedId, updateUserVault, updateUserLogin, updateUserProfile,
+  getPublicFeed, setPublicPosts, getSubscriptions, getSubscribedPosts,
+  subscribeToFeed, unsubscribeByToken, parseFeedId
+} = require("./lib/db");
+const { notifyFeedSubscribers, scheduleEmailQueue, processEmailQueue } = require("./lib/email");
 
-function loadEnvFile(filePath = path.join(ROOT, ".env")) {
-  if (!fsSync.existsSync(filePath)) return;
-  const lines = fsSync.readFileSync(filePath, "utf8").split(/\r?\n/);
-  for (const line of lines) {
-    const trimmed = line.trim();
-    if (!trimmed || trimmed.startsWith("#")) continue;
-    const index = trimmed.indexOf("=");
-    if (index === -1) continue;
-    const key = trimmed.slice(0, index).trim();
-    let value = trimmed.slice(index + 1).trim();
-    if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
-      value = value.slice(1, -1);
-    }
-    if (key && process.env[key] === undefined) {
-      process.env[key] = value;
-    }
-  }
-}
-
-loadEnvFile();
-
-const PORT = Number(process.env.PORT || 3000);
-const DATA_DIR = process.env.DATA_DIR || path.join(ROOT, "data");
-const USERS_FILE = path.join(DATA_DIR, "users.json");
-const PUBLIC_POSTS_FILE = path.join(DATA_DIR, "public-posts.json");
-const SUBSCRIPTIONS_FILE = path.join(DATA_DIR, "subscriptions.json");
-const EMAIL_DELIVERIES_FILE = path.join(DATA_DIR, "email-deliveries.json");
-const DB_TABLES = {
-  users: "mind_archive_users",
-  feedSubscriptions: "mind_archive_feed_subscriptions",
-  publicPosts: "mind_archive_public_posts",
-  emailDeliveries: "mind_archive_email_deliveries"
-};
-const SESSION_COOKIE = "mind_archive_session";
-const SESSION_SECRET = process.env.SESSION_SECRET || "dev-only-change-this-session-secret";
-const DATABASE_URL = process.env.DATABASE_URL || "";
-const RESEND_API_KEY = process.env.RESEND_API_KEY || "";
-const EMAIL_FROM = process.env.EMAIL_FROM || "";
-const APP_URL = String(process.env.APP_URL || "").replace(/\/$/, "");
-const IS_PRODUCTION = process.env.NODE_ENV === "production";
-const gzip = promisify(zlib.gzip);
-const brotliCompress = promisify(zlib.brotliCompress);
-let pool = null;
-let indexCache = null;
-const feedXmlCache = new Map();
-const sessionCache = new Map(); // token_tail -> { email, user, expiresAt }
-let emailQueueRunning = false;
-let emailQueueScheduled = false;
-const configErrors = [];
-
-if (IS_PRODUCTION && (!process.env.SESSION_SECRET || SESSION_SECRET.length < 32)) {
-  configErrors.push("SESSION_SECRET must be set to at least 32 characters in production.");
-}
-
-if (IS_PRODUCTION && !DATABASE_URL) {
-  configErrors.push("DATABASE_URL must be set in production.");
-}
-
-if (IS_PRODUCTION && (!RESEND_API_KEY || !EMAIL_FROM)) {
-  configErrors.push("RESEND_API_KEY and EMAIL_FROM must be set in production for subscriber emails.");
-}
-
-if (IS_PRODUCTION && RESEND_API_KEY && EMAIL_FROM && !APP_URL) {
-  configErrors.push("APP_URL must be set in production for email links.");
-}
-
-if (DATABASE_URL) {
-  const { Pool } = require("pg");
-  pool = new Pool({
-    connectionString: DATABASE_URL,
-    ssl: process.env.PGSSLMODE === "disable" ? false : { rejectUnauthorized: false },
-    max: 5,
-    idleTimeoutMillis: 15000,
-    connectionTimeoutMillis: 5000
-  });
-  pool.on("error", (err) => console.error("Idle pool client error:", err));
-}
-
-const rateBuckets = new Map();
 const RATE_LIMITS = {
   auth: { windowMs: 15 * 60 * 1000, max: 20 },
   write: { windowMs: 60 * 1000, max: 60 },
   general: { windowMs: 60 * 1000, max: 180 }
 };
-const PUBLIC_POST_LIMIT = 50;
-const PUBLIC_BODY_LIMIT = 50000;
 
-function normalizeEmail(value) {
-  return String(value || "").trim().toLowerCase();
-}
+const rateBuckets = new Map();
+const sessionCache = new Map();
+const feedXmlCache = new Map();
 
-function isValidEmail(value) {
-  return value.length <= 254 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
-}
-
-function escapeXml(value) {
-  return String(value || "")
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&apos;");
-}
-
-function escapeHtml(value) {
-  return String(value || "")
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
-}
+// --- HTTP helpers ---
 
 function securityHeaders(extra = {}) {
   return {
@@ -150,6 +57,51 @@ function acceptsEncoding(req, encoding) {
     .some((part) => part.trim().toLowerCase().split(";")[0] === encoding);
 }
 
+function getClientIp(req) {
+  const forwarded = String(req.headers["x-forwarded-for"] || "").split(",")[0].trim();
+  return forwarded || req.socket.remoteAddress || "unknown";
+}
+
+// --- Rate limiting ---
+
+function limitKind(req, pathname) {
+  if (pathname === "/api/signup" || pathname === "/api/signin" || pathname === "/api/user-salt") return "auth";
+  if (req.method === "PUT" && (pathname === "/api/vault" || pathname === "/api/public-feed")) return "write";
+  return "general";
+}
+
+function checkRateLimit(req, pathname) {
+  const kind = limitKind(req, pathname);
+  const config = RATE_LIMITS[kind];
+  const key = `${kind}:${getClientIp(req)}`;
+  const now = Date.now();
+  const bucket = rateBuckets.get(key);
+
+  if (!bucket || now > bucket.resetAt) {
+    rateBuckets.set(key, { count: 1, resetAt: now + config.windowMs });
+    return { ok: true };
+  }
+
+  bucket.count += 1;
+  if (bucket.count <= config.max) return { ok: true };
+
+  return { ok: false, retryAfter: Math.ceil((bucket.resetAt - now) / 1000) };
+}
+
+function cleanRateBuckets() {
+  const now = Date.now();
+  for (const [key, bucket] of rateBuckets.entries()) {
+    if (now > bucket.resetAt) rateBuckets.delete(key);
+  }
+  for (const [key, entry] of sessionCache.entries()) {
+    if (now > entry.expiresAt) sessionCache.delete(key);
+  }
+}
+
+// --- Static asset serving ---
+
+let indexCache = null;
+
 async function getIndexAsset() {
   const filePath = path.join(ROOT, "index.html");
   const resolved = path.resolve(filePath);
@@ -173,9 +125,7 @@ async function getIndexAsset() {
   const body = await fs.readFile(resolved);
   indexCache = {
     body,
-    br: await brotliCompress(body, {
-      params: { [zlib.constants.BROTLI_PARAM_QUALITY]: 5 }
-    }),
+    br: await brotliCompress(body, { params: { [require("zlib").constants.BROTLI_PARAM_QUALITY]: 5 } }),
     gzip: await gzip(body, { level: 6 }),
     etag: `W/"${stat.size.toString(16)}-${Math.floor(stat.mtimeMs).toString(16)}"`,
     mtimeMs: stat.mtimeMs,
@@ -184,579 +134,46 @@ async function getIndexAsset() {
   return indexCache;
 }
 
-function getClientIp(req) {
-  const forwarded = String(req.headers["x-forwarded-for"] || "").split(",")[0].trim();
-  return forwarded || req.socket.remoteAddress || "unknown";
-}
-
-function limitKind(req, pathname) {
-  if (pathname === "/api/signup" || pathname === "/api/signin" || pathname === "/api/user-salt") return "auth";
-  if (req.method === "PUT" && (pathname === "/api/vault" || pathname === "/api/public-feed")) return "write";
-  return "general";
-}
-
-function checkRateLimit(req, pathname) {
-  const kind = limitKind(req, pathname);
-  const config = RATE_LIMITS[kind];
-  const key = `${kind}:${getClientIp(req)}`;
-  const now = Date.now();
-  const bucket = rateBuckets.get(key);
-
-  if (!bucket || now > bucket.resetAt) {
-    rateBuckets.set(key, { count: 1, resetAt: now + config.windowMs });
-    return { ok: true };
-  }
-
-  bucket.count += 1;
-  if (bucket.count <= config.max) return { ok: true };
-
-  return {
-    ok: false,
-    retryAfter: Math.ceil((bucket.resetAt - now) / 1000)
-  };
-}
-
-function cleanRateBuckets() {
-  const now = Date.now();
-  for (const [key, bucket] of rateBuckets.entries()) {
-    if (now > bucket.resetAt) rateBuckets.delete(key);
-  }
-  for (const [key, entry] of sessionCache.entries()) {
-    if (now > entry.expiresAt) sessionCache.delete(key);
-  }
-}
-
-let ensureDataPromise = null;
-async function ensureData() {
-  if (ensureDataPromise) return ensureDataPromise;
-  ensureDataPromise = _ensureData();
-  return ensureDataPromise;
-}
-
-async function _ensureData() {
-  if (pool) {
-    await pool.query(`
-      create table if not exists ${DB_TABLES.users} (
-        email text primary key,
-        login_salt text not null,
-        login_hash text not null,
-        client_salt text not null,
-        recovery_salt text,
-        wrapped_key jsonb,
-        recovery_wrapped_key jsonb,
-        vault jsonb not null,
-        feed_id text unique,
-        public_feed jsonb,
-        created_at timestamptz not null default now(),
-        updated_at timestamptz not null default now()
-      )
-    `);
-    await pool.query(`alter table ${DB_TABLES.users} add column if not exists feed_id text unique`);
-    await pool.query(`alter table ${DB_TABLES.users} add column if not exists public_feed jsonb`);
-    await pool.query(`alter table ${DB_TABLES.users} add column if not exists first_name text`);
-    await pool.query(`alter table ${DB_TABLES.users} add column if not exists last_name text`);
-    await pool.query(`
-      create table if not exists ${DB_TABLES.feedSubscriptions} (
-        feed_id text not null references ${DB_TABLES.users}(feed_id) on delete cascade,
-        subscriber_email text not null references ${DB_TABLES.users}(email) on delete cascade,
-        unsubscribe_token text unique,
-        created_at timestamptz not null default now(),
-        primary key (feed_id, subscriber_email)
-      )
-    `);
-    await pool.query(`alter table ${DB_TABLES.feedSubscriptions} add column if not exists unsubscribe_token text unique`);
-    await pool.query(`
-      create table if not exists ${DB_TABLES.publicPosts} (
-        feed_id text not null references ${DB_TABLES.users}(feed_id) on delete cascade,
-        post_id text not null,
-        title text not null,
-        body text not null,
-        mood text,
-        place text,
-        collections jsonb not null default '[]'::jsonb,
-        series text,
-        created_at timestamptz not null,
-        updated_at timestamptz not null,
-        synced_at timestamptz not null default now(),
-        primary key (feed_id, post_id)
-      )
-    `);
-    await pool.query(`
-      create table if not exists ${DB_TABLES.emailDeliveries} (
-        feed_id text not null,
-        post_id text not null,
-        subscriber_email text not null,
-        status text not null,
-        provider_id text,
-        error text,
-        created_at timestamptz not null default now(),
-        updated_at timestamptz not null default now(),
-        primary key (feed_id, post_id, subscriber_email)
-      )
-    `);
-    await pool.query(`create index if not exists idx_public_posts_feed_id on ${DB_TABLES.publicPosts}(feed_id)`);
-    await pool.query(`create index if not exists idx_subscriptions_feed_id on ${DB_TABLES.feedSubscriptions}(feed_id)`);
-    await pool.query(`create index if not exists idx_subscriptions_subscriber on ${DB_TABLES.feedSubscriptions}(subscriber_email)`);
-    await pool.query(`create index if not exists idx_users_feed_id on ${DB_TABLES.users}(feed_id)`);
-    await pool.query(`create index if not exists idx_email_deliveries_status on ${DB_TABLES.emailDeliveries}(status) where status = 'pending'`);
+async function serveStatic(req, res) {
+  if (req.method !== "GET" && req.method !== "HEAD") {
+    text(res, 405, "Method not allowed");
     return;
   }
-
-  await fs.mkdir(DATA_DIR, { recursive: true });
-  for (const file of [USERS_FILE, PUBLIC_POSTS_FILE, SUBSCRIPTIONS_FILE, EMAIL_DELIVERIES_FILE]) {
-    try {
-      await fs.access(file);
-    } catch {
-      await fs.writeFile(file, "{}\n", "utf8");
-    }
-  }
-}
-
-async function loadJsonFile(file, fallback = {}) {
-  await ensureData();
   try {
-    const raw = await fs.readFile(file, "utf8");
-    const parsed = JSON.parse(raw || "{}");
-    return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : {};
-  } catch {
-    return fallback;
-  }
-}
+    const asset = await getIndexAsset();
+    const baseHeaders = {
+      "content-type": "text/html; charset=utf-8",
+      "cache-control": "public, max-age=0, must-revalidate",
+      "etag": asset.etag,
+      "vary": "Accept-Encoding"
+    };
 
-async function saveJsonFile(file, value) {
-  await ensureData();
-  await fs.writeFile(file, `${JSON.stringify(value, null, 2)}\n`, "utf8");
-}
-
-async function loadUsers() {
-  return loadJsonFile(USERS_FILE);
-}
-
-async function saveUsers(users) {
-  await saveJsonFile(USERS_FILE, users);
-}
-
-async function loadPublicPosts() {
-  return loadJsonFile(PUBLIC_POSTS_FILE);
-}
-
-async function savePublicPosts(posts) {
-  await saveJsonFile(PUBLIC_POSTS_FILE, posts);
-}
-
-async function loadSubscriptionsStore() {
-  return loadJsonFile(SUBSCRIPTIONS_FILE);
-}
-
-async function saveSubscriptionsStore(subscriptions) {
-  await saveJsonFile(SUBSCRIPTIONS_FILE, subscriptions);
-}
-
-async function loadDeliveries() {
-  return loadJsonFile(EMAIL_DELIVERIES_FILE);
-}
-
-async function saveDeliveries(deliveries) {
-  await saveJsonFile(EMAIL_DELIVERIES_FILE, deliveries);
-}
-
-function parseFeedId(value) {
-  const raw = String(value || "").trim();
-  if (!raw) return "";
-  const direct = raw.match(/^[A-Za-z0-9_-]+$/);
-  if (direct) return raw;
-  try {
-    const url = new URL(raw, "http://localhost");
-    const match = url.pathname.match(/^\/feed\/([A-Za-z0-9_-]+)\.xml$/);
-    return match ? match[1] : "";
-  } catch {
-    return "";
-  }
-}
-
-function rowToUser(row) {
-  if (!row) return null;
-  return {
-    loginSalt: row.login_salt,
-    loginHash: row.login_hash,
-    clientSalt: row.client_salt,
-    recoverySalt: row.recovery_salt,
-    wrappedKey: typeof row.wrapped_key === "string" ? JSON.parse(row.wrapped_key) : row.wrapped_key,
-    recoveryWrappedKey: typeof row.recovery_wrapped_key === "string" ? JSON.parse(row.recovery_wrapped_key) : row.recovery_wrapped_key,
-    vault: typeof row.vault === "string" ? JSON.parse(row.vault) : row.vault,
-    feedId: row.feed_id || "",
-    firstName: row.first_name || "",
-    lastName: row.last_name || "",
-    publicFeed: typeof row.public_feed === "string" ? JSON.parse(row.public_feed) : row.public_feed,
-    createdAt: row.created_at,
-    updatedAt: row.updated_at
-  };
-}
-
-async function getUser(email) {
-  await ensureData();
-  if (pool) {
-    const result = await pool.query(`select * from ${DB_TABLES.users} where email = $1`, [email]);
-    return rowToUser(result.rows[0]);
-  }
-
-  const users = await loadUsers();
-  return users[email] || null;
-}
-
-async function createUser(email, user) {
-  await ensureData();
-  if (pool) {
-    try {
-      await pool.query(
-        `insert into ${DB_TABLES.users} (email, login_salt, login_hash, client_salt, recovery_salt, wrapped_key, recovery_wrapped_key, vault, feed_id, first_name, last_name)
-         values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
-        [
-          email,
-          user.loginSalt,
-          user.loginHash,
-          user.clientSalt,
-          user.recoverySalt || null,
-          user.wrappedKey ? JSON.stringify(user.wrappedKey) : null,
-          user.recoveryWrappedKey ? JSON.stringify(user.recoveryWrappedKey) : null,
-          JSON.stringify(user.vault),
-          user.feedId,
-          user.firstName || null,
-          user.lastName || null
-        ]
-      );
-    } catch (error) {
-      if (error.code === "23505") error.code = "USER_EXISTS";
-      throw error;
+    if (req.headers["if-none-match"] === asset.etag) {
+      res.writeHead(304, securityHeaders(baseHeaders));
+      res.end();
+      return;
     }
-    return;
-  }
 
-  const users = await loadUsers();
-  if (users[email]) {
-    const error = new Error("User already exists.");
-    error.code = "USER_EXISTS";
-    throw error;
-  }
-  users[email] = user;
-  await saveUsers(users);
-}
-
-async function ensureFeedId(email, user) {
-  if (user.feedId) return user.feedId;
-  const feedId = randomToken(16);
-
-  if (pool) {
-    await pool.query(`update ${DB_TABLES.users} set feed_id = $2, updated_at = now() where email = $1`, [email, feedId]);
-    user.feedId = feedId;
-    return feedId;
-  }
-
-  const users = await loadUsers();
-  if (!users[email]) return "";
-  users[email].feedId = feedId;
-  users[email].updatedAt = new Date().toISOString();
-  await saveUsers(users);
-  user.feedId = feedId;
-  return feedId;
-}
-
-async function updateUserVault(email, vault) {
-  await ensureData();
-  if (pool) {
-    const result = await pool.query(
-      `update ${DB_TABLES.users} set vault = $2, updated_at = now() where email = $1`,
-      [email, JSON.stringify(vault)]
-    );
-    return result.rowCount > 0;
-  }
-
-  const users = await loadUsers();
-  if (!users[email]) return false;
-  users[email].vault = vault;
-  users[email].updatedAt = new Date().toISOString();
-  await saveUsers(users);
-  return true;
-}
-
-async function getPublicPosts(feedId) {
-  await ensureData();
-  if (pool) {
-    const result = await pool.query(
-      `select post_id, title, body, mood, place, collections, series, created_at, updated_at
-       from ${DB_TABLES.publicPosts}
-       where feed_id = $1
-       order by created_at desc
-       limit $2`,
-      [feedId, PUBLIC_POST_LIMIT]
-    );
-    if (!result.rows.length) {
-      const legacy = await pool.query(`select public_feed from ${DB_TABLES.users} where feed_id = $1`, [feedId]);
-      const publicFeed = typeof legacy.rows[0]?.public_feed === "string" ? JSON.parse(legacy.rows[0].public_feed) : legacy.rows[0]?.public_feed;
-      return Array.isArray(publicFeed?.posts) ? publicFeed.posts.slice(0, PUBLIC_POST_LIMIT) : [];
+    const headers = { ...baseHeaders };
+    let body = asset.body;
+    if (acceptsEncoding(req, "br")) {
+      body = asset.br;
+      headers["content-encoding"] = "br";
+    } else if (acceptsEncoding(req, "gzip")) {
+      body = asset.gzip;
+      headers["content-encoding"] = "gzip";
     }
-    return result.rows.map((row) => ({
-      id: row.post_id,
-      title: row.title,
-      body: row.body,
-      mood: row.mood || "",
-      place: row.place || "",
-      collections: typeof row.collections === "string" ? JSON.parse(row.collections) : row.collections || [],
-      series: row.series || "",
-      createdAt: row.created_at,
-      updatedAt: row.updated_at
-    }));
-  }
+    headers["content-length"] = String(body.length);
 
-  const store = await loadPublicPosts();
-  const posts = Array.isArray(store[feedId]) ? store[feedId] : [];
-  if (!posts.length) {
-    const users = await loadUsers();
-    const entry = Object.values(users).find((user) => user && user.feedId === feedId);
-    if (Array.isArray(entry?.publicFeed?.posts)) {
-      return entry.publicFeed.posts.slice(0, PUBLIC_POST_LIMIT);
-    }
+    res.writeHead(200, securityHeaders(headers));
+    if (req.method === "HEAD") { res.end(); return; }
+    res.end(body);
+  } catch (error) {
+    text(res, error.statusCode || 404, error.message || "Not found");
   }
-  return posts
-    .slice()
-    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-    .slice(0, PUBLIC_POST_LIMIT);
 }
 
-async function getFeedOwner(feedId) {
-  await ensureData();
-  if (pool) {
-    const result = await pool.query(`select email, feed_id, first_name, last_name from ${DB_TABLES.users} where feed_id = $1`, [feedId]);
-    const row = result.rows[0];
-    return row ? { ownerEmail: row.email, feedId: row.feed_id, firstName: row.first_name || "", lastName: row.last_name || "" } : null;
-  }
-
-  const users = await loadUsers();
-  const entry = Object.entries(users).find(([, item]) => item && item.feedId === feedId);
-  return entry ? { ownerEmail: entry[0], feedId, firstName: entry[1].firstName || "", lastName: entry[1].lastName || "" } : null;
-}
-
-async function setPublicPosts(email, feedId, posts) {
-  await ensureData();
-  feedXmlCache.delete(feedId);
-
-  if (pool) {
-    const existingRows = await pool.query(`select post_id from ${DB_TABLES.publicPosts} where feed_id = $1`, [feedId]);
-    const previousIds = new Set(existingRows.rows.map((r) => r.post_id));
-    await pool.query("begin");
-    try {
-      const currentIds = posts.map((post) => post.id);
-      if (currentIds.length) {
-        await pool.query(`delete from ${DB_TABLES.publicPosts} where feed_id = $1 and not (post_id = any($2))`, [feedId, currentIds]);
-      } else {
-        await pool.query(`delete from ${DB_TABLES.publicPosts} where feed_id = $1`, [feedId]);
-      }
-      if (posts.length > 0) {
-        const placeholders = posts.map((_, i) => {
-          const b = i * 10;
-          return `($${b+1},$${b+2},$${b+3},$${b+4},$${b+5},$${b+6},$${b+7},$${b+8},$${b+9},$${b+10},now())`;
-        });
-        const values = posts.flatMap((post) => [
-          feedId, post.id, post.title, post.body,
-          post.mood || null, post.place || null,
-          JSON.stringify(post.collections || []),
-          post.series || null, post.createdAt, post.updatedAt
-        ]);
-        await pool.query(
-          `insert into ${DB_TABLES.publicPosts} (feed_id,post_id,title,body,mood,place,collections,series,created_at,updated_at,synced_at)
-           values ${placeholders.join(",")}
-           on conflict (feed_id,post_id) do update set
-             title=excluded.title, body=excluded.body, mood=excluded.mood, place=excluded.place,
-             collections=excluded.collections, series=excluded.series,
-             created_at=excluded.created_at, updated_at=excluded.updated_at, synced_at=now()`,
-          values
-        );
-      }
-      await pool.query(`update ${DB_TABLES.users} set updated_at = now() where email = $1`, [email]);
-      await pool.query("commit");
-    } catch (error) {
-      await pool.query("rollback");
-      throw error;
-    }
-    return posts.filter((post) => !previousIds.has(post.id));
-  }
-
-  const previousIds = new Set((await getPublicPosts(feedId)).map((post) => post.id));
-  const store = await loadPublicPosts();
-  store[feedId] = posts;
-  await savePublicPosts(store);
-  const users = await loadUsers();
-  if (users[email]) {
-    users[email].updatedAt = new Date().toISOString();
-    delete users[email].publicFeed;
-    await saveUsers(users);
-  }
-  return posts.filter((post) => !previousIds.has(post.id));
-}
-
-async function getPublicFeed(feedId) {
-  const owner = await getFeedOwner(feedId);
-  if (!owner) return null;
-  const posts = await getPublicPosts(feedId);
-  const updatedAt = posts.reduce((latest, post) => {
-    const time = new Date(post.updatedAt || post.createdAt).getTime();
-    return Number.isNaN(time) || time <= latest ? latest : time;
-  }, 0);
-  return {
-    ...owner,
-    publicFeed: {
-      updatedAt: updatedAt ? new Date(updatedAt).toISOString() : new Date().toISOString(),
-      posts
-    }
-  };
-}
-
-async function subscribeToFeed(subscriberEmail, feedId) {
-  const feed = await getPublicFeed(feedId);
-  if (!feed) {
-    const error = new Error("Feed not found.");
-    error.statusCode = 404;
-    throw error;
-  }
-
-  if (pool) {
-    const token = randomToken(18);
-    await pool.query(
-      `insert into ${DB_TABLES.feedSubscriptions} (feed_id, subscriber_email, unsubscribe_token)
-       values ($1, $2, $3)
-       on conflict (feed_id, subscriber_email) do update set
-         unsubscribe_token = coalesce(${DB_TABLES.feedSubscriptions}.unsubscribe_token, excluded.unsubscribe_token)`,
-      [feedId, subscriberEmail, token]
-    );
-    return feed;
-  }
-
-  const users = await loadUsers();
-  if (!users[subscriberEmail]) {
-    const error = new Error("Subscriber account not found.");
-    error.statusCode = 404;
-    throw error;
-  }
-  const subscriptions = await loadSubscriptionsStore();
-  subscriptions[subscriberEmail] = Array.isArray(subscriptions[subscriberEmail]) ? subscriptions[subscriberEmail] : [];
-  const existing = subscriptions[subscriberEmail].find((item) => (typeof item === "string" ? item : item.feedId) === feedId);
-  let changed = false;
-  if (!existing) {
-    subscriptions[subscriberEmail].push({ feedId, token: randomToken(18), createdAt: new Date().toISOString() });
-    changed = true;
-  } else if (typeof existing === "object" && !existing.token) {
-    existing.token = randomToken(18);
-    changed = true;
-  }
-  if (changed) await saveSubscriptionsStore(subscriptions);
-  return feed;
-}
-
-async function getSubscriptions(subscriberEmail) {
-  await ensureData();
-  if (pool) {
-    const result = await pool.query(
-      `select s.feed_id, s.created_at, u.first_name, u.last_name
-       from ${DB_TABLES.feedSubscriptions} s
-       join ${DB_TABLES.users} u on u.feed_id = s.feed_id
-       where s.subscriber_email = $1
-       order by s.created_at desc`,
-      [subscriberEmail]
-    );
-    return result.rows.map((row) => ({
-      feedId: row.feed_id,
-      createdAt: row.created_at,
-      authorFirstName: row.first_name || "",
-      authorLastName: row.last_name || ""
-    }));
-  }
-
-  const subscriptions = await loadSubscriptionsStore();
-  const users = await loadUsers();
-  return (Array.isArray(subscriptions[subscriberEmail]) ? subscriptions[subscriberEmail] : [])
-    .map((item) => {
-      const feedId = typeof item === "string" ? item : item.feedId;
-      const createdAt = typeof item === "object" ? item.createdAt || "" : "";
-      const ownerEntry = Object.entries(users).find(([, u]) => u && u.feedId === feedId);
-      return {
-        feedId,
-        createdAt,
-        authorFirstName: ownerEntry?.[1]?.firstName || "",
-        authorLastName: ownerEntry?.[1]?.lastName || ""
-      };
-    })
-    .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
-}
-
-async function getFeedSubscribers(feedId) {
-  await ensureData();
-  if (pool) {
-    const result = await pool.query(`select subscriber_email, unsubscribe_token from ${DB_TABLES.feedSubscriptions} where feed_id = $1`, [feedId]);
-    return result.rows.map((row) => ({ email: row.subscriber_email, token: row.unsubscribe_token || "" }));
-  }
-
-  const subscriptions = await loadSubscriptionsStore();
-  return Object.entries(subscriptions)
-    .filter(([, items]) => Array.isArray(items) && items.some((item) => (typeof item === "string" ? item : item.feedId) === feedId))
-    .map(([email, items]) => {
-      const item = items.find((entry) => (typeof entry === "string" ? entry : entry.feedId) === feedId);
-      return { email, token: typeof item === "object" ? item.token || "" : "" };
-    });
-}
-
-async function unsubscribeByToken(token) {
-  const cleanToken = String(token || "");
-  if (!cleanToken) return false;
-
-  if (pool) {
-    const result = await pool.query(`delete from ${DB_TABLES.feedSubscriptions} where unsubscribe_token = $1`, [cleanToken]);
-    return result.rowCount > 0;
-  }
-
-  const subscriptions = await loadSubscriptionsStore();
-  let changed = false;
-  for (const [email, items] of Object.entries(subscriptions)) {
-    if (!Array.isArray(items)) continue;
-    const nextItems = items.filter((item) => !(typeof item === "object" && item.token === cleanToken));
-    if (nextItems.length !== items.length) {
-      subscriptions[email] = nextItems;
-      changed = true;
-    }
-  }
-  if (changed) await saveSubscriptionsStore(subscriptions);
-  return changed;
-}
-
-async function updateUserLogin(email, loginSecret, wrappedKey) {
-  await ensureData();
-  const loginSalt = randomToken(18);
-  const loginHash = hashLoginSecret(loginSecret, loginSalt);
-
-  if (pool) {
-    const result = await pool.query(
-      `update ${DB_TABLES.users} set login_salt = $2, login_hash = $3, wrapped_key = $4, updated_at = now() where email = $1`,
-      [email, loginSalt, loginHash, JSON.stringify(wrappedKey)]
-    );
-    return result.rowCount > 0;
-  }
-
-  const users = await loadUsers();
-  if (!users[email]) return false;
-  users[email].loginSalt = loginSalt;
-  users[email].loginHash = loginHash;
-  users[email].wrappedKey = wrappedKey;
-  users[email].updatedAt = new Date().toISOString();
-  await saveUsers(users);
-  return true;
-}
-
-function hashLoginSecret(loginSecret, salt) {
-  return crypto.pbkdf2Sync(String(loginSecret), salt, 310000, 32, "sha256").toString("base64");
-}
-
-function randomToken(bytes = 32) {
-  return crypto.randomBytes(bytes).toString("base64url");
-}
+// --- Session helpers ---
 
 function parseCookies(req) {
   const header = req.headers.cookie || "";
@@ -812,6 +229,8 @@ function clearSessionHeaders() {
     "set-cookie": `${SESSION_COOKIE}=; HttpOnly; SameSite=Lax; Path=/; Max-Age=0`
   };
 }
+
+// --- Request / validation helpers ---
 
 async function readJson(req) {
   let body = "";
@@ -870,6 +289,33 @@ function normalizePublicPosts(posts) {
   });
 }
 
+// --- Auth middleware ---
+
+async function requireUser(req, res) {
+  const token = parseCookies(req)[SESSION_COOKIE];
+  const email = verifySessionToken(token);
+  if (!email) {
+    json(res, 401, { error: "Not signed in." });
+    return null;
+  }
+  const cacheKey = token.slice(-32);
+  const cached = sessionCache.get(cacheKey);
+  if (cached && cached.email === email && Date.now() < cached.expiresAt) {
+    return { email, user: cached.user };
+  }
+  const user = await getUser(email);
+  if (!user) {
+    json(res, 401, { error: "Session no longer exists." }, clearSessionHeaders());
+    sessionCache.delete(cacheKey);
+    return null;
+  }
+  await ensureFeedId(email, user);
+  sessionCache.set(cacheKey, { email, user, expiresAt: Date.now() + 2 * 60 * 1000 });
+  return { email, user };
+}
+
+// --- RSS feed rendering ---
+
 function renderPublicFeedXml(req, feedId, publicFeed, ownerName = "") {
   const origin = `${isHttps(req) ? "https" : "http"}://${req.headers.host || "localhost"}`;
   const feedUrl = `${origin}/feed/${encodeURIComponent(feedId)}.xml`;
@@ -898,324 +344,65 @@ function renderPublicFeedXml(req, feedId, publicFeed, ownerName = "") {
 </rss>`;
 }
 
-function publicPostEmail(feedId, post, unsubscribeToken = "") {
-  const title = post.title || "New thought";
-  const baseUrl = APP_URL || "";
-  const feedPath = `/feed/${feedId}.xml`;
-  const feedUrl = baseUrl ? `${baseUrl}${feedPath}` : feedPath;
-  const unsubscribePath = unsubscribeToken ? `/unsubscribe/${unsubscribeToken}` : "";
-  const unsubscribeUrl = unsubscribePath && baseUrl ? `${baseUrl}${unsubscribePath}` : unsubscribePath;
-  return {
-    subject: title,
-    text: `${title}\n\n${post.body}\n\nFeed: ${feedUrl}${unsubscribeUrl ? `\nUnsubscribe: ${unsubscribeUrl}` : ""}`,
-    html: `
-      <h1>${escapeHtml(title)}</h1>
-      <p style="white-space:pre-wrap">${escapeHtml(post.body)}</p>
-      <p><small>Feed: <a href="${escapeHtml(feedUrl)}">${escapeHtml(feedUrl)}</a></small></p>
-      ${unsubscribeUrl ? `<p><small><a href="${escapeHtml(unsubscribeUrl)}">Unsubscribe</a></small></p>` : ""}
-    `
-  };
-}
+// --- Request handlers ---
 
-async function createPendingDeliveries(feedId, posts, subscribers) {
-  if (!posts.length || !subscribers.length) return [];
-  if (!RESEND_API_KEY || !EMAIL_FROM) return [];
-  const entries = [];
-
-  if (pool) {
-    const placeholders = [];
-    const values = [];
-    posts.forEach((post) => {
-      subscribers.forEach((subscriber) => {
-        const b = values.length;
-        placeholders.push(`($${b+1},$${b+2},$${b+3},'pending')`);
-        values.push(feedId, post.id, subscriber.email);
-      });
-    });
-    const result = await pool.query(
-      `insert into ${DB_TABLES.emailDeliveries} (feed_id,post_id,subscriber_email,status)
-       values ${placeholders.join(",")}
-       on conflict do nothing
-       returning feed_id, post_id, subscriber_email`,
-      values
-    );
-    return result.rows.map((row) => ({ feedId: row.feed_id, postId: row.post_id, subscriberEmail: row.subscriber_email }));
-  }
-
-  const deliveries = await loadDeliveries();
-  for (const post of posts) {
-    for (const subscriber of subscribers) {
-      const key = `${feedId}:${post.id}:${subscriber.email}`;
-      if (!deliveries[key]) {
-        deliveries[key] = {
-          feedId,
-          postId: post.id,
-          subscriberEmail: subscriber.email,
-          status: "pending",
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        };
-        entries.push({ feedId, postId: post.id, subscriberEmail: subscriber.email });
-      }
-    }
-  }
-  await saveDeliveries(deliveries);
-  return entries;
-}
-
-async function getPendingDeliveries(limit = 100) {
-  if (!RESEND_API_KEY || !EMAIL_FROM) return [];
-
-  if (pool) {
-    const result = await pool.query(
-      `select d.feed_id, d.post_id, d.subscriber_email, s.unsubscribe_token,
-              p.title, p.body, p.mood, p.place, p.collections, p.series, p.created_at, p.updated_at
-       from ${DB_TABLES.emailDeliveries} d
-       join ${DB_TABLES.publicPosts} p on p.feed_id = d.feed_id and p.post_id = d.post_id
-       left join ${DB_TABLES.feedSubscriptions} s on s.feed_id = d.feed_id and s.subscriber_email = d.subscriber_email
-       where d.status = 'pending'
-       order by d.created_at
-       limit $1`,
-      [limit]
-    );
-    return result.rows.map((row) => ({
-      feedId: row.feed_id,
-      postId: row.post_id,
-      subscriberEmail: row.subscriber_email,
-      unsubscribeToken: row.unsubscribe_token || "",
-      post: {
-        id: row.post_id,
-        title: row.title,
-        body: row.body,
-        mood: row.mood || "",
-        place: row.place || "",
-        collections: typeof row.collections === "string" ? JSON.parse(row.collections) : row.collections || [],
-        series: row.series || "",
-        createdAt: row.created_at,
-        updatedAt: row.updated_at
-      }
-    }));
-  }
-
-  const deliveries = await loadDeliveries();
-  const publicPosts = await loadPublicPosts();
-  const subscriptions = await loadSubscriptionsStore();
-  const pending = [];
-  for (const delivery of Object.values(deliveries)) {
-    if (!delivery || delivery.status !== "pending") continue;
-    const post = (publicPosts[delivery.feedId] || []).find((item) => item.id === delivery.postId);
-    if (!post) continue;
-    const subscription = (subscriptions[delivery.subscriberEmail] || [])
-      .find((item) => (typeof item === "string" ? item : item.feedId) === delivery.feedId);
-    pending.push({
-      feedId: delivery.feedId,
-      postId: delivery.postId,
-      subscriberEmail: delivery.subscriberEmail,
-      unsubscribeToken: typeof subscription === "object" ? subscription.token || "" : "",
-      post
-    });
-    if (pending.length >= limit) break;
-  }
-  return pending;
-}
-
-async function recordDelivery(entry, status, details = {}) {
-  if (pool) {
-    await pool.query(
-      `update ${DB_TABLES.emailDeliveries}
-       set status = $4, provider_id = $5, error = $6, updated_at = now()
-       where feed_id = $1 and post_id = $2 and subscriber_email = $3`,
-      [entry.feedId, entry.postId, entry.subscriberEmail, status, details.providerId || null, details.error || null]
-    );
+async function handlePublicFeed(req, res, feedId) {
+  if (req.method !== "GET" && req.method !== "HEAD") {
+    text(res, 405, "Method not allowed");
     return;
   }
 
-  const deliveries = await loadDeliveries();
-  const key = `${entry.feedId}:${entry.postId}:${entry.subscriberEmail}`;
-  if (deliveries[key]) {
-    deliveries[key].status = status;
-    deliveries[key].providerId = details.providerId || "";
-    deliveries[key].error = details.error || "";
-    deliveries[key].updatedAt = new Date().toISOString();
-    await saveDeliveries(deliveries);
+  const record = await getPublicFeed(feedId);
+  if (!record) {
+    text(res, 404, "Feed not found");
+    return;
   }
-}
 
-async function sendDeliveryBatch(entries) {
-  if (!entries.length) return { sent: 0, skipped: 0, failed: 0 };
-
-  const payload = entries.map((entry) => {
-    const email = publicPostEmail(entry.feedId, entry.post, entry.unsubscribeToken);
-    return {
-      from: EMAIL_FROM,
-      to: [entry.subscriberEmail],
-      subject: email.subject,
-      text: email.text,
-      html: email.html,
-      headers: entry.unsubscribeToken && APP_URL ? {
-        "List-Unsubscribe": `<${APP_URL || ""}/unsubscribe/${entry.unsubscribeToken}>`
-      } : undefined
+  const cacheKey = `${isHttps(req) ? "https" : "http"}://${req.headers.host || "localhost"}:${feedId}`;
+  const updatedAt = record.publicFeed.updatedAt || "";
+  let cached = feedXmlCache.get(cacheKey);
+  if (!cached || cached.updatedAt !== updatedAt) {
+    const ownerName = [record.firstName || "", record.lastName || ""].filter(Boolean).join(" ");
+    const body = renderPublicFeedXml(req, feedId, record.publicFeed, ownerName);
+    cached = {
+      body,
+      etag: `W/"${crypto.createHash("sha256").update(body).digest("base64url").slice(0, 24)}"`,
+      updatedAt
     };
+    feedXmlCache.set(cacheKey, cached);
+  }
+
+  if (req.headers["if-none-match"] === cached.etag) {
+    res.writeHead(304, securityHeaders({ "cache-control": "public, max-age=60", etag: cached.etag }));
+    res.end();
+    return;
+  }
+
+  const headers = securityHeaders({
+    "content-type": "application/rss+xml; charset=utf-8",
+    "cache-control": "public, max-age=60",
+    etag: cached.etag,
+    "content-length": String(Buffer.byteLength(cached.body))
   });
-
-  const response = await fetch("https://api.resend.com/emails/batch", {
-    method: "POST",
-    headers: {
-      authorization: `Bearer ${RESEND_API_KEY}`,
-      "content-type": "application/json"
-    },
-    body: JSON.stringify(payload)
-  });
-
-  if (!response.ok) {
-    const error = await response.text().catch(() => "");
-    if (pool) {
-      const keys = entries.map((e) => [e.feedId, e.postId, e.subscriberEmail]);
-      await pool.query(
-        `update ${DB_TABLES.emailDeliveries} set status='failed', error=$1, updated_at=now()
-         where (feed_id,post_id,subscriber_email) in (${keys.map((_, i) => `($${i*3+2},$${i*3+3},$${i*3+4})`).join(",")})`,
-        [error, ...keys.flat()]
-      );
-    } else {
-      for (const entry of entries) await recordDelivery(entry, "failed", { error });
-    }
-    return { sent: 0, skipped: 0, failed: entries.length };
-  }
-
-  const body = await response.json().catch(() => ({}));
-  const ids = Array.isArray(body.data) ? body.data : [];
-  if (pool) {
-    for (let index = 0; index < entries.length; index += 1) {
-      await pool.query(
-        `update ${DB_TABLES.emailDeliveries} set status='sent', provider_id=$4, updated_at=now()
-         where feed_id=$1 and post_id=$2 and subscriber_email=$3`,
-        [entries[index].feedId, entries[index].postId, entries[index].subscriberEmail, ids[index]?.id || null]
-      );
-    }
-  } else {
-    for (let index = 0; index < entries.length; index += 1) {
-      await recordDelivery(entries[index], "sent", { providerId: ids[index]?.id || "" });
-    }
-  }
-  return { sent: entries.length, skipped: 0, failed: 0 };
+  res.writeHead(200, headers);
+  if (req.method === "HEAD") { res.end(); return; }
+  res.end(cached.body);
 }
 
-async function notifyFeedSubscribers(feedId, posts) {
-  if (!posts.length) return { attempted: 0, queued: 0, skipped: 0 };
-  const subscribers = await getFeedSubscribers(feedId);
-  if (!RESEND_API_KEY || !EMAIL_FROM) {
-    return { attempted: subscribers.length * posts.length, queued: 0, skipped: subscribers.length * posts.length };
+async function handleUnsubscribe(req, res, token) {
+  if (req.method !== "GET" && req.method !== "POST") {
+    text(res, 405, "Method not allowed");
+    return;
   }
-  const pending = await createPendingDeliveries(feedId, posts, subscribers);
-  scheduleEmailQueue();
-  return { attempted: subscribers.length * posts.length, queued: pending.length, skipped: 0 };
-}
-
-function scheduleEmailQueue(delayMs = 100) {
-  if (emailQueueScheduled || emailQueueRunning || !RESEND_API_KEY || !EMAIL_FROM) return;
-  emailQueueScheduled = true;
-  setTimeout(() => {
-    emailQueueScheduled = false;
-    processEmailQueue().catch(() => {});
-  }, delayMs).unref();
-}
-
-async function processEmailQueue() {
-  if (emailQueueRunning || !RESEND_API_KEY || !EMAIL_FROM) return;
-  emailQueueRunning = true;
-  try {
-    while (true) {
-      const entries = await getPendingDeliveries(100);
-      if (!entries.length) break;
-      await sendDeliveryBatch(entries);
-      if (entries.length < 100) break;
-    }
-  } finally {
-    emailQueueRunning = false;
-  }
-}
-
-async function getSubscribedPosts(subscriberEmail) {
-  await ensureData();
-  if (pool) {
-    const result = await pool.query(
-      `select p.feed_id, p.post_id, p.title, p.body, p.mood, p.place, p.collections, p.series, p.created_at, p.updated_at,
-              u.first_name, u.last_name
-       from ${DB_TABLES.feedSubscriptions} s
-       join ${DB_TABLES.publicPosts} p on p.feed_id = s.feed_id
-       join ${DB_TABLES.users} u on u.feed_id = s.feed_id
-       where s.subscriber_email = $1
-       order by p.created_at desc
-       limit 100`,
-      [subscriberEmail]
-    );
-    return result.rows.map((row) => ({
-      feedId: row.feed_id,
-      postId: row.post_id,
-      title: row.title,
-      body: row.body,
-      mood: row.mood || "",
-      place: row.place || "",
-      collections: typeof row.collections === "string" ? JSON.parse(row.collections) : row.collections || [],
-      series: row.series || "",
-      createdAt: row.created_at,
-      updatedAt: row.updated_at,
-      authorFirstName: row.first_name || "",
-      authorLastName: row.last_name || ""
-    }));
-  }
-
-  const subscriptions = await loadSubscriptionsStore();
-  const publicPosts = await loadPublicPosts();
-  const users = await loadUsers();
-  const userSubs = (Array.isArray(subscriptions[subscriberEmail]) ? subscriptions[subscriberEmail] : [])
-    .map((item) => (typeof item === "string" ? item : item.feedId));
-
-  const posts = [];
-  for (const feedId of userSubs) {
-    const feedPosts = Array.isArray(publicPosts[feedId]) ? publicPosts[feedId] : [];
-    const ownerEntry = Object.entries(users).find(([, u]) => u && u.feedId === feedId);
-    const authorFirstName = ownerEntry?.[1]?.firstName || "";
-    const authorLastName = ownerEntry?.[1]?.lastName || "";
-    for (const post of feedPosts) {
-      posts.push({ ...post, feedId, authorFirstName, authorLastName });
-    }
-  }
-  return posts.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).slice(0, 100);
-}
-
-async function requireUser(req, res) {
-  const token = parseCookies(req)[SESSION_COOKIE];
-  const email = verifySessionToken(token);
-  if (!email) {
-    json(res, 401, { error: "Not signed in." });
-    return null;
-  }
-  const cacheKey = token.slice(-32);
-  const cached = sessionCache.get(cacheKey);
-  if (cached && cached.email === email && Date.now() < cached.expiresAt) {
-    return { email, user: cached.user };
-  }
-  const user = await getUser(email);
-  if (!user) {
-    json(res, 401, { error: "Session no longer exists." }, clearSessionHeaders());
-    sessionCache.delete(cacheKey);
-    return null;
-  }
-  await ensureFeedId(email, user);
-  sessionCache.set(cacheKey, { email, user, expiresAt: Date.now() + 2 * 60 * 1000 });
-  return { email, user };
+  const removed = await unsubscribeByToken(token);
+  text(res, removed ? 200 : 404, removed ? "Unsubscribed." : "Subscription not found.");
 }
 
 async function handleApi(req, res, pathname) {
   try {
     if (configErrors.length) {
       const status = pathname === "/api/health" ? 503 : 500;
-      json(res, status, {
-        ok: false,
-        error: "Server is missing required production configuration.",
-        details: configErrors
-      });
+      json(res, status, { ok: false, error: "Server is missing required production configuration.", details: configErrors });
       return;
     }
 
@@ -1237,35 +424,17 @@ async function handleApi(req, res, pathname) {
       const firstName = String(body.firstName || "").trim().slice(0, 80);
       const lastName = String(body.lastName || "").trim().slice(0, 80);
 
-      if (!firstName) {
-        json(res, 400, { error: "First name is required." });
-        return;
-      }
-      if (!lastName) {
-        json(res, 400, { error: "Last name is required." });
-        return;
-      }
-      if (!isValidEmail(email)) {
-        json(res, 400, { error: "Enter a valid email address." });
-        return;
-      }
-      if (loginSecret.length < 32) {
-        json(res, 400, { error: "Missing login verifier." });
-        return;
-      }
-      if (!validateVault(body.vault)) {
-        json(res, 400, { error: "Missing encrypted vault." });
-        return;
-      }
+      if (!firstName) { json(res, 400, { error: "First name is required." }); return; }
+      if (!lastName) { json(res, 400, { error: "Last name is required." }); return; }
+      if (!isValidEmail(email)) { json(res, 400, { error: "Enter a valid email address." }); return; }
+      if (loginSecret.length < 32) { json(res, 400, { error: "Missing login verifier." }); return; }
+      if (!validateVault(body.vault)) { json(res, 400, { error: "Missing encrypted vault." }); return; }
       if (!validateWrappedKey(body.wrappedKey) || !validateWrappedKey(body.recoveryWrappedKey)) {
         json(res, 400, { error: "Missing recovery metadata." });
         return;
       }
 
-      if (await getUser(email)) {
-        json(res, 409, { error: "That email already has an archive." });
-        return;
-      }
+      if (await getUser(email)) { json(res, 409, { error: "That email already has an archive." }); return; }
 
       const loginSalt = randomToken(18);
       const user = {
@@ -1284,10 +453,7 @@ async function handleApi(req, res, pathname) {
       try {
         await createUser(email, user);
       } catch (error) {
-        if (error.code === "USER_EXISTS") {
-          json(res, 409, { error: "That email already has an archive." });
-          return;
-        }
+        if (error.code === "USER_EXISTS") { json(res, 409, { error: "That email already has an archive." }); return; }
         throw error;
       }
 
@@ -1310,10 +476,7 @@ async function handleApi(req, res, pathname) {
       const url = new URL(req.url, `http://${req.headers.host || "localhost"}`);
       const email = normalizeEmail(url.searchParams.get("email"));
       const user = email ? await getUser(email) : null;
-      if (!user) {
-        json(res, 404, { error: "Wrong email or password." });
-        return;
-      }
+      if (!user) { json(res, 404, { error: "Wrong email or password." }); return; }
       json(res, 200, {
         clientSalt: user.clientSalt,
         recoverySalt: user.recoverySalt || "",
@@ -1355,10 +518,7 @@ async function handleApi(req, res, pathname) {
       const loginSecret = String(body.loginSecret || "");
       const user = await getUser(email);
 
-      if (!user || loginSecret.length < 32) {
-        json(res, 401, { error: "Recovery failed." });
-        return;
-      }
+      if (!user || loginSecret.length < 32) { json(res, 401, { error: "Recovery failed." }); return; }
       if (!validateWrappedKey(body.wrappedKey) || !validateWrappedKey(body.recoveryWrappedKey)) {
         json(res, 400, { error: "Missing recovery metadata." });
         return;
@@ -1428,10 +588,7 @@ async function handleApi(req, res, pathname) {
       if (!auth) return;
       const body = await readJson(req);
       const feedId = parseFeedId(body.feedUrl || body.feedId);
-      if (!feedId) {
-        json(res, 400, { error: "Paste a valid RSS feed URL." });
-        return;
-      }
+      if (!feedId) { json(res, 400, { error: "Paste a valid RSS feed URL." }); return; }
       const feed = await subscribeToFeed(auth.email, feedId);
       json(res, 200, {
         ok: true,
@@ -1448,8 +605,8 @@ async function handleApi(req, res, pathname) {
       if (!auth) return;
       const body = await readJson(req);
       const posts = normalizePublicPosts(body.posts || []);
-      const publicFeed = { updatedAt: new Date().toISOString(), posts };
-      const newPosts = await setPublicPosts(auth.email, auth.user.feedId, publicFeed.posts);
+      const newPosts = await setPublicPosts(auth.email, auth.user.feedId, posts);
+      feedXmlCache.delete(auth.user.feedId);
       const emailResult = await notifyFeedSubscribers(auth.user.feedId, newPosts);
       json(res, 200, {
         ok: true,
@@ -1472,10 +629,7 @@ async function handleApi(req, res, pathname) {
       const auth = await requireUser(req, res);
       if (!auth) return;
       const body = await readJson(req);
-      if (!validateVault(body.vault)) {
-        json(res, 400, { error: "Invalid encrypted vault." });
-        return;
-      }
+      if (!validateVault(body.vault)) { json(res, 400, { error: "Invalid encrypted vault." }); return; }
       await updateUserVault(auth.email, body.vault);
       const token = parseCookies(req)[SESSION_COOKIE];
       if (token) sessionCache.delete(token.slice(-32));
@@ -1483,117 +637,49 @@ async function handleApi(req, res, pathname) {
       return;
     }
 
+    if (req.method === "PUT" && pathname === "/api/account") {
+      const auth = await requireUser(req, res);
+      if (!auth) return;
+      const body = await readJson(req);
+      const firstName = String(body.firstName || "").trim().slice(0, 80);
+      const lastName = String(body.lastName || "").trim().slice(0, 80);
+      if (!firstName) { json(res, 400, { error: "First name is required." }); return; }
+      if (!lastName) { json(res, 400, { error: "Last name is required." }); return; }
+      await updateUserProfile(auth.email, firstName, lastName);
+      const token = parseCookies(req)[SESSION_COOKIE];
+      if (token) sessionCache.delete(token.slice(-32));
+      json(res, 200, { ok: true, firstName, lastName });
+      return;
+    }
+
     json(res, 404, { error: "Not found." });
   } catch (error) {
-    json(res, 500, { error: error.message || "Server error." });
+    json(res, error.statusCode || 500, { error: error.message || "Server error." });
   }
 }
 
-async function serveStatic(req, res, pathname) {
-  if (req.method !== "GET" && req.method !== "HEAD") {
-    text(res, 405, "Method not allowed");
-    return;
-  }
-
-  try {
-    const asset = await getIndexAsset();
-    const baseHeaders = {
-      "content-type": "text/html; charset=utf-8",
-      "cache-control": "public, max-age=0, must-revalidate",
-      "etag": asset.etag,
-      "vary": "Accept-Encoding"
-    };
-
-    if (req.headers["if-none-match"] === asset.etag) {
-      res.writeHead(304, securityHeaders(baseHeaders));
-      res.end();
-      return;
-    }
-
-    const headers = { ...baseHeaders };
-    let body = asset.body;
-    if (acceptsEncoding(req, "br")) {
-      body = asset.br;
-      headers["content-encoding"] = "br";
-    } else if (acceptsEncoding(req, "gzip")) {
-      body = asset.gzip;
-      headers["content-encoding"] = "gzip";
-    }
-    headers["content-length"] = String(body.length);
-
-    res.writeHead(200, securityHeaders(headers));
-    if (req.method === "HEAD") {
-      res.end();
-      return;
-    }
-    res.end(body);
-  } catch (error) {
-    text(res, error.statusCode || 404, error.message || "Not found");
-  }
-}
-
-async function handlePublicFeed(req, res, feedId) {
-  if (req.method !== "GET" && req.method !== "HEAD") {
-    text(res, 405, "Method not allowed");
-    return;
-  }
-
-  const record = await getPublicFeed(feedId);
-  if (!record) {
-    text(res, 404, "Feed not found");
-    return;
-  }
-
-  const cacheKey = `${isHttps(req) ? "https" : "http"}://${req.headers.host || "localhost"}:${feedId}`;
-  const updatedAt = record.publicFeed.updatedAt || "";
-  let cached = feedXmlCache.get(cacheKey);
-  if (!cached || cached.updatedAt !== updatedAt) {
-    const ownerName = [record.firstName || "", record.lastName || ""].filter(Boolean).join(" ");
-    const body = renderPublicFeedXml(req, feedId, record.publicFeed, ownerName);
-    cached = {
-      body,
-      etag: `W/"${crypto.createHash("sha256").update(body).digest("base64url").slice(0, 24)}"`,
-      updatedAt
-    };
-    feedXmlCache.set(cacheKey, cached);
-  }
-  if (req.headers["if-none-match"] === cached.etag) {
-    res.writeHead(304, securityHeaders({
-      "cache-control": "public, max-age=60",
-      etag: cached.etag
-    }));
-    res.end();
-    return;
-  }
-
-  const headers = securityHeaders({
-    "content-type": "application/rss+xml; charset=utf-8",
-    "cache-control": "public, max-age=60",
-    etag: cached.etag,
-    "content-length": String(Buffer.byteLength(cached.body))
-  });
-  res.writeHead(200, headers);
-  if (req.method === "HEAD") {
-    res.end();
-    return;
-  }
-  res.end(cached.body);
-}
-
-async function handleUnsubscribe(req, res, token) {
-  if (req.method !== "GET" && req.method !== "POST") {
-    text(res, 405, "Method not allowed");
-    return;
-  }
-
-  const removed = await unsubscribeByToken(token);
-  text(res, removed ? 200 : 404, removed ? "Unsubscribed." : "Subscription not found.");
-}
+const STATIC_FILES = {
+  "/favicon-16.png": { file: "favicon-16.png", type: "image/png" },
+  "/favicon-32.png": { file: "favicon-32.png", type: "image/png" },
+  "/favicon-192.png": { file: "favicon-192.png", type: "image/png" },
+  "/apple-touch-icon.png": { file: "apple-touch-icon.png", type: "image/png" }
+};
 
 async function handleRequest(req, res) {
   const url = new URL(req.url, `http://${req.headers.host || "localhost"}`);
   if (url.pathname.startsWith("/api/")) {
     await handleApi(req, res, url.pathname);
+    return;
+  }
+  const staticFile = STATIC_FILES[url.pathname];
+  if (staticFile) {
+    if (req.method !== "GET" && req.method !== "HEAD") { text(res, 405, "Method not allowed"); return; }
+    try {
+      const body = await fs.readFile(path.join(ROOT, staticFile.file));
+      res.writeHead(200, securityHeaders({ "content-type": staticFile.type, "cache-control": "public, max-age=31536000, immutable", "content-length": String(body.length) }));
+      if (req.method !== "HEAD") res.end(body);
+      else res.end();
+    } catch { text(res, 404, "Not found"); }
     return;
   }
   const feedMatch = url.pathname.match(/^\/feed\/([A-Za-z0-9_-]+)\.xml$/);
@@ -1606,7 +692,7 @@ async function handleRequest(req, res) {
     await handleUnsubscribe(req, res, unsubscribeMatch[1]);
     return;
   }
-  await serveStatic(req, res, url.pathname);
+  await serveStatic(req, res);
 }
 
 if (require.main === module) {

@@ -1,8 +1,31 @@
+# Local data (file-based dev storage)
 data/
+
+# Dependencies
 node_modules/
+
+# Environment & secrets
 .env
+.env.*
+!.env.example
+
+# Vercel local config
+.vercel/
+
+# Claude Code
 .claude/
+
+# Certificates & keys
+*.pem
+*.key
+*.cert
+*.p12
+*.pfx
+
+# OS
 .DS_Store
 Thumbs.db
+
+# Logs
 npm-debug.log*
 *.log

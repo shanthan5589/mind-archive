@@ -4,6 +4,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Mind Archive</title>
+  <link rel="icon" type="image/png" href="/favicon-32.png" sizes="32x32">
+  <link rel="icon" type="image/png" href="/favicon-16.png" sizes="16x16">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
   <style>
     :root {
       --page: #e7e7e7;
@@ -101,8 +104,8 @@
       margin: 0;
       color: var(--text);
       background: var(--page);
-      font-family: Verdana, Geneva, Tahoma, sans-serif;
-      font-size: 12px;
+      font-family: system-ui, -apple-system, "Segoe UI", Tahoma, sans-serif;
+      font-size: 13px;
       line-height: 1.45;
     }
 
@@ -123,9 +126,10 @@
       border: 1px solid var(--line-dark);
       background: var(--button);
       color: var(--text);
-      padding: 4px 10px;
+      padding: 5px 12px;
       cursor: pointer;
-      min-height: 26px;
+      min-height: 28px;
+      border-radius: 5px;
     }
 
     button:hover {
@@ -153,7 +157,8 @@
       border: 1px solid var(--line-dark);
       background: var(--control);
       color: var(--text);
-      padding: 4px 5px;
+      padding: 5px 8px;
+      border-radius: 5px;
     }
 
     textarea {
@@ -168,6 +173,9 @@
       margin: 8px auto 24px;
       border: 1px solid var(--line-dark);
       background: var(--panel);
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 2px 20px rgba(0,0,0,0.10);
     }
 
     .skip-link {
@@ -284,9 +292,10 @@
       border: 1px solid var(--line);
       border-bottom: 0;
       background: var(--tab);
-      padding: 4px 8px;
+      padding: 5px 10px;
       min-height: auto;
       text-align: center;
+      border-radius: 5px 5px 0 0;
     }
 
     .tab.active {
@@ -317,8 +326,8 @@
       border: 0;
       border-right: 1px solid var(--line);
       background: var(--tab);
-      min-height: 30px;
-      padding: 5px 10px;
+      min-height: 32px;
+      padding: 6px 18px;
     }
 
     .auth-tab.active {
@@ -335,14 +344,16 @@
       background: var(--panel-3);
       color: var(--muted);
       margin-top: 8px;
-      padding: 8px;
+      padding: 10px 14px;
+      border-radius: 7px;
     }
 
     .recovery-box {
       border: 1px solid var(--recovery-border);
       background: var(--recovery);
       color: var(--recovery-text);
-      padding: 8px;
+      padding: 10px 14px;
+      border-radius: 7px;
     }
 
     .recovery-key {
@@ -370,7 +381,9 @@
     .box {
       border: 1px solid var(--line);
       background: var(--panel);
-      margin-bottom: 8px;
+      margin-bottom: 10px;
+      border-radius: 7px;
+      overflow: hidden;
     }
 
     .box-title {
@@ -378,11 +391,11 @@
       background: var(--box-title);
       color: var(--box-title-text);
       font-weight: bold;
-      padding: 4px 6px;
+      padding: 7px 10px;
     }
 
     .box-body {
-      padding: 7px;
+      padding: 10px;
     }
 
     .stack {
@@ -429,8 +442,9 @@
     .counter {
       border: 1px solid var(--line);
       background: var(--panel-3);
-      padding: 6px;
+      padding: 8px 6px;
       text-align: center;
+      border-radius: 5px;
     }
 
     .counter strong {
@@ -447,6 +461,8 @@
     .post {
       border: 1px solid var(--line);
       background: var(--panel);
+      border-radius: 7px;
+      overflow: hidden;
     }
 
     .post.pinned {
@@ -559,8 +575,9 @@
       border: 1px solid var(--line);
       background: var(--tag);
       color: var(--tag-text);
-      padding: 1px 5px;
-      font-size: 12px;
+      padding: 2px 8px;
+      font-size: 11px;
+      border-radius: 10px;
     }
 
     .pin {
@@ -656,7 +673,8 @@
     .collection-item {
       border: 1px solid var(--line);
       background: var(--panel);
-      padding: 7px;
+      padding: 10px;
+      border-radius: 7px;
     }
 
     .collection-item h3 {
@@ -669,8 +687,9 @@
       border: 1px dashed var(--line-dark);
       background: var(--panel-3);
       color: var(--muted);
-      padding: 16px;
+      padding: 24px 16px;
       text-align: center;
+      border-radius: 7px;
     }
 
     .rss-output {
@@ -682,8 +701,8 @@
     }
 
     #toolsView {
-      grid-template-columns: minmax(0, 1.45fr) minmax(280px, 0.9fr);
-      gap: 8px;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
       align-items: start;
     }
 
@@ -695,8 +714,26 @@
       margin-bottom: 0;
     }
 
-    #toolsView .box:nth-of-type(n+3) {
-      grid-column: 1 / -1;
+    .subscription-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 0;
+      border-top: 1px solid var(--line);
+    }
+
+    .subscription-item:first-child {
+      border-top: none;
+      padding-top: 2px;
+    }
+
+    .subscription-item a {
+      font-weight: 500;
+      text-decoration: none;
+    }
+
+    .subscription-item a:hover {
+      text-decoration: underline;
     }
 
     .footer {
@@ -711,9 +748,13 @@
       .page {
         width: calc(100vw - 8px);
         margin-top: 4px;
+        border-radius: 6px;
       }
 
-      .topbar,
+      .topbar {
+        flex-wrap: wrap;
+      }
+
       .post-head {
         align-items: stretch;
         flex-direction: column;
@@ -741,10 +782,6 @@
       #toolsView:not(.hidden) {
         display: grid;
         grid-template-columns: 1fr;
-      }
-
-      #toolsView .box:nth-of-type(3) {
-        grid-column: auto;
       }
 
       .sidebar {
@@ -777,12 +814,13 @@
       border: 1px solid var(--recovery-border);
       background: var(--recovery);
       color: var(--recovery-text);
-      padding: 7px 9px;
+      padding: 8px 12px;
       display: flex;
       align-items: center;
       gap: 8px;
       flex-wrap: wrap;
       margin-bottom: 4px;
+      border-radius: 6px;
     }
 
     /* Age-based left border — not applied to pinned (which has its own border colour) */
@@ -835,9 +873,12 @@
     }
 
     .shortcuts-box {
-      min-width: 300px;
+      min-width: 320px;
       border: 1px solid var(--line-dark);
       background: var(--panel);
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.20);
     }
 
     .shortcuts-table {
@@ -864,9 +905,11 @@
       border: 1px solid var(--line-dark);
       background: var(--button);
       color: var(--text);
-      padding: 1px 6px;
+      padding: 2px 6px;
       font-family: Consolas, "Courier New", monospace;
       font-size: 11px;
+      border-radius: 4px;
+      box-shadow: 0 1px 0 var(--line-dark);
     }
 
     @media print {
@@ -952,8 +995,27 @@
       background: var(--panel);
       padding: 36px 52px;
       text-align: center;
-      width: 280px;
+      width: 300px;
+      border-radius: 12px;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.20);
     }
+
+    #loadingView {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex: 1;
+      height: 100%;
+    }
+    .spinner {
+      width: 28px;
+      height: 28px;
+      border: 3px solid var(--line);
+      border-top-color: var(--title);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
 
     .lock-label {
       font-size: 18px;
@@ -1030,6 +1092,58 @@
       vertical-align: middle;
       flex-shrink: 0;
     }
+    .user-menu {
+      position: relative;
+    }
+
+    .user-menu-trigger {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .user-menu-caret {
+      font-size: 10px;
+      color: var(--muted);
+    }
+
+    .user-menu-dropdown {
+      position: absolute;
+      top: calc(100% + 4px);
+      right: 0;
+      min-width: 160px;
+      background: var(--panel);
+      border: 1px solid var(--line-dark);
+      border-radius: 4px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      z-index: 200;
+      overflow: hidden;
+      padding: 4px 0;
+    }
+
+    .menu-item {
+      display: block;
+      width: 100%;
+      text-align: left;
+      border: none;
+      border-radius: 0;
+      background: none;
+      padding: 8px 14px;
+      cursor: pointer;
+      font: inherit;
+      color: var(--text);
+    }
+
+    .menu-item:hover {
+      background: var(--button-hover);
+    }
+
+    .menu-divider {
+      height: 1px;
+      background: var(--line);
+      margin: 2px 0;
+    }
+
   </style>
 </head>
 <body>
@@ -1041,12 +1155,19 @@
         <span>plain old thoughts, dated and kept</span>
       </div>
       <div class="top-actions">
-        <span class="session-user auth-only hidden" id="currentUserLabel"></span>
         <button id="themeButton" type="button">Dark mode</button>
         <button id="privacyButton" type="button">Privacy</button>
         <button id="shortcutsButton" type="button" title="Keyboard shortcuts">?</button>
-        <button id="lockButton" class="auth-only hidden" type="button" title="Lock screen">Lock</button>
-        <button id="logoutButton" class="auth-only hidden" type="button">Logout</button>
+        <div class="user-menu auth-only hidden" id="userMenu">
+          <button type="button" class="user-menu-trigger" id="userMenuButton" aria-haspopup="true" aria-expanded="false">
+            <span id="currentUserLabel" class="hidden"></span><span class="user-menu-caret" aria-hidden="true">▾</span>
+          </button>
+          <div class="user-menu-dropdown hidden" id="userMenuDropdown" role="menu">
+            <button type="button" id="lockButton" class="menu-item" role="menuitem">Lock screen</button>
+            <div class="menu-divider" role="separator"></div>
+            <button type="button" id="logoutButton" class="menu-item" role="menuitem">Sign out</button>
+          </div>
+        </div>
       </div>
     </header>
 
@@ -1067,6 +1188,10 @@
         </div>
       </div>
     </section>
+
+    <div id="loadingView" class="hidden">
+      <div class="spinner"></div>
+    </div>
 
     <section id="authView" class="auth-panel">
       <div class="box">
@@ -1338,6 +1463,24 @@
 
         <section id="toolsView" class="view hidden" role="tabpanel">
           <div class="box">
+            <div class="box-title">Account</div>
+            <div class="box-body stack">
+              <div class="field">
+                <label for="accountFirstName">First name</label>
+                <input id="accountFirstName" type="text" maxlength="80" autocomplete="given-name">
+              </div>
+              <div class="field">
+                <label for="accountLastName">Last name</label>
+                <input id="accountLastName" type="text" maxlength="80" autocomplete="family-name">
+              </div>
+              <div class="button-row">
+                <button id="saveAccount" type="button">Save</button>
+                <span id="accountStatus" class="muted" role="status" aria-live="polite"></span>
+              </div>
+            </div>
+          </div>
+
+          <div class="box">
             <div class="box-title">Your Feed</div>
             <div class="box-body stack">
               <div class="muted">Share this link with anyone you want to follow your writing. Only posts marked <strong>share in RSS</strong> are included — everything else stays private.</div>
@@ -1365,7 +1508,7 @@
                 <button id="subscribeFeedButton" type="button">Follow</button>
                 <span id="subscribeStatus" class="muted" role="status" aria-live="polite"></span>
               </div>
-              <div id="subscriptionsList" class="muted"></div>
+              <div id="subscriptionsList"></div>
             </div>
           </div>
 
@@ -1766,14 +1909,24 @@
       return result;
     }
 
-    async function savePosts() {
+    async function savePosts(syncFeed = true) {
       if (!state.currentUser || !state.currentKey) return;
       const vault = await encryptJson(state.currentKey, state.posts);
-      await api("/api/vault", {
-        method: "PUT",
-        body: JSON.stringify({ vault })
-      });
-      await syncPublicFeed();
+      const saves = [api("/api/vault", { method: "PUT", body: JSON.stringify({ vault }) })];
+      if (syncFeed) saves.push(syncPublicFeed());
+      await Promise.all(saves);
+    }
+
+    let _saveTimer = null;
+    let _pendingSyncFeed = false;
+    function scheduleSave(syncFeed = true) {
+      if (syncFeed) _pendingSyncFeed = true;
+      clearTimeout(_saveTimer);
+      _saveTimer = setTimeout(() => {
+        const doSync = _pendingSyncFeed;
+        _pendingSyncFeed = false;
+        savePosts(doSync).catch(() => {});
+      }, 500);
     }
 
     function hasLegacyPosts() {
@@ -1904,8 +2057,7 @@
       const archiveKeyRaw = localStorage.getItem(SESSION_KEY_STORAGE);
       if (!archiveKeyRaw) return false;
       try {
-        const result = await api("/api/session");
-        const key = await importArchiveKey(archiveKeyRaw);
+        const [result, key] = await Promise.all([api("/api/session"), importArchiveKey(archiveKeyRaw)]);
         const posts = result.vault ? await decryptJson(key, result.vault) : [];
         unlock(result.email, result.feedId, result.firstName || "", result.lastName || "", key, Array.isArray(posts) ? posts : [], archiveKeyRaw);
         state.currentClientSalt = result.clientSalt || "";
@@ -2046,7 +2198,7 @@
       $("searchInput").value = "";
       $("onlyPinned").checked = false;
       const displayName = [firstName, lastName].filter(Boolean).join(" ") || email;
-      $("currentUserLabel").textContent = `signed in as ${displayName}`;
+      $("currentUserLabel").textContent = displayName;
       showApp();
       renderAll();
       setView("postsView");
@@ -2055,6 +2207,7 @@
 
     function showAuth() {
       state.previousScreen = "auth";
+      $("loadingView").classList.add("hidden");
       $("privacyView").classList.add("hidden");
       $("recoveryView").classList.add("hidden");
       $("authView").classList.remove("hidden");
@@ -2071,6 +2224,7 @@
 
     function showApp() {
       state.previousScreen = "app";
+      $("loadingView").classList.add("hidden");
       $("privacyView").classList.add("hidden");
       $("recoveryView").classList.add("hidden");
       $("authView").classList.add("hidden");
@@ -2701,21 +2855,21 @@
       renderAll();
     }
 
-    async function togglePin(id) {
+    function togglePin(id) {
       const post = state.posts.find((item) => item.id === id);
       if (!post) return;
       post.pinned = !post.pinned;
       post.updatedAt = new Date().toISOString();
-      await savePosts();
       renderAll();
+      scheduleSave(true);
     }
 
-    async function toggleFavourite(id) {
+    function toggleFavourite(id) {
       const post = state.posts.find((item) => item.id === id);
       if (!post) return;
       post.favourite = !post.favourite;
-      await savePosts();
       renderAll();
+      scheduleSave(false);
     }
 
     function renderPreview() {
@@ -2726,6 +2880,8 @@
     }
 
     function renderTools() {
+      $("accountFirstName").value = state.currentFirstName;
+      $("accountLastName").value = state.currentLastName;
       $("tabTitleInput").value = localStorage.getItem(TAB_TITLE_KEY) || "";
       const sharedCount = state.posts.filter((post) => post.rssPublic && !post.hidden).length;
       const feedUrl = getFeedUrl();
@@ -2734,11 +2890,11 @@
       $("subscriptionsList").innerHTML = state.subscriptions.length
         ? state.subscriptions.map((item) => {
             const label = item.authorFirstName || item.authorLastName
-              ? `${escapeHtml([item.authorFirstName, item.authorLastName].filter(Boolean).join(" "))}`
+              ? escapeHtml([item.authorFirstName, item.authorLastName].filter(Boolean).join(" "))
               : escapeHtml(item.feedId);
-            return `<div style="padding:4px 0"><a href="/feed/${encodeURIComponent(item.feedId)}.xml" target="_blank" rel="noopener">${label}</a></div>`;
+            return `<div class="subscription-item"><a href="/feed/${encodeURIComponent(item.feedId)}.xml" target="_blank" rel="noopener">${label}</a></div>`;
           }).join("")
-        : "No subscriptions yet. Paste a feed link above to follow a writer.";
+        : "<span class='muted'>No subscriptions yet. Paste a feed link above to follow a writer.</span>";
     }
 
     function renderAll() {
@@ -2784,6 +2940,25 @@
       });
 
       $("lockButton").addEventListener("click", lockScreen);
+
+      // User account dropdown
+      const userMenuButton = $("userMenuButton");
+      const userMenuDropdown = $("userMenuDropdown");
+      function closeUserMenu() {
+        userMenuDropdown.classList.add("hidden");
+        userMenuButton.setAttribute("aria-expanded", "false");
+      }
+      userMenuButton.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const isOpen = !userMenuDropdown.classList.contains("hidden");
+        userMenuDropdown.classList.toggle("hidden");
+        userMenuButton.setAttribute("aria-expanded", String(!isOpen));
+      });
+      userMenuDropdown.addEventListener("click", closeUserMenu);
+      document.addEventListener("click", (e) => {
+        if (!e.target.closest("#userMenu")) closeUserMenu();
+      });
+
       $("lockUnlockForm").addEventListener("submit", (e) => {
         e.preventDefault();
         const pw = $("lockPasswordInput").value;
@@ -2977,10 +3152,10 @@
         if (!target) return;
         const id = target.dataset.id;
         if (target.dataset.action === "toggle") togglePost(id);
-        if (target.dataset.action === "favourite") await toggleFavourite(id);
+        if (target.dataset.action === "favourite") toggleFavourite(id);
         if (target.dataset.action === "edit") editPost(id);
         if (target.dataset.action === "delete") await deletePost(id);
-        if (target.dataset.action === "pin") await togglePin(id);
+        if (target.dataset.action === "pin") togglePin(id);
         if (target.dataset.action === "open") openPost(id);
       });
 
@@ -3097,6 +3272,26 @@
       });
       $("printPdf").addEventListener("click", () => window.print());
 
+      $("saveAccount").addEventListener("click", async () => {
+        const firstName = $("accountFirstName").value.trim();
+        const lastName = $("accountLastName").value.trim();
+        if (!firstName || !lastName) {
+          $("accountStatus").textContent = "First and last name required.";
+          return;
+        }
+        $("accountStatus").textContent = "Saving...";
+        try {
+          await api("/api/account", { method: "PUT", body: JSON.stringify({ firstName, lastName }) });
+          state.currentFirstName = firstName;
+          state.currentLastName = lastName;
+          $("currentUserLabel").textContent = [firstName, lastName].filter(Boolean).join(" ");
+          $("accountStatus").textContent = "Saved.";
+          setTimeout(() => { $("accountStatus").textContent = ""; }, 2000);
+        } catch (error) {
+          $("accountStatus").textContent = error.message || "Failed to save.";
+        }
+      });
+
       $("saveTabTitle").addEventListener("click", () => {
         const value = $("tabTitleInput").value.trim();
         if (value) {
@@ -3163,9 +3358,14 @@
     bindEvents();
     setAuthMode("signin");
     renderPreview();
-    tryRestoreSession()
-      .then((restored) => { if (!restored) showAuth(); })
-      .catch(() => showAuth());
+    if (localStorage.getItem(SESSION_KEY_STORAGE)) {
+      $("loadingView").classList.remove("hidden");
+      tryRestoreSession()
+        .then((restored) => { if (!restored) showAuth(); })
+        .catch(() => showAuth());
+    } else {
+      showAuth();
+    }
   </script>
 </body>
 </html>
