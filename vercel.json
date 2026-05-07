@@ -6,6 +6,10 @@
       "use": "@vercel/static"
     },
     {
+      "src": "*.png",
+      "use": "@vercel/static"
+    },
+    {
       "src": "api/index.js",
       "use": "@vercel/node"
     }
