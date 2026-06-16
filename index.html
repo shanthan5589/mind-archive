@@ -2909,17 +2909,22 @@
     function bindEvents() {
       $("signinForm").addEventListener("submit", async (event) => {
         event.preventDefault();
+        const btn = $("signinForm").querySelector("[type=submit]");
+        btn.disabled = true;
         $("signinStatus").textContent = "checking...";
         try {
           await signIn($("signinEmail").value, $("signinPassword").value);
           $("signinStatus").textContent = "";
         } catch (error) {
           $("signinStatus").textContent = error.message;
+          btn.disabled = false;
         }
       });
 
       $("signupForm").addEventListener("submit", async (event) => {
         event.preventDefault();
+        const btn = $("signupForm").querySelector("[type=submit]");
+        btn.disabled = true;
         $("signupStatus").textContent = "creating...";
         try {
           await signUp(
@@ -2932,6 +2937,7 @@
           $("signupStatus").textContent = "";
         } catch (error) {
           $("signupStatus").textContent = error.message;
+          btn.disabled = false;
         }
       });
 
