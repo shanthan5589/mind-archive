@@ -5,16 +5,12 @@ const path = require("path");
 
 const {
   ROOT, PORT, SESSION_COOKIE, SESSION_SECRET,
-  configErrors, gzip, brotliCompress, pool,
-  PUBLIC_POST_LIMIT, PUBLIC_BODY_LIMIT, RESEND_API_KEY, EMAIL_FROM
+  configErrors, gzip, brotliCompress, pool
 } = require("./lib/config");
-const { normalizeEmail, isValidEmail, escapeXml, escapeHtml, randomToken, hashLoginSecret } = require("./lib/utils");
+const { normalizeEmail, isValidEmail, escapeHtml, randomToken, hashLoginSecret } = require("./lib/utils");
 const {
-  getUser, createUser, ensureFeedId, updateUserVault, updateUserLogin, updateUserProfile,
-  getPublicFeed, setPublicPosts, getSubscriptions, getSubscribedPosts,
-  subscribeToFeed, unsubscribeByToken, parseFeedId
+  getUser, createUser, ensureFeedId, updateUserVault, updateUserLogin, updateUserProfile
 } = require("./lib/db");
-const { notifyFeedSubscribers, scheduleEmailQueue, processEmailQueue } = require("./lib/email");
 
 const RATE_LIMITS = {
   auth: { windowMs: 15 * 60 * 1000, max: 20 },
@@ -24,7 +20,6 @@ const RATE_LIMITS = {
 
 const rateBuckets = new Map();
 const sessionCache = new Map();
-const feedXmlCache = new Map();
 
 // --- HTTP helpers ---
 
@@ -66,7 +61,7 @@ function getClientIp(req) {
 
 function limitKind(req, pathname) {
   if (pathname === "/api/signup" || pathname === "/api/signin" || pathname === "/api/user-salt") return "auth";
-  if (req.method === "PUT" && (pathname === "/api/vault" || pathname === "/api/public-feed")) return "write";
+  if (req.method === "PUT" && pathname === "/api/vault") return "write";
   return "general";
 }
 
@@ -259,36 +254,6 @@ function validateWrappedKey(value) {
     && value.data.length < 2000;
 }
 
-function normalizePublicPosts(posts) {
-  if (!Array.isArray(posts) || posts.length > PUBLIC_POST_LIMIT) {
-    const error = new Error(`RSS feed can include up to ${PUBLIC_POST_LIMIT} posts.`);
-    error.statusCode = 400;
-    throw error;
-  }
-
-  return posts.map((post) => {
-    const id = String(post.id || "").slice(0, 120);
-    const title = String(post.title || "Untitled").trim().slice(0, 160) || "Untitled";
-    const body = String(post.body || "").slice(0, PUBLIC_BODY_LIMIT);
-    const createdDate = new Date(post.createdAt || Date.now());
-    const updatedDate = post.updatedAt ? new Date(post.updatedAt) : createdDate;
-    const createdAt = Number.isNaN(createdDate.getTime()) ? new Date().toISOString() : createdDate.toISOString();
-    const updatedAt = Number.isNaN(updatedDate.getTime()) ? createdAt : updatedDate.toISOString();
-    const mood = String(post.mood || "").slice(0, 80);
-    const place = String(post.place || "").slice(0, 120);
-    const collections = Array.isArray(post.collections) ? post.collections.map((name) => String(name).slice(0, 80)).slice(0, 20) : [];
-    const series = String(post.series || "").slice(0, 120);
-
-    if (!id || !body) {
-      const error = new Error("RSS posts need an id and body.");
-      error.statusCode = 400;
-      throw error;
-    }
-
-    return { id, title, body, createdAt, updatedAt, mood, place, collections, series };
-  });
-}
-
 // --- Auth middleware ---
 
 async function requireUser(req, res) {
@@ -314,89 +279,7 @@ async function requireUser(req, res) {
   return { email, user };
 }
 
-// --- RSS feed rendering ---
-
-function renderPublicFeedXml(req, feedId, publicFeed, ownerName = "") {
-  const origin = `${isHttps(req) ? "https" : "http"}://${req.headers.host || "localhost"}`;
-  const feedUrl = `${origin}/feed/${encodeURIComponent(feedId)}.xml`;
-  const feedTitle = ownerName ? `${ownerName}'s Archive` : "Mind Archive";
-  const posts = Array.isArray(publicFeed.posts) ? publicFeed.posts : [];
-  const items = posts.map((post) => {
-    const postUrl = `${feedUrl}#post-${encodeURIComponent(post.id)}`;
-    return `
-  <item>
-    <title>${escapeXml(post.title)}</title>
-    <link>${escapeXml(postUrl)}</link>
-    <guid>${escapeXml(post.id)}</guid>
-    <pubDate>${new Date(post.createdAt).toUTCString()}</pubDate>
-    <description>${escapeXml(post.body)}</description>
-  </item>`;
-  }).join("");
-
-  return `<?xml version="1.0" encoding="UTF-8"?>
-<rss version="2.0">
-<channel>
-  <title>${escapeXml(feedTitle)}</title>
-  <link>${escapeXml(feedUrl)}</link>
-  <description>Shared thoughts and opinions</description>
-  <lastBuildDate>${new Date(publicFeed.updatedAt || Date.now()).toUTCString()}</lastBuildDate>${items}
-</channel>
-</rss>`;
-}
-
 // --- Request handlers ---
-
-async function handlePublicFeed(req, res, feedId) {
-  if (req.method !== "GET" && req.method !== "HEAD") {
-    text(res, 405, "Method not allowed");
-    return;
-  }
-
-  const record = await getPublicFeed(feedId);
-  if (!record) {
-    text(res, 404, "Feed not found");
-    return;
-  }
-
-  const cacheKey = `${isHttps(req) ? "https" : "http"}://${req.headers.host || "localhost"}:${feedId}`;
-  const updatedAt = record.publicFeed.updatedAt || "";
-  let cached = feedXmlCache.get(cacheKey);
-  if (!cached || cached.updatedAt !== updatedAt) {
-    const ownerName = [record.firstName || "", record.lastName || ""].filter(Boolean).join(" ");
-    const body = renderPublicFeedXml(req, feedId, record.publicFeed, ownerName);
-    cached = {
-      body,
-      etag: `W/"${crypto.createHash("sha256").update(body).digest("base64url").slice(0, 24)}"`,
-      updatedAt
-    };
-    feedXmlCache.set(cacheKey, cached);
-  }
-
-  if (req.headers["if-none-match"] === cached.etag) {
-    res.writeHead(304, securityHeaders({ "cache-control": "public, max-age=60", etag: cached.etag }));
-    res.end();
-    return;
-  }
-
-  const headers = securityHeaders({
-    "content-type": "application/rss+xml; charset=utf-8",
-    "cache-control": "public, max-age=60",
-    etag: cached.etag,
-    "content-length": String(Buffer.byteLength(cached.body))
-  });
-  res.writeHead(200, headers);
-  if (req.method === "HEAD") { res.end(); return; }
-  res.end(cached.body);
-}
-
-async function handleUnsubscribe(req, res, token) {
-  if (req.method !== "GET" && req.method !== "POST") {
-    text(res, 405, "Method not allowed");
-    return;
-  }
-  const removed = await unsubscribeByToken(token);
-  text(res, removed ? 200 : 404, removed ? "Unsubscribed." : "Subscription not found.");
-}
 
 async function handleApi(req, res, pathname) {
   try {
@@ -569,55 +452,6 @@ async function handleApi(req, res, pathname) {
       return;
     }
 
-    if (req.method === "GET" && pathname === "/api/subscriptions") {
-      const auth = await requireUser(req, res);
-      if (!auth) return;
-      json(res, 200, { subscriptions: await getSubscriptions(auth.email) });
-      return;
-    }
-
-    if (req.method === "GET" && pathname === "/api/subscribed-posts") {
-      const auth = await requireUser(req, res);
-      if (!auth) return;
-      json(res, 200, { posts: await getSubscribedPosts(auth.email) });
-      return;
-    }
-
-    if (req.method === "POST" && pathname === "/api/subscribe-feed") {
-      const auth = await requireUser(req, res);
-      if (!auth) return;
-      const body = await readJson(req);
-      const feedId = parseFeedId(body.feedUrl || body.feedId);
-      if (!feedId) { json(res, 400, { error: "Paste a valid RSS feed URL." }); return; }
-      const feed = await subscribeToFeed(auth.email, feedId);
-      json(res, 200, {
-        ok: true,
-        feedId,
-        subscribedEmail: auth.email,
-        postCount: Array.isArray(feed.publicFeed?.posts) ? feed.publicFeed.posts.length : 0,
-        emailConfigured: Boolean(RESEND_API_KEY && EMAIL_FROM)
-      });
-      return;
-    }
-
-    if (req.method === "PUT" && pathname === "/api/public-feed") {
-      const auth = await requireUser(req, res);
-      if (!auth) return;
-      const body = await readJson(req);
-      const posts = normalizePublicPosts(body.posts || []);
-      const newPosts = await setPublicPosts(auth.email, auth.user.feedId, posts);
-      feedXmlCache.delete(auth.user.feedId);
-      const emailResult = await notifyFeedSubscribers(auth.user.feedId, newPosts);
-      json(res, 200, {
-        ok: true,
-        feedId: auth.user.feedId,
-        postCount: posts.length,
-        newPostCount: newPosts.length,
-        email: emailResult
-      });
-      return;
-    }
-
     if (req.method === "GET" && pathname === "/api/vault") {
       const auth = await requireUser(req, res);
       if (!auth) return;
@@ -682,16 +516,6 @@ async function handleRequest(req, res) {
     } catch { text(res, 404, "Not found"); }
     return;
   }
-  const feedMatch = url.pathname.match(/^\/feed\/([A-Za-z0-9_-]+)\.xml$/);
-  if (feedMatch) {
-    await handlePublicFeed(req, res, feedMatch[1]);
-    return;
-  }
-  const unsubscribeMatch = url.pathname.match(/^\/unsubscribe\/([A-Za-z0-9_-]+)$/);
-  if (unsubscribeMatch) {
-    await handleUnsubscribe(req, res, unsubscribeMatch[1]);
-    return;
-  }
   await serveStatic(req, res);
 }
 
@@ -699,8 +523,6 @@ if (require.main === module) {
   const server = http.createServer(handleRequest);
 
   setInterval(cleanRateBuckets, 5 * 60 * 1000).unref();
-  setInterval(() => processEmailQueue().catch(() => {}), 30 * 1000).unref();
-  scheduleEmailQueue(1000);
 
   server.listen(PORT, "0.0.0.0", () => {
     console.log(`Mind Archive running on http://localhost:${PORT}`);

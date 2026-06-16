@@ -1,4 +1,4 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
@@ -7,93 +7,126 @@
   <link rel="icon" type="image/png" href="/favicon-32.png" sizes="32x32">
   <link rel="icon" type="image/png" href="/favicon-16.png" sizes="16x16">
   <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
   <style>
+    /* ─── Design Tokens: Warm Parchment + Violet Ink ─── */
     :root {
-      --page: #e7e7e7;
-      --panel: #ffffff;
-      --panel-2: #f3f3f3;
-      --panel-3: #f8fafc;
-      --control: #ffffff;
-      --button: #eeeeee;
-      --button-hover: #e0e7ef;
-      --line: #b9c3cf;
-      --line-dark: #8c9bad;
-      --text: #1f2933;
-      --muted: #5d6670;
-      --link: #1a4f8f;
-      --danger: #9b1c1c;
-      --pin: #7d5200;
-      --ok: #1b6f3a;
-      --title: #2b5f93;
-      --topbar: #f7f7f7;
-      --nav: #dce5ee;
-      --tab: #edf2f7;
-      --tab-active: #ffffff;
-      --box-title: #e1e9f2;
-      --box-title-text: #2a4f76;
-      --post-head: #f2f5f9;
-      --post-title: #0f2f57;
-      --post-pinned: #fffdf7;
-      --tag: #eef3f9;
-      --tag-text: #334155;
-      --code: #edf1f7;
-      --pre: #f6f8fb;
-      --recovery: #fff8dd;
-      --recovery-text: #3f3210;
-      --focus: #1a4f8f;
-      --day: #d7dee8;
-      --day-active: #6f93bd;
-      --accent: #3b6fa3;
-      --recovery-border: #9b7d2c;
-      --pin-border: #b8872f;
-      --post-aged: #fffdf5;
-      --age-new: #1b6f3a;
-      --age-year: #3b6fa3;
-      --age-old: #9b7d2c;
+      --page:    #F4F1EB;          /* warm parchment               */
+      --panel:   #FEFDFB;          /* warm white                   */
+      --panel-2: #F4F1EB;
+      --panel-3: #EAE6DC;          /* deeper parchment             */
+      --control: #FEFDFB;
+
+      --button:      #1C1917;      /* near-black — like ink        */
+      --button-fg:   #FAFAF9;
+      --button-hover:#292524;
+
+      --line:      rgba(28,25,23,0.1);
+      --line-dark: rgba(28,25,23,0.2);
+
+      --text:  #1C1917;            /* warm near-black              */
+      --muted: #78716C;            /* warm slate                   */
+      --link:  #6D28D9;            /* violet ink                   */
+      --title: #1C1917;
+
+      --danger: #DC2626;
+      --pin:    #B45309;           /* amber                        */
+      --ok:     #16A34A;           /* forest green                 */
+
+      --topbar: rgba(254,253,251,0.92);
+      --nav:    #FEFDFB;
+      --tab:    transparent;
+      --tab-active: transparent;
+
+      --box-title:      #EAE6DC;
+      --box-title-text: #78716C;
+
+      --post-head:   #F9F7F3;
+      --post-title:  #1C1917;
+      --post-pinned: #FEFCE8;
+
+      --tag:      #E5E0D5;
+      --tag-text: #44403C;
+
+      --code: #EAE6DC;
+      --pre:  #EAE6DC;
+
+      --recovery:        #FFFBEB;
+      --recovery-text:   #92400E;
+      --recovery-border: rgba(180,83,9,0.3);
+      --pin-border:      rgba(180,83,9,0.35);
+
+      --focus:  #7C3AED;           /* violet focus ring            */
+      --accent: #6D28D9;           /* violet ink                   */
+
+      --day:        #E5E0D5;
+      --day-active: #6D28D9;
+
+      --post-aged: #F9F7F3;
+      --age-new:   #16A34A;
+      --age-year:  #78716C;
+      --age-old:   #D6D3D1;
     }
 
+    /* ─── Dark: Warm Charcoal + Violet Glow ─── */
     :root[data-theme="dark"] {
-      --page: #15171b;
-      --panel: #20242a;
-      --panel-2: #191d23;
-      --panel-3: #252a31;
-      --control: #111418;
-      --button: #2c323a;
-      --button-hover: #38424d;
-      --line: #3d4652;
-      --line-dark: #576170;
-      --text: #e5e7eb;
-      --muted: #a6afbb;
-      --link: #8db7f0;
-      --danger: #ff8f8f;
-      --pin: #f4ca64;
-      --ok: #8fdda6;
-      --title: #9ec5ef;
-      --topbar: #191d23;
-      --nav: #232b35;
-      --tab: #1b222b;
-      --tab-active: #20242a;
-      --box-title: #253140;
-      --box-title-text: #c8dcf3;
-      --post-head: #252b34;
-      --post-title: #c9e0f7;
-      --post-pinned: #292614;
-      --tag: #263447;
-      --tag-text: #d2deea;
-      --code: #303845;
-      --pre: #181d23;
-      --recovery: #3b311a;
-      --recovery-text: #f8e8b2;
-      --focus: #9ec5ef;
-      --day: #303845;
-      --day-active: #7ba1ce;
-      --accent: #4a85c8;
-      --recovery-border: #8a6e22;
-      --pin-border: #9a6d1f;
-      --post-aged: #1c1a13;
-      --age-new: #8fdda6;
-      --age-year: #4a85c8;
-      --age-old: #c9a84c;
+      --page:    #0C0A09;          /* very warm near-black         */
+      --panel:   #1C1917;
+      --panel-2: #292524;
+      --panel-3: #3F3A36;
+      --control: #1C1917;
+
+      --button:      #E7E5E4;      /* warm off-white               */
+      --button-fg:   #1C1917;
+      --button-hover:#D6D3D1;
+
+      --line:      rgba(245,243,239,0.1);
+      --line-dark: rgba(245,243,239,0.2);
+
+      --text:  #F5F5F4;
+      --muted: #A8A29E;
+      --link:  #A78BFA;            /* soft violet                  */
+      --title: #FAFAF9;
+
+      --danger: #EF4444;
+      --pin:    #F59E0B;
+      --ok:     #22C55E;
+
+      --topbar: rgba(28,25,23,0.94);
+      --nav:    #1C1917;
+      --tab:    transparent;
+      --tab-active: transparent;
+
+      --box-title:      rgba(41,37,36,0.95);
+      --box-title-text: #A8A29E;
+
+      --post-head:   #292524;
+      --post-title:  #F5F5F4;
+      --post-pinned: #2C1A00;
+
+      --tag:      #3F3A36;
+      --tag-text: #D6D3D1;
+
+      --code: #292524;
+      --pre:  #1C1917;
+
+      --recovery:        #2C1A00;
+      --recovery-text:   #FCD34D;
+      --recovery-border: rgba(245,158,11,0.4);
+      --pin-border:      rgba(245,158,11,0.4);
+
+      --focus:  #8B5CF6;
+      --accent: #A78BFA;           /* soft violet glow             */
+
+      --day:        #3F3A36;
+      --day-active: #8B5CF6;
+
+      --post-aged: #1C1917;
+      --age-new:   #22C55E;
+      --age-year:  #A8A29E;
+      --age-old:   #57534E;
     }
 
     * {
@@ -104,15 +137,21 @@
       margin: 0;
       color: var(--text);
       background: var(--page);
-      font-family: system-ui, -apple-system, "Segoe UI", Tahoma, sans-serif;
-      font-size: 13px;
-      line-height: 1.45;
+      font-family: "Plus Jakarta Sans", system-ui, -apple-system, sans-serif;
+      font-size: 14px;
+      line-height: 1.55;
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
     }
 
     a {
       color: var(--link);
-      text-decoration: underline;
+      text-decoration: none;
       cursor: pointer;
+    }
+
+    a:hover {
+      text-decoration: underline;
     }
 
     button,
@@ -123,59 +162,86 @@
     }
 
     button {
-      border: 1px solid var(--line-dark);
+      border: none;
       background: var(--button);
-      color: var(--text);
-      padding: 5px 12px;
+      color: var(--button-fg);
+      padding: 0 18px;
       cursor: pointer;
-      min-height: 28px;
-      border-radius: 5px;
+      font: inherit;
+      font-size: 14px;
+      font-weight: 500;
+      min-height: 36px;
+      border-radius: 10px;
+      line-height: 1;
+      letter-spacing: -0.01em;
+      transition: background 0.18s ease, transform 0.12s ease, box-shadow 0.18s ease, opacity 0.15s ease;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.06), 0 2px 8px rgba(0,0,0,0.1);
+      white-space: nowrap;
     }
 
     button:hover {
       background: var(--button-hover);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 16px rgba(0,0,0,0.15), 0 1px 4px rgba(0,0,0,0.08);
+    }
+
+    button:active {
+      transform: scale(0.97);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
     }
 
     a:focus-visible,
-    button:focus-visible,
-    input:focus-visible,
-    textarea:focus-visible,
-    select:focus-visible {
-      outline: 2px solid var(--focus);
+    button:focus-visible {
+      outline: 3px solid rgba(109,40,217,0.45);
       outline-offset: 2px;
     }
 
     button:disabled {
-      color: var(--muted);
+      opacity: 0.38;
       cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
     }
 
     input,
     textarea,
     select {
       width: 100%;
-      border: 1px solid var(--line-dark);
+      border: 1.5px solid var(--line);
       background: var(--control);
       color: var(--text);
-      padding: 5px 8px;
-      border-radius: 5px;
+      padding: 9px 12px;
+      border-radius: 10px;
+      font: inherit;
+      font-size: 14px;
+      transition: border-color 0.18s, box-shadow 0.18s;
+    }
+
+    input:focus,
+    select:focus,
+    textarea:focus {
+      outline: none;
+      border-color: var(--focus);
+      box-shadow: 0 0 0 4px rgba(109,40,217,0.12);
     }
 
     textarea {
       min-height: 300px;
       resize: vertical;
-      font-family: Consolas, "Courier New", monospace;
-      line-height: 1.55;
+      font-family: "SF Mono", "Fira Code", Consolas, "Courier New", monospace;
+      line-height: 1.6;
     }
 
     .page {
-      width: min(1260px, calc(100vw - 16px));
-      margin: 8px auto 24px;
-      border: 1px solid var(--line-dark);
-      background: var(--panel);
-      border-radius: 10px;
+      width: min(1280px, calc(100vw - 32px));
+      margin: 20px auto 40px;
+      border-radius: 18px;
       overflow: hidden;
-      box-shadow: 0 2px 20px rgba(0,0,0,0.10);
+      box-shadow:
+        0 0 0 0.5px rgba(0,0,0,0.06),
+        0 2px 8px rgba(0,0,0,0.04),
+        0 8px 32px rgba(0,0,0,0.08),
+        0 24px 64px rgba(0,0,0,0.05);
     }
 
     .skip-link {
@@ -203,31 +269,39 @@
       align-items: center;
       justify-content: space-between;
       gap: 12px;
-      border-top: 4px solid var(--accent);
-      border-bottom: 1px solid var(--line-dark);
+      border-bottom: 0.5px solid rgba(0,0,0,0.1);
       background: var(--topbar);
-      padding: 6px 9px;
+      padding: 14px 22px;
+      backdrop-filter: saturate(180%) blur(20px);
+      -webkit-backdrop-filter: saturate(180%) blur(20px);
     }
 
     .brand {
       display: flex;
-      align-items: baseline;
-      gap: 8px;
+      align-items: center;
+      gap: 10px;
       min-width: 0;
     }
 
     .brand h1 {
       margin: 0;
       color: var(--title);
-      font-family: Georgia, "Times New Roman", serif;
-      font-size: 22px;
+      font-family: "Instrument Serif", Georgia, serif;
+      font-style: italic;
+      font-size: 20px;
+      font-weight: 400;
+      letter-spacing: -0.01em;
       line-height: 1;
       white-space: nowrap;
     }
 
     .brand span {
       color: var(--muted);
-      font-size: 12px;
+      font-size: 11px;
+      font-family: "Plus Jakarta Sans", sans-serif;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      font-weight: 500;
     }
 
     .top-actions {
@@ -236,6 +310,33 @@
       justify-content: end;
       align-items: center;
       gap: 6px;
+    }
+
+    .top-actions > button,
+    .top-actions .user-menu-trigger {
+      min-width: 0;
+      text-align: center;
+    }
+
+    /* Shortcuts — circular icon */
+    .top-actions #shortcutsButton {
+      min-width: 30px;
+      min-height: 30px;
+      padding: 0;
+      border-radius: 50%;
+      background: transparent;
+      border: 1.5px solid var(--line-dark);
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 600;
+      box-shadow: none;
+    }
+
+    .top-actions #shortcutsButton:hover {
+      background: var(--panel-3);
+      color: var(--text);
+      transform: none;
+      box-shadow: none;
     }
 
     .top-actions > .session-user {
@@ -247,6 +348,65 @@
       flex-wrap: wrap;
       gap: 6px;
       align-items: center;
+    }
+
+    .button-row > button {
+      flex: 0 0 auto;
+    }
+
+    .action-group {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 5px;
+    }
+
+    .compact-button {
+      min-height: 28px;
+      padding: 0 10px;
+      font-size: 12px;
+      border-radius: 7px;
+      white-space: nowrap;
+    }
+
+    .link-button {
+      min-height: 0;
+      border: 0;
+      background: none;
+      color: var(--link);
+      padding: 0;
+      text-decoration: none;
+      box-shadow: none;
+      transform: none;
+      font-weight: 400;
+      font-size: 13px;
+    }
+
+    .link-button:hover {
+      background: none;
+      color: var(--button-hover);
+      transform: none;
+      box-shadow: none;
+      text-decoration: underline;
+    }
+
+    .close-button {
+      min-width: 28px;
+      min-height: 28px;
+      padding: 0;
+      font-size: 15px;
+      text-align: center;
+      border-radius: 50%;
+      background: rgba(120,120,128,0.12);
+      color: var(--muted);
+      box-shadow: none;
+    }
+
+    .close-button:hover {
+      background: rgba(120,120,128,0.2);
+      transform: none;
+      box-shadow: none;
     }
 
     .form-actions {
@@ -282,26 +442,48 @@
     .nav {
       display: flex;
       flex-wrap: wrap;
-      gap: 2px;
-      border-bottom: 1px solid var(--line);
+      gap: 0;
+      border-bottom: 0.5px solid var(--line);
       background: var(--nav);
-      padding: 3px 4px 0;
+      padding: 0 14px;
     }
 
     .tab {
-      border: 1px solid var(--line);
-      border-bottom: 0;
-      background: var(--tab);
-      padding: 5px 10px;
-      min-height: auto;
+      flex: 1 1 100px;
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      font-weight: 500;
+      padding: 12px 16px;
+      border-radius: 0;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -0.5px;
+      cursor: pointer;
+      font: inherit;
+      font-size: 13px;
+      font-weight: 500;
+      letter-spacing: -0.01em;
       text-align: center;
-      border-radius: 5px 5px 0 0;
+      transition: color 0.15s;
+      box-shadow: none;
+      transform: none;
     }
 
     .tab.active {
-      border-color: var(--line-dark);
-      background: var(--tab-active);
-      font-weight: bold;
+      background: transparent;
+      color: var(--accent);
+      font-weight: 700;
+      border-bottom: 2.5px solid var(--accent);
+      border-left: none;
+      border-right: none;
+      border-top: none;
+    }
+
+    .tab:hover:not(.active) {
+      color: var(--text);
+      transform: none;
+      box-shadow: none;
+      background: rgba(0,0,0,0.02);
     }
 
     .layout {
@@ -311,41 +493,111 @@
     }
 
     .auth-panel {
-      max-width: 520px;
-      margin: 22px auto 30px;
+      max-width: 420px;
+      margin: 48px auto 48px;
+      padding: 0 16px;
+    }
+
+    .auth-panel .box {
+      border: none;
+      border-radius: 20px;
+      box-shadow:
+        0 0 0 0.5px rgba(0,0,0,0.07),
+        0 4px 20px rgba(0,0,0,0.08),
+        0 16px 40px rgba(0,0,0,0.06);
     }
 
     .auth-tabs {
       display: flex;
-      gap: 0;
+      gap: 4px;
+      background: var(--panel-3);
+      padding: 6px;
+      border-radius: 12px 12px 0 0;
       border-bottom: 1px solid var(--line);
-      background: var(--nav);
     }
 
     .auth-tab {
+      flex: 1;
       border: 0;
-      border-right: 1px solid var(--line);
-      background: var(--tab);
-      min-height: 32px;
-      padding: 6px 18px;
+      background: transparent;
+      color: var(--muted);
+      min-height: 34px;
+      padding: 6px 16px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      font: inherit;
+      border-radius: 8px;
+      transition: background 0.15s, color 0.15s;
+      box-shadow: none;
+      transform: none;
     }
 
     .auth-tab.active {
       background: var(--panel);
-      font-weight: bold;
+      color: var(--text);
+      font-weight: 600;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      transform: none;
+    }
+
+    .auth-tab:hover:not(.active) {
+      background: var(--panel-2);
+      transform: none;
+      box-shadow: none;
+    }
+
+    .auth-panel .box-body {
+      padding: 24px;
     }
 
     .auth-form {
+      gap: 10px;
+    }
+
+    .auth-form input {
+      min-height: 46px;
+      padding: 12px 14px;
+      font-size: 15px;
+      border-radius: 12px;
+    }
+
+    .auth-form .form-actions {
+      flex-direction: column;
+      align-items: stretch;
+      border-top: none;
+      padding-top: 8px;
+      margin-top: 4px;
       gap: 8px;
     }
 
+    .auth-form .form-actions button[type="submit"] {
+      border-radius: 12px;
+      min-height: 50px;
+      font-size: 15px;
+      font-weight: 700;
+      width: 100%;
+      letter-spacing: 0.01em;
+      box-shadow: 0 4px 14px rgba(28,25,23,0.2), 0 1px 4px rgba(28,25,23,0.1);
+    }
+
+    .auth-form .form-actions button[type="submit"]:hover {
+      box-shadow: 0 6px 22px rgba(28,25,23,0.28), 0 2px 8px rgba(28,25,23,0.12);
+      transform: translateY(-2px);
+    }
+
+    .auth-form .form-actions .muted {
+      text-align: center;
+    }
+
     .auth-note {
-      border: 1px solid var(--line);
-      background: var(--panel-3);
+      font-size: 11px;
       color: var(--muted);
-      margin-top: 8px;
-      padding: 10px 14px;
-      border-radius: 7px;
+      background: transparent;
+      border: none;
+      margin-top: 10px;
+      padding: 6px 4px;
+      text-align: center;
     }
 
     .recovery-box {
@@ -367,40 +619,60 @@
       user-select: all;
     }
 
+    .recovery-actions {
+      margin-top: 7px;
+    }
+
     .sidebar {
-      border-right: 1px solid var(--line);
+      border-right: 0.5px solid var(--line);
       background: var(--panel-2);
-      padding: 8px;
+      padding: 16px 12px;
     }
 
     .main {
-      padding: 8px;
+      padding: 16px;
       min-width: 0;
+      background: var(--panel);
     }
 
     .box {
-      border: 1px solid var(--line);
+      border: none;
       background: var(--panel);
-      margin-bottom: 10px;
-      border-radius: 7px;
+      margin-bottom: 12px;
+      border-radius: 14px;
       overflow: hidden;
+      box-shadow: 0 0 0 0.5px rgba(0,0,0,0.07), 0 1px 4px rgba(0,0,0,0.05);
     }
 
     .box-title {
-      border-bottom: 1px solid var(--line);
+      border-bottom: 0.5px solid var(--line);
       background: var(--box-title);
       color: var(--box-title-text);
-      font-weight: bold;
-      padding: 7px 10px;
+      font-weight: 600;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      padding: 9px 14px;
+    }
+
+    .box-title.with-actions {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .box-title.with-actions > span {
+      min-width: 0;
     }
 
     .box-body {
-      padding: 10px;
+      padding: 14px;
     }
 
     .stack {
       display: grid;
-      gap: 7px;
+      gap: 10px;
     }
 
     .row {
@@ -417,15 +689,25 @@
       min-width: 0;
     }
 
+    .row input[type="checkbox"] {
+      width: auto;
+    }
+
     .field {
       display: grid;
       gap: 3px;
     }
 
     .field label {
-      color: var(--text);
-      font-weight: bold;
-      font-size: 12px;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+    }
+
+    .auth-extra {
+      margin-top: 6px;
     }
 
     .muted {
@@ -440,34 +722,53 @@
     }
 
     .counter {
-      border: 1px solid var(--line);
-      background: var(--panel-3);
-      padding: 8px 6px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      border: none;
+      background: rgba(0,0,0,0.025);
+      padding: 14px 8px;
       text-align: center;
-      border-radius: 5px;
+      border-radius: 12px;
+      font-size: 10px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      gap: 3px;
     }
 
     .counter strong {
       display: block;
-      font-size: 18px;
-      color: var(--post-title);
+      font-size: 26px;
+      font-weight: 700;
+      letter-spacing: -0.04em;
+      color: var(--text);
     }
 
     .post-list {
       display: grid;
-      gap: 8px;
+      gap: 10px;
     }
 
     .post {
-      border: 1px solid var(--line);
+      border: none;
       background: var(--panel);
-      border-radius: 7px;
+      border-radius: 14px;
       overflow: hidden;
+      margin-bottom: 0;
+      box-shadow: 0 0 0 0.5px rgba(0,0,0,0.07), 0 1px 4px rgba(0,0,0,0.05);
+      transition: box-shadow 0.2s ease, transform 0.15s ease;
+    }
+
+    .post:hover {
+      box-shadow: 0 0 0 0.5px rgba(0,0,0,0.1), 0 4px 18px rgba(0,0,0,0.1);
+      transform: translateY(-1px);
     }
 
     .post.pinned {
-      border-color: var(--pin-border);
+      border: 1.5px solid var(--pin-border);
       background: var(--post-pinned);
+      box-shadow: none;
     }
 
     .post-head {
@@ -475,15 +776,21 @@
       align-items: flex-start;
       justify-content: space-between;
       gap: 8px;
-      border-bottom: 1px solid var(--line);
-      background: var(--post-head);
-      padding: 7px;
+      border-bottom: 0.5px solid var(--line);
+      background: transparent;
+      padding: 12px 14px;
+    }
+
+    .post-summary {
+      min-width: 0;
+      flex: 1 1 auto;
     }
 
     .post-title {
       margin: 0;
       color: var(--post-title);
-      font-size: 16px;
+      font-size: 15px;
+      font-weight: 600;
       line-height: 1.25;
     }
 
@@ -493,37 +800,66 @@
       color: var(--post-title);
       min-height: 0;
       padding: 0;
-      font-weight: bold;
+      font-weight: 600;
+      letter-spacing: -0.01em;
       text-align: left;
       cursor: pointer;
-      text-decoration: underline;
+      text-decoration: none;
+      box-shadow: none;
+      transform: none;
+    }
+
+    .post-title button:hover {
+      color: var(--link);
+      text-decoration: none;
+      transform: none;
+      box-shadow: none;
     }
 
     .post-title button::before {
-      content: "▶";
+      content: "›";
       display: inline-block;
-      font-size: 8px;
+      font-size: 18px;
+      font-weight: 300;
       color: var(--muted);
       margin-right: 6px;
       vertical-align: middle;
       text-decoration: none;
+      line-height: 0.9;
+      transition: transform 0.2s ease;
     }
 
     .post.expanded .post-title button::before {
-      content: "▼";
+      content: "›";
+      display: inline-block;
+      transform: rotate(90deg);
     }
 
     .post-meta {
       color: var(--muted);
-      font-size: 12px;
-      margin-top: 2px;
+      font-size: 11px;
+      font-weight: 500;
+      margin-top: 4px;
+      letter-spacing: 0.01em;
     }
 
     .post-actions {
       display: flex;
-      gap: 4px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 5px;
       align-items: flex-start;
       flex: 0 0 auto;
+      max-width: 360px;
+    }
+
+    .post-actions button {
+      min-height: 26px;
+      padding: 0 10px;
+      font-size: 12px;
+      font-weight: 500;
+      border-radius: 7px;
+      white-space: nowrap;
     }
 
     .post-content {
@@ -535,7 +871,8 @@
     }
 
     .post-body {
-      padding: 8px 9px;
+      padding: 14px 16px;
+      line-height: 1.7;
     }
 
     .post-body h1,
@@ -543,7 +880,6 @@
     .post-body h3 {
       margin: 10px 0 4px;
       color: var(--text);
-      font-family: Georgia, "Times New Roman", serif;
     }
 
     .post-body p {
@@ -552,16 +888,19 @@
 
     .post-body pre {
       overflow: auto;
-      border: 1px solid var(--line);
+      border: none;
       background: var(--pre);
-      padding: 8px;
-      font-family: Consolas, "Courier New", monospace;
+      padding: 12px 14px;
+      font-family: "SF Mono", "Fira Code", Consolas, monospace;
+      border-radius: 10px;
     }
 
     .post-body code {
       background: var(--code);
-      padding: 1px 3px;
-      font-family: Consolas, "Courier New", monospace;
+      padding: 2px 5px;
+      border-radius: 5px;
+      font-family: "SF Mono", "Fira Code", Consolas, monospace;
+      font-size: 0.9em;
     }
 
     .tags {
@@ -572,12 +911,15 @@
     }
 
     .tag {
-      border: 1px solid var(--line);
+      display: inline-block;
+      border: none;
       background: var(--tag);
       color: var(--tag-text);
-      padding: 2px 8px;
+      border-radius: 20px;
+      padding: 3px 10px;
       font-size: 11px;
-      border-radius: 10px;
+      font-weight: 500;
+      letter-spacing: -0.01em;
     }
 
     .pin {
@@ -604,6 +946,12 @@
       align-items: start;
     }
 
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(160px, 1fr));
+      gap: 8px;
+    }
+
     .preview {
       max-height: 260px;
       overflow: auto;
@@ -623,14 +971,16 @@
     }
 
     .year {
-      border-left: 4px solid var(--line-dark);
-      padding-left: 8px;
+      border-left: 3px solid var(--accent);
+      padding-left: 14px;
     }
 
     .year h3 {
-      margin: 0 0 5px;
-      font-size: 18px;
-      font-family: Georgia, "Times New Roman", serif;
+      margin: 0 0 6px;
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      color: var(--title);
     }
 
     .month {
@@ -657,12 +1007,12 @@
     .day {
       min-width: 3px;
       background: var(--day);
-      border: 1px solid var(--line);
+      border: none;
+      border-radius: 2px;
     }
 
     .day.has-posts {
       background: var(--day-active);
-      border-color: var(--line-dark);
     }
 
     .collection-list {
@@ -671,25 +1021,28 @@
     }
 
     .collection-item {
-      border: 1px solid var(--line);
+      border: none;
       background: var(--panel);
-      padding: 10px;
-      border-radius: 7px;
+      padding: 14px;
+      border-radius: 14px;
+      box-shadow: 0 0 0 0.5px rgba(0,0,0,0.07), 0 1px 4px rgba(0,0,0,0.05);
     }
 
     .collection-item h3 {
       margin: 0 0 4px;
       font-size: 15px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
       color: var(--post-title);
     }
 
     .empty {
-      border: 1px dashed var(--line-dark);
-      background: var(--panel-3);
+      border: 1.5px dashed rgba(0,0,0,0.12);
+      background: transparent;
       color: var(--muted);
-      padding: 24px 16px;
+      padding: 32px 20px;
       text-align: center;
-      border-radius: 7px;
+      border-radius: 14px;
     }
 
     .rss-output {
@@ -737,11 +1090,13 @@
     }
 
     .footer {
-      border-top: 1px solid var(--line);
+      border-top: 0.5px solid var(--line);
       background: var(--panel-2);
       color: var(--muted);
-      padding: 7px 10px;
+      padding: 10px 22px;
       font-size: 12px;
+      font-weight: 500;
+      letter-spacing: 0.01em;
     }
 
     @media (max-width: 800px) {
@@ -753,6 +1108,11 @@
 
       .topbar {
         flex-wrap: wrap;
+      }
+
+      .top-actions {
+        width: 100%;
+        justify-content: flex-start;
       }
 
       .post-head {
@@ -774,9 +1134,26 @@
         justify-content: flex-start;
       }
 
+      .post-actions {
+        max-width: none;
+      }
+
       .layout,
       .split {
         grid-template-columns: 1fr;
+      }
+
+      .form-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .box-title.with-actions {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .box-title.with-actions .action-group {
+        justify-content: flex-start;
       }
 
       #toolsView:not(.hidden) {
@@ -792,6 +1169,66 @@
       .month {
         grid-template-columns: 1fr;
       }
+    }
+
+    @media (max-width: 640px) {
+      /* Page: edge to edge */
+      .page { width: 100vw; margin: 0; border-radius: 0; }
+
+      /* Topbar: single row — brand left, user menu right */
+      .topbar { flex-wrap: nowrap; padding: 10px 14px; gap: 8px; align-items: center; }
+      .brand { flex: 1; flex-direction: row; align-items: center; gap: 8px; min-width: 0; }
+      .brand h1 { font-size: 18px; white-space: nowrap; }
+      .brand span { display: none; }
+      .top-actions { width: auto; flex-wrap: nowrap; gap: 6px; flex-shrink: 0; }
+      /* Hide shortcuts on mobile */
+      #shortcutsButton { display: none; }
+
+      /* Sidebar: hidden */
+      .sidebar { display: none; }
+
+      /* Nav: 5 equal-width tabs in one row, no scroll, no wrap */
+      .nav { flex-wrap: nowrap; padding: 0; gap: 0; overflow: visible; }
+      .tab {
+        flex: 1 1 0;
+        min-width: 0;
+        padding: 12px 2px;
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: -0.01em;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        text-align: center;
+        border-radius: 0;
+        border-bottom: 2.5px solid transparent;
+        margin-bottom: -0.5px;
+        box-shadow: none;
+        transform: none;
+      }
+      .tab.active {
+        color: var(--accent);
+        border-bottom-color: var(--accent);
+        background: transparent;
+        font-weight: 700;
+      }
+      .tab:hover:not(.active) { background: rgba(0,0,0,0.02); transform: none; }
+
+      /* Main area */
+      .main { padding: 10px; }
+
+      /* Post: title + actions stacked */
+      .post-head { flex-direction: column; align-items: flex-start; }
+      .post-actions { max-width: none; gap: 4px; }
+
+      /* Box title header: compact */
+      .box-title.with-actions { gap: 6px; padding: 8px 12px; }
+      .box-title.with-actions .action-group { gap: 4px; }
+      .box-title.with-actions .compact-button { min-height: 26px; padding: 0 8px; font-size: 11px; }
+
+      /* Backup buttons: full-width stacked column */
+      #toolsView .button-row { flex-direction: column; gap: 8px; }
+      #toolsView .button-row button { width: 100%; min-height: 46px; font-size: 14px; border-radius: 12px; }
     }
 
     body.focus-mode .topbar,
@@ -814,13 +1251,13 @@
       border: 1px solid var(--recovery-border);
       background: var(--recovery);
       color: var(--recovery-text);
-      padding: 8px 12px;
+      padding: 10px 14px;
       display: flex;
       align-items: center;
       gap: 8px;
       flex-wrap: wrap;
-      margin-bottom: 4px;
-      border-radius: 6px;
+      margin-bottom: 8px;
+      border-radius: 12px;
     }
 
     /* Age-based left border — not applied to pinned (which has its own border colour) */
@@ -831,12 +1268,100 @@
 
     .today-badge {
       display: inline-block;
-      border: 1px solid var(--age-new);
-      color: var(--age-new);
+      background: #34C759;
+      color: #ffffff;
       font-size: 10px;
-      padding: 0 4px;
-      margin-right: 3px;
+      font-weight: 700;
+      border-radius: 20px;
+      padding: 2px 8px;
+      margin-right: 4px;
       vertical-align: middle;
+      letter-spacing: 0.01em;
+    }
+
+    /* Recover form button */
+    #recoverForm .form-actions button[type="submit"] {
+      border-radius: 12px;
+      min-height: 46px;
+      font-weight: 700;
+      box-shadow: 0 4px 14px rgba(28,25,23,0.18);
+    }
+
+    /* User menu trigger pill */
+    .user-menu-trigger {
+      background: var(--panel-3);
+      border: 1.5px solid var(--line-dark);
+      color: var(--text);
+      padding: 0 12px;
+      min-height: 30px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      box-shadow: none;
+    }
+
+    .user-menu-trigger:hover {
+      background: var(--panel-3);
+      transform: none;
+      box-shadow: none;
+    }
+
+    /* Counter editorial number */
+    .counter strong {
+      font-family: "Instrument Serif", Georgia, serif;
+      font-style: italic;
+      font-size: 32px;
+      font-weight: 400;
+      letter-spacing: -0.02em;
+      color: var(--title);
+    }
+
+    /* Timeline year serif */
+    .year h3 {
+      font-family: "Instrument Serif", Georgia, serif;
+      font-style: italic;
+      font-weight: 400;
+      font-size: 22px;
+      letter-spacing: -0.01em;
+    }
+
+    /* Post headings — editorial */
+    .post-body h1, .post-body h2 {
+      font-family: "Instrument Serif", Georgia, serif;
+      font-style: italic;
+      font-weight: 400;
+      letter-spacing: -0.01em;
+    }
+
+    .post-body h3 {
+      font-weight: 700;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--muted);
+    }
+
+    /* Post title weight */
+    .post-title {
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    /* Post body more padding */
+    .box-body {
+      padding: 16px;
+    }
+
+    /* Auth tab active — warm shadow */
+    .auth-tab.active {
+      box-shadow: 0 1px 4px rgba(28,25,23,0.12), 0 0 0 0.5px rgba(28,25,23,0.06);
+    }
+
+    /* Tag hidden */
+    .tag-hidden {
+      background: rgba(220,38,38,0.1);
+      color: var(--danger);
     }
 
     .fav-star {
@@ -873,12 +1398,12 @@
     }
 
     .shortcuts-box {
-      min-width: 320px;
-      border: 1px solid var(--line-dark);
+      min-width: 340px;
+      border: none;
       background: var(--panel);
-      border-radius: 10px;
+      border-radius: 18px;
       overflow: hidden;
-      box-shadow: 0 8px 40px rgba(0,0,0,0.20);
+      box-shadow: 0 0 0 0.5px rgba(0,0,0,0.1), 0 24px 60px rgba(0,0,0,0.3);
     }
 
     .shortcuts-table {
@@ -887,12 +1412,12 @@
     }
 
     .shortcuts-table td {
-      padding: 5px 8px;
+      padding: 8px 14px;
       vertical-align: middle;
     }
 
     .shortcuts-table tr + tr td {
-      border-top: 1px solid var(--line);
+      border-top: 0.5px solid var(--line);
     }
 
     .shortcuts-table td:first-child {
@@ -902,13 +1427,13 @@
 
     kbd {
       display: inline-block;
-      border: 1px solid var(--line-dark);
-      background: var(--button);
+      border: 1px solid var(--line);
+      background: var(--panel-3);
       color: var(--text);
-      padding: 2px 6px;
-      font-family: Consolas, "Courier New", monospace;
+      padding: 2px 7px;
+      font-family: "SF Mono", Consolas, monospace;
       font-size: 11px;
-      border-radius: 4px;
+      border-radius: 6px;
       box-shadow: 0 1px 0 var(--line-dark);
     }
 
@@ -943,41 +1468,6 @@
       }
     }
 
-    .reading-post {
-      padding: 16px 0;
-    }
-
-    .reading-post-header {
-      display: flex;
-      align-items: baseline;
-      gap: 10px;
-      margin-bottom: 6px;
-      flex-wrap: wrap;
-    }
-
-    .reading-author {
-      font-weight: 600;
-      color: var(--title);
-      font-size: 14px;
-    }
-
-    .reading-post-title {
-      font-size: 17px;
-      font-weight: 600;
-      color: var(--post-title);
-      margin: 0 0 10px 0;
-    }
-
-    .reading-divider {
-      border: 0;
-      border-top: 1px solid var(--line);
-      margin: 0;
-    }
-
-    .reading-empty {
-      color: var(--muted);
-      padding: 12px 0;
-    }
 
     /* Lock screen */
     .lock-screen {
@@ -991,13 +1481,16 @@
     }
 
     .lock-box {
-      border: 1px solid var(--line-dark);
+      border: none;
       background: var(--panel);
-      padding: 36px 52px;
+      padding: 40px 52px;
       text-align: center;
-      width: 300px;
-      border-radius: 12px;
-      box-shadow: 0 8px 40px rgba(0,0,0,0.20);
+      width: 320px;
+      border-radius: 24px;
+      box-shadow:
+        0 0 0 0.5px rgba(0,0,0,0.08),
+        0 8px 40px rgba(0,0,0,0.15),
+        0 32px 80px rgba(0,0,0,0.12);
     }
 
     #loadingView {
@@ -1010,24 +1503,64 @@
     .spinner {
       width: 28px;
       height: 28px;
-      border: 3px solid var(--line);
-      border-top-color: var(--title);
+      border: 2.5px solid var(--line);
+      border-top-color: var(--accent);
       border-radius: 50%;
       animation: spin 0.7s linear infinite;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
 
     .lock-label {
-      font-size: 18px;
-      font-weight: bold;
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
       color: var(--title);
-      font-family: Georgia, "Times New Roman", serif;
-      margin-bottom: 8px;
+      margin-bottom: 6px;
     }
 
     .lock-hint {
       color: var(--muted);
       font-size: 12px;
+    }
+
+    .lock-form-fields {
+      display: grid;
+      gap: 8px;
+      margin-top: 16px;
+    }
+
+    .lock-status {
+      color: var(--danger);
+      font-size: 12px;
+      min-height: 16px;
+      margin-top: 6px;
+      text-align: center;
+    }
+
+    .lock-actions {
+      margin-top: 10px;
+    }
+
+    .lock-actions button {
+      width: 100%;
+      border-radius: 12px;
+      min-height: 50px;
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+      box-shadow: 0 4px 14px rgba(28,25,23,0.2), 0 1px 4px rgba(28,25,23,0.1);
+    }
+
+    .lock-secondary {
+      margin-top: 14px;
+      text-align: center;
+    }
+
+    .lock-divider {
+      border-top: 1px solid var(--line);
+      margin-top: 24px;
+      padding-top: 14px;
+      text-align: center;
     }
 
     /* Blur overlay (tab switch) */
@@ -1045,11 +1578,12 @@
     }
 
     .blur-reveal-hint {
-      border: 1px solid var(--line-dark);
       background: var(--panel);
-      padding: 10px 18px;
+      padding: 12px 20px;
       color: var(--muted);
-      font-size: 12px;
+      font-size: 13px;
+      border-radius: 14px;
+      box-shadow: 0 0 0 0.5px rgba(0,0,0,0.1), 0 8px 24px rgba(0,0,0,0.15);
     }
 
     .tag-hidden {
@@ -1109,13 +1643,13 @@
 
     .user-menu-dropdown {
       position: absolute;
-      top: calc(100% + 4px);
+      top: calc(100% + 6px);
       right: 0;
-      min-width: 160px;
+      min-width: 180px;
       background: var(--panel);
-      border: 1px solid var(--line-dark);
-      border-radius: 4px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      border: none;
+      border-radius: 14px;
+      box-shadow: 0 0 0 0.5px rgba(0,0,0,0.1), 0 8px 30px rgba(0,0,0,0.15);
       z-index: 200;
       overflow: hidden;
       padding: 4px 0;
@@ -1128,20 +1662,120 @@
       border: none;
       border-radius: 0;
       background: none;
-      padding: 8px 14px;
+      box-shadow: none;
+      padding: 9px 16px;
       cursor: pointer;
       font: inherit;
+      font-size: 14px;
+      font-weight: 400;
       color: var(--text);
+      transform: none;
+      min-height: 0;
+      letter-spacing: -0.01em;
     }
 
     .menu-item:hover {
-      background: var(--button-hover);
+      background: var(--panel-3);
+      color: var(--text);
+      transform: none;
+      box-shadow: none;
     }
 
     .menu-divider {
-      height: 1px;
+      height: 0.5px;
       background: var(--line);
-      margin: 2px 0;
+      margin: 4px 0;
+    }
+
+    /* ── Backup page: single column to match other views ── */
+    #toolsView:not(.hidden) {
+      display: block;
+    }
+    #toolsView .box {
+      margin-bottom: 12px;
+    }
+
+    /* ── Stats grid: no individual card boxes ── */
+    .counter-grid { gap: 0; }
+    .counter {
+      background: transparent;
+      border-radius: 0;
+      padding: 14px 6px 12px;
+      gap: 2px;
+    }
+    .counter:nth-child(-n+2) { border-bottom: 0.5px solid var(--line); }
+    .counter:nth-child(odd)  { border-right: 0.5px solid var(--line); }
+
+    /* ── Section headers: remove heavy parchment bar ── */
+    .box-title { background: transparent; }
+
+    /* ── Sidebar boxes: use border, drop elevation shadow ── */
+    .sidebar .box {
+      box-shadow: none;
+      border: 0.5px solid var(--line);
+      border-radius: 10px;
+    }
+
+    /* ── Header action buttons (Show hidden / Random / + New post): ghost ── */
+    .box-title.with-actions .compact-button {
+      background: transparent;
+      color: var(--muted);
+      border: 0.5px solid var(--line-dark);
+      box-shadow: none;
+      min-height: 24px;
+      padding: 0 10px;
+      font-size: 11px;
+      border-radius: 8px;
+      font-weight: 500;
+    }
+    .box-title.with-actions .compact-button:hover {
+      background: var(--panel-3);
+      color: var(--text);
+      transform: none;
+      box-shadow: none;
+    }
+
+    /* ── Post action buttons: elegant ghost outline ── */
+    .post-actions button {
+      min-height: 24px;
+      padding: 0 9px;
+      font-size: 11px;
+      border-radius: 7px;
+      background: transparent;
+      border: 0.5px solid var(--line-dark);
+      color: var(--muted);
+      box-shadow: none;
+      font-weight: 500;
+    }
+    .post-actions button:hover {
+      background: var(--panel-3);
+      color: var(--text);
+      transform: none;
+      box-shadow: none;
+    }
+    /* Star/favourite — borderless icon */
+    .post-actions button[data-action="favourite"] {
+      border: none;
+      font-size: 15px;
+      padding: 0 4px;
+      color: var(--muted);
+    }
+    .post-actions button[data-action="favourite"]:hover {
+      background: transparent;
+      color: var(--pin);
+      transform: none;
+    }
+    /* Delete — red tint */
+    .post-actions button[data-action="delete"] {
+      color: var(--danger);
+      border-color: rgba(220,38,38,0.2);
+    }
+    .post-actions button[data-action="delete"]:hover {
+      background: rgba(220,38,38,0.06);
+      color: var(--danger);
+      border-color: rgba(220,38,38,0.3);
+      transform: none;
+      box-shadow: none;
     }
 
   </style>
@@ -1155,14 +1789,14 @@
         <span>plain old thoughts, dated and kept</span>
       </div>
       <div class="top-actions">
-        <button id="themeButton" type="button">Dark mode</button>
-        <button id="privacyButton" type="button">Privacy</button>
         <button id="shortcutsButton" type="button" title="Keyboard shortcuts">?</button>
         <div class="user-menu auth-only hidden" id="userMenu">
           <button type="button" class="user-menu-trigger" id="userMenuButton" aria-haspopup="true" aria-expanded="false">
             <span id="currentUserLabel" class="hidden"></span><span class="user-menu-caret" aria-hidden="true">▾</span>
           </button>
           <div class="user-menu-dropdown hidden" id="userMenuDropdown" role="menu">
+            <button type="button" id="themeMenuItem" class="menu-item" role="menuitem">Dark mode</button>
+            <div class="menu-divider" role="separator"></div>
             <button type="button" id="lockButton" class="menu-item" role="menuitem">Lock screen</button>
             <div class="menu-divider" role="separator"></div>
             <button type="button" id="logoutButton" class="menu-item" role="menuitem">Sign out</button>
@@ -1173,21 +1807,6 @@
 
     <div id="mainContent" class="skip-target" tabindex="-1"></div>
 
-    <section id="privacyView" class="auth-panel hidden">
-      <div class="box">
-        <div class="box-title">About and Privacy</div>
-        <div class="box-body stack">
-          <p>Mind Archive is for private long-term writing: thoughts, feelings, notes, collections, and personal timelines.</p>
-          <p>Your posts are encrypted in your browser before they are stored on the server. The server stores encrypted vault data, not readable journal text.</p>
-          <p>Your password is used in the browser to unlock your archive. The raw password is not sent to the server.</p>
-          <p>Password recovery only works with the recovery key shown during sign-up. The server cannot recover an archive without it.</p>
-          <p>Backups matter. Use the Markdown and JSON export tools regularly if the archive is important to you.</p>
-          <div class="row wrap">
-            <button id="privacyBackButton" type="button">Back</button>
-          </div>
-        </div>
-      </div>
-    </section>
 
     <div id="loadingView" class="hidden">
       <div class="spinner"></div>
@@ -1213,18 +1832,18 @@
               <button type="submit">Sign in</button>
               <span id="signinStatus" class="muted" role="status" aria-live="polite"></span>
             </div>
-            <div style="margin-top:6px;">
-              <button type="button" id="showRecoverButton" style="background:none;border:none;color:var(--muted);font-size:12px;cursor:pointer;text-decoration:underline;padding:0;">Forgot password?</button>
+            <div class="auth-extra">
+              <button type="button" id="showRecoverButton" class="link-button">Forgot password?</button>
             </div>
           </form>
 
           <form id="signupForm" class="auth-form stack hidden">
-            <div class="row wrap">
-              <div class="field" style="flex:1 1 140px">
+            <div class="form-grid">
+              <div class="field">
                 <label for="signupFirstName">First name</label>
                 <input id="signupFirstName" type="text" autocomplete="given-name" maxlength="80" required>
               </div>
-              <div class="field" style="flex:1 1 140px">
+              <div class="field">
                 <label for="signupLastName">Last name</label>
                 <input id="signupLastName" type="text" autocomplete="family-name" maxlength="80" required>
               </div>
@@ -1249,7 +1868,7 @@
               <strong>Save this recovery key now.</strong>
               <p class="muted">It can reset your password if you forget it. It will not be shown again.</p>
               <div id="recoveryKeyValue" class="recovery-key"></div>
-              <div class="form-actions" style="margin-top:7px">
+              <div class="form-actions recovery-actions">
                 <button type="button" id="copyRecoveryKey">Copy recovery key</button>
               </div>
             </div>
@@ -1293,10 +1912,9 @@
     <nav id="appNav" class="nav hidden" aria-label="Main views" role="tablist">
       <button class="tab active" data-view="postsView" role="tab" aria-controls="postsView" aria-selected="true">Posts</button>
       <button class="tab" data-view="editorView" role="tab" aria-controls="editorView" aria-selected="false">Write</button>
-      <button class="tab" data-view="timelineView" role="tab" aria-controls="timelineView" aria-selected="false">What I Was Thinking</button>
+      <button class="tab" data-view="timelineView" role="tab" aria-controls="timelineView" aria-selected="false">Timeline</button>
       <button class="tab" data-view="collectionsView" role="tab" aria-controls="collectionsView" aria-selected="false">Collections</button>
-      <button class="tab" data-view="toolsView" role="tab" aria-controls="toolsView" aria-selected="false">RSS / Backup</button>
-      <button class="tab" data-view="readingView" role="tab" aria-controls="readingView" aria-selected="false">Reading</button>
+      <button class="tab" data-view="toolsView" role="tab" aria-controls="toolsView" aria-selected="false">Backup</button>
     </nav>
 
     <div id="appLayout" class="layout hidden">
@@ -1344,8 +1962,8 @@
                 <option value="shortest">Shortest first</option>
               </select>
             </div>
-            <label class="row"><input id="onlyPinned" type="checkbox" style="width:auto"> pinned only</label>
-            <label class="row"><input id="onlyFavourite" type="checkbox" style="width:auto"> ★ favourites only</label>
+            <label class="row"><input id="onlyPinned" type="checkbox"> pinned only</label>
+            <label class="row"><input id="onlyFavourite" type="checkbox"> ★ favourites only</label>
             <button type="button" id="clearFilters" class="hidden">× clear filters</button>
           </div>
         </section>
@@ -1365,12 +1983,12 @@
       <main class="main">
         <section id="postsView" class="view" role="tabpanel">
           <div class="box">
-            <div class="box-title" style="display:flex;align-items:center;justify-content:space-between;">
+            <div class="box-title with-actions">
               <span id="postsBoxTitle">Posts</span>
-              <div style="display:flex;gap:4px;">
-                <button type="button" id="toggleHiddenButton" style="font-size:11px;padding:2px 7px;min-height:0;">Show hidden</button>
-                <button type="button" id="randomPostButton" style="font-size:11px;padding:2px 7px;min-height:0;">Random</button>
-                <button type="button" id="newPostButton" style="font-size:11px;padding:2px 7px;min-height:0;">+ New post</button>
+              <div class="action-group">
+                <button type="button" id="toggleHiddenButton" class="compact-button">Show hidden</button>
+                <button type="button" id="randomPostButton" class="compact-button">Random</button>
+                <button type="button" id="newPostButton" class="compact-button">+ New post</button>
               </div>
             </div>
             <div class="box-body">
@@ -1382,9 +2000,11 @@
         <section id="editorView" class="view hidden" role="tabpanel">
           <div class="split">
             <form id="postForm" class="box">
-              <div class="box-title" style="display:flex;align-items:center;justify-content:space-between;">
+              <div class="box-title with-actions">
                 <span id="editorTitle">Write Post</span>
-                <button type="button" id="focusButton" style="font-size:11px;padding:2px 7px;min-height:0;">Focus</button>
+                <div class="action-group">
+                  <button type="button" id="focusButton" class="compact-button">Focus</button>
+                </div>
               </div>
               <div class="box-body stack">
                 <div id="draftBanner" class="draft-banner hidden">
@@ -1397,22 +2017,22 @@
                   <label for="titleInput">Title</label>
                   <input id="titleInput" required maxlength="160" placeholder="what was today about?">
                 </div>
-                <div class="row wrap">
-                  <div class="field" style="flex:1 1 170px">
+                <div class="form-grid">
+                  <div class="field">
                     <label for="moodInput">Mood</label>
                     <input id="moodInput" maxlength="80" placeholder="tired, clear, angry, grateful">
                   </div>
-                  <div class="field" style="flex:1 1 170px">
+                  <div class="field">
                     <label for="placeInput">Place</label>
                     <input id="placeInput" maxlength="120" placeholder="room, city, train, college">
                   </div>
                 </div>
-                <div class="row wrap">
-                  <div class="field" style="flex:1 1 170px">
+                <div class="form-grid">
+                  <div class="field">
                     <label for="collectionsInput">Collections</label>
                     <input id="collectionsInput" placeholder="life, college, work">
                   </div>
-                  <div class="field" style="flex:1 1 170px">
+                  <div class="field">
                     <label for="seriesInput">Series</label>
                     <input id="seriesInput" placeholder="becoming 20">
                   </div>
@@ -1423,9 +2043,8 @@
                   <div class="editor-wordcount" id="editorWordCount">0 words</div>
                 </div>
                 <div class="option-list">
-                  <label class="row"><input id="pinnedInput" type="checkbox" style="width:auto"> pin this thought</label>
-                  <label class="row"><input id="rssInput" type="checkbox" style="width:auto"> share in RSS</label>
-                  <label class="row"><input id="hiddenInput" type="checkbox" style="width:auto"> keep hidden</label>
+                  <label class="row"><input id="pinnedInput" type="checkbox"> pin this thought</label>
+                  <label class="row"><input id="hiddenInput" type="checkbox"> keep hidden</label>
                 </div>
                 <div class="form-actions">
                   <button type="submit">Save post</button>
@@ -1480,52 +2099,6 @@
             </div>
           </div>
 
-          <div class="box">
-            <div class="box-title">Your Feed</div>
-            <div class="box-body stack">
-              <div class="muted">Share this link with anyone you want to follow your writing. Only posts marked <strong>share in RSS</strong> are included — everything else stays private.</div>
-              <div class="field">
-                <label for="publicRssUrl">Feed URL</label>
-                <input id="publicRssUrl" readonly>
-              </div>
-              <div class="button-row">
-                <button id="copyRssUrl">Copy link</button>
-                <button id="downloadRss">Download XML</button>
-                <span id="rssStatus" class="muted" role="status" aria-live="polite"></span>
-              </div>
-            </div>
-          </div>
-
-          <div class="box">
-            <div class="box-title">Follow a Writer</div>
-            <div class="box-body stack">
-              <div class="muted">Paste a feed link from someone who uses Mind Archive. Their shared posts will appear in your <strong>Reading</strong> tab.</div>
-              <div class="field">
-                <label for="subscribeFeedInput">Feed URL</label>
-                <input id="subscribeFeedInput" placeholder="https://…/feed/….xml">
-              </div>
-              <div class="button-row">
-                <button id="subscribeFeedButton" type="button">Follow</button>
-                <span id="subscribeStatus" class="muted" role="status" aria-live="polite"></span>
-              </div>
-              <div id="subscriptionsList"></div>
-            </div>
-          </div>
-
-          <div class="box">
-            <div class="box-title">Privacy</div>
-            <div class="box-body stack">
-              <div class="muted">Auto-lock closes the screen after 15 minutes of no activity. Use the Lock button in the toolbar to lock instantly. Your password is required to unlock.</div>
-              <div class="field">
-                <label for="tabTitleInput">Browser tab title</label>
-                <input id="tabTitleInput" type="text" maxlength="60" placeholder="Mind Archive">
-              </div>
-              <div class="button-row">
-                <button id="saveTabTitle" type="button">Save title</button>
-                <span id="tabTitleStatus" class="muted" role="status" aria-live="polite"></span>
-              </div>
-            </div>
-          </div>
 
           <div class="box">
             <div class="box-title">Backup &amp; Restore</div>
@@ -1543,18 +2116,6 @@
           </div>
         </section>
 
-        <section id="readingView" class="view hidden" role="tabpanel">
-          <div class="box">
-            <div class="box-title" style="display:flex;align-items:center;justify-content:space-between;">
-              <span>Reading</span>
-              <button type="button" id="refreshReadingButton" style="font-size:11px;padding:2px 8px;min-height:0;">Refresh</button>
-            </div>
-            <div class="box-body stack">
-              <div class="muted">Posts from writers you follow appear here. Subscribe to a feed in the RSS / Backup tab — paste their link and you'll see every post they share here, automatically.</div>
-              <div id="readingFeedList"><div class="reading-empty">Loading...</div></div>
-            </div>
-          </div>
-        </section>
       </main>
     </div>
 
@@ -1570,44 +2131,48 @@
       <!-- Password unlock form -->
       <div id="lockUnlockSection">
         <form id="lockUnlockForm" autocomplete="off">
-          <div class="field" style="margin-top:16px;">
-            <input id="lockPasswordInput" type="password" placeholder="Enter your password" autocomplete="current-password" style="width:100%;box-sizing:border-box;">
+          <div class="lock-form-fields">
+            <div class="field">
+              <input id="lockPasswordInput" type="password" placeholder="Enter your password" autocomplete="current-password">
+            </div>
           </div>
-          <div id="lockError" style="font-size:12px;color:var(--danger,#c0392b);min-height:16px;margin-top:6px;text-align:center;"></div>
-          <div style="margin-top:10px;">
-            <button type="submit" style="width:100%;">Unlock</button>
+          <div id="lockError" class="lock-status"></div>
+          <div class="lock-actions">
+            <button type="submit">Unlock</button>
           </div>
         </form>
-        <div style="margin-top:14px;text-align:center;">
-          <button type="button" id="lockForgotButton" style="background:none;border:none;color:var(--muted);font-size:12px;cursor:pointer;text-decoration:underline;padding:0;">Forgot password?</button>
+        <div class="lock-secondary">
+          <button type="button" id="lockForgotButton" class="link-button">Forgot password?</button>
         </div>
       </div>
 
       <!-- Inline recovery form (shown when Forgot password? is clicked) -->
       <div id="lockRecoverSection" class="hidden">
         <form id="lockRecoverForm" autocomplete="off">
-          <div class="field" style="margin-top:16px;">
-            <input id="lockRecoverKey" placeholder="Recovery key" style="width:100%;box-sizing:border-box;">
+          <div class="lock-form-fields">
+            <div class="field">
+              <input id="lockRecoverKey" placeholder="Recovery key">
+            </div>
+            <div class="field">
+              <input id="lockRecoverPassword" type="password" placeholder="New password" autocomplete="new-password">
+            </div>
+            <div class="field">
+              <input id="lockRecoverPasswordAgain" type="password" placeholder="Repeat new password" autocomplete="new-password">
+            </div>
           </div>
-          <div class="field" style="margin-top:8px;">
-            <input id="lockRecoverPassword" type="password" placeholder="New password" autocomplete="new-password" style="width:100%;box-sizing:border-box;">
-          </div>
-          <div class="field" style="margin-top:8px;">
-            <input id="lockRecoverPasswordAgain" type="password" placeholder="Repeat new password" autocomplete="new-password" style="width:100%;box-sizing:border-box;">
-          </div>
-          <div id="lockRecoverError" style="font-size:12px;color:var(--danger,#c0392b);min-height:16px;margin-top:6px;text-align:center;"></div>
-          <div style="margin-top:10px;">
-            <button type="submit" style="width:100%;">Recover account</button>
+          <div id="lockRecoverError" class="lock-status"></div>
+          <div class="lock-actions">
+            <button type="submit">Recover account</button>
           </div>
         </form>
-        <div style="margin-top:14px;text-align:center;">
-          <button type="button" id="lockRecoverBackButton" style="background:none;border:none;color:var(--muted);font-size:12px;cursor:pointer;text-decoration:underline;padding:0;">← Back to unlock</button>
+        <div class="lock-secondary">
+          <button type="button" id="lockRecoverBackButton" class="link-button">← Back to unlock</button>
         </div>
       </div>
 
       <!-- Sign out divider — always visible, below both sections -->
-      <div style="margin-top:24px;border-top:1px solid var(--line);padding-top:14px;text-align:center;">
-        <button type="button" id="lockSignOutButton" style="background:none;border:none;color:var(--muted);font-size:11px;cursor:pointer;text-decoration:underline;padding:0;">Sign out of this device</button>
+      <div class="lock-divider">
+        <button type="button" id="lockSignOutButton" class="link-button">Sign out of this device</button>
       </div>
     </div>
   </div>
@@ -1618,9 +2183,9 @@
 
   <div id="shortcutsOverlay" class="shortcuts-overlay hidden" role="dialog" aria-modal="true" aria-label="Keyboard shortcuts">
     <div class="shortcuts-box">
-      <div class="box-title" style="display:flex;align-items:center;justify-content:space-between;">
+      <div class="box-title with-actions">
         <span>Keyboard Shortcuts</span>
-        <button type="button" id="closeShortcuts" style="border:0;background:transparent;font-size:16px;cursor:pointer;padding:0 4px;">×</button>
+        <button type="button" id="closeShortcuts" class="link-button close-button">×</button>
       </div>
       <div class="box-body">
         <table class="shortcuts-table">
@@ -1638,7 +2203,6 @@
     const LEGACY_STORAGE_KEY = "mind-archive-v1";
     const THEME_STORAGE_KEY = "mind-archive-theme";
     const SESSION_KEY_STORAGE = "mind-archive-session-key";
-    const TAB_TITLE_KEY = "mind-archive-tab-title";
     const AUTO_LOCK_MS = 15 * 60 * 1000;
     let lastActivity = Date.now();
     const cryptoApi = window.crypto && window.crypto.subtle ? window.crypto : null;
@@ -1657,7 +2221,6 @@
       sort: "newest",
       onlyFavourite: false,
       currentUser: "",
-      currentFeedId: "",
       currentFirstName: "",
       currentLastName: "",
       currentKey: null,
@@ -1665,10 +2228,6 @@
       currentClientSalt: "",
       currentWrappedKey: null,
       previousScreen: "auth",
-      subscriptions: [],
-      subscriptionsLoaded: false,
-      readingPosts: [],
-      readingLoaded: false,
       locked: false,
       showHidden: false
     };
@@ -1686,8 +2245,8 @@
       const nextTheme = theme === "dark" ? "dark" : "light";
       document.documentElement.dataset.theme = nextTheme;
       localStorage.setItem(THEME_STORAGE_KEY, nextTheme);
-      if ($("themeButton")) {
-        $("themeButton").textContent = nextTheme === "dark" ? "Light mode" : "Dark mode";
+      if ($("themeMenuItem")) {
+        $("themeMenuItem").textContent = nextTheme === "dark" ? "Light mode" : "Dark mode";
       }
     }
 
@@ -1826,106 +2385,18 @@
       return body;
     }
 
-    function getFeedUrl() {
-      return state.currentFeedId ? `${location.origin}/feed/${encodeURIComponent(state.currentFeedId)}.xml` : "";
-    }
 
-    function getPublicPosts() {
-      return sortedPosts(state.posts.filter((post) => post.rssPublic && !post.hidden)).slice(0, 50).map((post) => ({
-        id: post.id,
-        title: post.title,
-        body: post.body,
-        mood: post.mood || "",
-        place: post.place || "",
-        collections: Array.isArray(post.collections) ? post.collections : [],
-        series: post.series || "",
-        createdAt: post.createdAt,
-        updatedAt: post.updatedAt || post.createdAt
-      }));
-    }
-
-    async function syncPublicFeed() {
-      if (!state.currentFeedId) return;
-      await api("/api/public-feed", {
-        method: "PUT",
-        body: JSON.stringify({ posts: getPublicPosts() })
-      });
-    }
-
-    function schedulePublicFeedSync() {
-      syncPublicFeed().catch(() => {});
-    }
-
-    async function loadSubscriptions(force = false) {
-      if (!force && state.subscriptionsLoaded) return;
-      const result = await api("/api/subscriptions");
-      state.subscriptions = Array.isArray(result.subscriptions) ? result.subscriptions : [];
-      state.subscriptionsLoaded = true;
-      if (state.view === "toolsView") renderTools();
-    }
-
-    async function loadReadingFeed() {
-      const result = await api("/api/subscribed-posts");
-      state.readingPosts = Array.isArray(result.posts) ? result.posts : [];
-      state.readingLoaded = true;
-      if (state.view === "readingView") renderReading();
-    }
-
-    function renderReading() {
-      const container = $("readingFeedList");
-      if (!state.readingLoaded) {
-        container.innerHTML = '<div class="reading-empty">Loading...</div>';
-        return;
-      }
-      if (!state.subscriptions.length) {
-        container.innerHTML = '<div class="reading-empty">You haven\'t subscribed to any feeds yet. Go to <strong>RSS / Backup</strong> and paste someone\'s feed link to follow them.</div>';
-        return;
-      }
-      if (!state.readingPosts.length) {
-        container.innerHTML = '<div class="reading-empty">Nothing to read yet — the writers you follow haven\'t shared any posts.</div>';
-        return;
-      }
-      container.innerHTML = state.readingPosts.map((post, index) => {
-        const author = [post.authorFirstName, post.authorLastName].filter(Boolean).join(" ") || post.feedId;
-        return `${index > 0 ? '<hr class="reading-divider">' : ""}<article class="reading-post">
-          <div class="reading-post-header">
-            <span class="reading-author">${escapeHtml(author)}</span>
-            <span class="muted" style="font-size:12px">${relativeDate(post.createdAt)}</span>
-          </div>
-          <h3 class="reading-post-title">${escapeHtml(post.title)}</h3>
-          <div class="post-body">${renderMarkdown(post.body)}</div>
-        </article>`;
-      }).join("");
-    }
-
-    async function subscribeToFeed(feedUrl) {
-      const result = await api("/api/subscribe-feed", {
-        method: "POST",
-        body: JSON.stringify({ feedUrl })
-      });
-      await loadSubscriptions(true);
-      state.readingLoaded = false;
-      loadReadingFeed().catch(() => {});
-      return result;
-    }
-
-    async function savePosts(syncFeed = true) {
+    async function savePosts() {
       if (!state.currentUser || !state.currentKey) return;
       const vault = await encryptJson(state.currentKey, state.posts);
-      const saves = [api("/api/vault", { method: "PUT", body: JSON.stringify({ vault }) })];
-      if (syncFeed) saves.push(syncPublicFeed());
-      await Promise.all(saves);
+      await api("/api/vault", { method: "PUT", body: JSON.stringify({ vault }) });
     }
 
     let _saveTimer = null;
-    let _pendingSyncFeed = false;
-    function scheduleSave(syncFeed = true) {
-      if (syncFeed) _pendingSyncFeed = true;
+    function scheduleSave() {
       clearTimeout(_saveTimer);
       _saveTimer = setTimeout(() => {
-        const doSync = _pendingSyncFeed;
-        _pendingSyncFeed = false;
-        savePosts(doSync).catch(() => {});
+        savePosts().catch(() => {});
       }, 500);
     }
 
@@ -2034,7 +2505,6 @@
         clearTabBlur();
         $("lockScreen").classList.add("hidden");
         state.currentUser = "";
-        state.currentFeedId = "";
         state.currentFirstName = "";
         state.currentLastName = "";
         state.currentKey = null;
@@ -2042,10 +2512,6 @@
         state.currentClientSalt = "";
         state.currentWrappedKey = null;
         state.posts = [];
-        state.subscriptions = [];
-        state.subscriptionsLoaded = false;
-        state.readingPosts = [];
-        state.readingLoaded = false;
         state.locked = false;
         state.showHidden = false;
         clearEditor();
@@ -2172,23 +2638,15 @@
       $("blurOverlay").classList.add("hidden");
     }
 
-    function applyTabTitle() {
-      const saved = localStorage.getItem(TAB_TITLE_KEY);
-      document.title = saved || "Mind Archive";
-    }
-
     function unlock(email, feedId, firstName, lastName, key, posts, archiveKeyRaw = "") {
       if (archiveKeyRaw) localStorage.setItem(SESSION_KEY_STORAGE, archiveKeyRaw);
       lastActivity = Date.now();
       state.currentUser = email;
-      state.currentFeedId = feedId || "";
       state.currentFirstName = firstName || "";
       state.currentLastName = lastName || "";
       state.currentKey = key;
       state.currentArchiveKeyRaw = archiveKeyRaw;
       state.posts = posts;
-      state.readingPosts = [];
-      state.readingLoaded = false;
       state.locked = false;
       state.showHidden = false;
       state.query = "";
@@ -2197,18 +2655,16 @@
       state.onlyPinned = false;
       $("searchInput").value = "";
       $("onlyPinned").checked = false;
-      const displayName = [firstName, lastName].filter(Boolean).join(" ") || email;
+      const displayName = firstName || email;
       $("currentUserLabel").textContent = displayName;
       showApp();
       renderAll();
       setView("postsView");
-      loadSubscriptions().catch(() => {});
     }
 
     function showAuth() {
       state.previousScreen = "auth";
       $("loadingView").classList.add("hidden");
-      $("privacyView").classList.add("hidden");
       $("recoveryView").classList.add("hidden");
       $("authView").classList.remove("hidden");
       $("appNav").classList.add("hidden");
@@ -2225,7 +2681,6 @@
     function showApp() {
       state.previousScreen = "app";
       $("loadingView").classList.add("hidden");
-      $("privacyView").classList.add("hidden");
       $("recoveryView").classList.add("hidden");
       $("authView").classList.add("hidden");
       $("appNav").classList.remove("hidden");
@@ -2234,30 +2689,11 @@
       document.querySelectorAll(".auth-only").forEach((el) => el.classList.remove("hidden"));
     }
 
-    function showPrivacy() {
-      $("authView").classList.add("hidden");
-      $("recoveryView").classList.add("hidden");
-      $("appNav").classList.add("hidden");
-      $("appLayout").classList.add("hidden");
-      $("privacyView").classList.remove("hidden");
-    }
-
     function showRecovery() {
       $("authView").classList.add("hidden");
-      $("privacyView").classList.add("hidden");
       $("appNav").classList.add("hidden");
       $("appLayout").classList.add("hidden");
       $("recoveryView").classList.remove("hidden");
-    }
-
-    function leavePrivacy() {
-      if (state.currentUser) {
-        showApp();
-        renderAll();
-        setView(state.view || "postsView");
-      } else {
-        showAuth();
-      }
     }
 
     function setAuthMode(mode) {
@@ -2495,14 +2931,6 @@
       if (view === "timelineView") renderTimeline();
       if (view === "collectionsView") renderCollections();
       if (view === "toolsView") renderTools();
-      if (view === "readingView") {
-        if (!state.readingLoaded) {
-          renderReading();
-          loadReadingFeed().catch(() => {});
-        } else {
-          renderReading();
-        }
-      }
       if (view === "editorView" && !$("postId").value) checkDraft();
     }
 
@@ -2519,8 +2947,7 @@
         ...(post.place ? [{ text: `place: ${post.place}`, color: null }] : []),
         ...(post.collections || []).map((name) => ({ text: `collection: ${name}`, color: collectionColor(name) })),
         ...(post.series ? [{ text: `series: ${post.series}`, color: null }] : []),
-        ...(post.rssPublic ? [{ text: "RSS shared", color: null }] : []),
-      ];
+        ];
 
       const ageClass = postAgeClass(post.createdAt);
       const todayPost = isToday(post.createdAt);
@@ -2530,13 +2957,12 @@
       return `
         <article class="post ${post.pinned ? "pinned" : ""} ${ageClass}" id="post-${escapeHtml(post.id)}">
           <div class="post-head">
-            <div>
+            <div class="post-summary">
               <h2 class="post-title"><button type="button" data-action="toggle" data-id="${post.id}">${escapeHtml(post.title)}</button></h2>
               <div class="post-meta">
                 ${todayPost ? '<span class="today-badge">today</span>' : ""}
                 ${post.pinned ? '<span class="pin">📌 pinned</span> &middot; ' : ""}
                 ${post.favourite ? '<span class="fav-star">★</span> &middot; ' : ""}
-                ${post.rssPublic ? '<span class="ok">RSS</span> &middot; ' : ""}
                 <time title="${absDate}">${relDate}</time>
                 ${post.updatedAt && post.updatedAt !== post.createdAt ? ` &middot; edited` : ""}
                 &middot; ${wordsIn(post.body)} words &middot; ~${readTime(post.body)} min read
@@ -2691,7 +3117,6 @@
         `- Created: ${post.createdAt}`,
         `- Updated: ${post.updatedAt || post.createdAt}`,
         `- Pinned: ${post.pinned ? "yes" : "no"}`,
-        `- Shared in RSS: ${post.rssPublic ? "yes" : "no"}`,
         post.mood ? `- Mood: ${post.mood}` : "",
         post.place ? `- Place: ${post.place}` : "",
         post.collections?.length ? `- Collections: ${post.collections.join(", ")}` : "",
@@ -2705,27 +3130,6 @@
       return header.concat(posts).join("\n");
     }
 
-    function buildRss() {
-      const feedUrl = getFeedUrl() || location.href.split("#")[0];
-      const items = getPublicPosts().map((post) => `
-  <item>
-    <title>${escapeHtml(post.title)}</title>
-    <link>${escapeHtml(feedUrl)}#post-${escapeHtml(post.id)}</link>
-    <guid>${escapeHtml(post.id)}</guid>
-    <pubDate>${new Date(post.createdAt).toUTCString()}</pubDate>
-    <description>${escapeHtml(post.body)}</description>
-  </item>`).join("");
-
-      return `<?xml version="1.0" encoding="UTF-8"?>
-<rss version="2.0">
-<channel>
-  <title>Mind Archive</title>
-  <link>${escapeHtml(feedUrl)}</link>
-  <description>Shared thoughts and opinions</description>
-  <lastBuildDate>${new Date().toUTCString()}</lastBuildDate>${items}
-</channel>
-</rss>`;
-    }
 
     function download(filename, content, type) {
       const blob = new Blob([content], { type });
@@ -2748,7 +3152,6 @@
       $("seriesInput").value = "";
       $("bodyInput").value = "";
       $("pinnedInput").checked = false;
-      $("rssInput").checked = false;
       $("hiddenInput").checked = false;
       $("editorTitle").textContent = "Write Post";
       $("editorStatus").textContent = "";
@@ -2768,7 +3171,6 @@
       $("seriesInput").value = post.series || "";
       $("bodyInput").value = post.body;
       $("pinnedInput").checked = Boolean(post.pinned);
-      $("rssInput").checked = Boolean(post.rssPublic);
       $("hiddenInput").checked = Boolean(post.hidden);
       $("editorTitle").textContent = "Edit Post";
       $("editorStatus").textContent = `created ${formatDate(post.createdAt)}`;
@@ -2882,19 +3284,6 @@
     function renderTools() {
       $("accountFirstName").value = state.currentFirstName;
       $("accountLastName").value = state.currentLastName;
-      $("tabTitleInput").value = localStorage.getItem(TAB_TITLE_KEY) || "";
-      const sharedCount = state.posts.filter((post) => post.rssPublic && !post.hidden).length;
-      const feedUrl = getFeedUrl();
-      $("publicRssUrl").value = feedUrl;
-      $("rssStatus").textContent = feedUrl ? `${sharedCount} post${sharedCount === 1 ? "" : "s"} shared` : "";
-      $("subscriptionsList").innerHTML = state.subscriptions.length
-        ? state.subscriptions.map((item) => {
-            const label = item.authorFirstName || item.authorLastName
-              ? escapeHtml([item.authorFirstName, item.authorLastName].filter(Boolean).join(" "))
-              : escapeHtml(item.feedId);
-            return `<div class="subscription-item"><a href="/feed/${encodeURIComponent(item.feedId)}.xml" target="_blank" rel="noopener">${label}</a></div>`;
-          }).join("")
-        : "<span class='muted'>No subscriptions yet. Paste a feed link above to follow a writer.</span>";
     }
 
     function renderAll() {
@@ -2903,7 +3292,6 @@
       if (state.view === "timelineView") renderTimeline();
       if (state.view === "collectionsView") renderCollections();
       if (state.view === "toolsView") renderTools();
-      if (state.view === "readingView") renderReading();
     }
 
     function bindEvents() {
@@ -2987,11 +3375,9 @@
       });
       $("blurOverlay").addEventListener("click", clearTabBlur);
       $("logoutButton").addEventListener("click", logout);
-      $("themeButton").addEventListener("click", () => {
+      $("themeMenuItem").addEventListener("click", () => {
         applyTheme(document.documentElement.dataset.theme === "dark" ? "light" : "dark");
       });
-      $("privacyButton").addEventListener("click", showPrivacy);
-      $("privacyBackButton").addEventListener("click", leavePrivacy);
       $("showRecoverButton").addEventListener("click", showRecovery);
       $("recoverBackButton").addEventListener("click", showAuth);
       $("copyRecoveryKey").addEventListener("click", async () => {
@@ -3129,7 +3515,6 @@
           collections,
           series: $("seriesInput").value.trim(),
           pinned: $("pinnedInput").checked,
-          rssPublic: $("rssInput").checked && !$("hiddenInput").checked,
           hidden: $("hiddenInput").checked,
           favourite: existing?.favourite || false,
           createdAt: existing?.createdAt || now,
@@ -3248,34 +3633,6 @@
 
       $("downloadMarkdown").addEventListener("click", () => download("mind-archive.md", buildMarkdownExport(), "text/markdown"));
       $("downloadJson").addEventListener("click", () => download("mind-archive.json", JSON.stringify(state.posts, null, 2), "application/json"));
-      $("downloadRss").addEventListener("click", () => download("feed.xml", buildRss(), "application/rss+xml"));
-      $("copyRssUrl").addEventListener("click", async () => {
-        const value = getFeedUrl();
-        if (!value) return;
-        try {
-          await navigator.clipboard.writeText(value);
-          $("copyRssUrl").textContent = "Copied";
-          setTimeout(() => $("copyRssUrl").textContent = "Copy link", 1200);
-        } catch {
-          $("publicRssUrl").select();
-        }
-      });
-      $("refreshReadingButton").addEventListener("click", () => {
-        state.readingLoaded = false;
-        renderReading();
-        loadReadingFeed().catch(() => {});
-      });
-
-      $("subscribeFeedButton").addEventListener("click", async () => {
-        $("subscribeStatus").textContent = "subscribing...";
-        try {
-          const result = await subscribeToFeed($("subscribeFeedInput").value);
-          $("subscribeFeedInput").value = "";
-          $("subscribeStatus").textContent = "following — posts will appear in your Reading tab";
-        } catch (error) {
-          $("subscribeStatus").textContent = error.message;
-        }
-      });
       $("printPdf").addEventListener("click", () => window.print());
 
       $("saveAccount").addEventListener("click", async () => {
@@ -3290,7 +3647,7 @@
           await api("/api/account", { method: "PUT", body: JSON.stringify({ firstName, lastName }) });
           state.currentFirstName = firstName;
           state.currentLastName = lastName;
-          $("currentUserLabel").textContent = [firstName, lastName].filter(Boolean).join(" ");
+          $("currentUserLabel").textContent = firstName || [firstName, lastName].filter(Boolean).join(" ");
           $("accountStatus").textContent = "Saved.";
           setTimeout(() => { $("accountStatus").textContent = ""; }, 2000);
         } catch (error) {
@@ -3298,17 +3655,6 @@
         }
       });
 
-      $("saveTabTitle").addEventListener("click", () => {
-        const value = $("tabTitleInput").value.trim();
-        if (value) {
-          localStorage.setItem(TAB_TITLE_KEY, value);
-        } else {
-          localStorage.removeItem(TAB_TITLE_KEY);
-        }
-        applyTabTitle();
-        $("tabTitleStatus").textContent = "saved";
-        setTimeout(() => { $("tabTitleStatus").textContent = ""; }, 1500);
-      });
 
       // Auto-lock: check every 30s, trigger after 15 min inactivity
       setInterval(() => {
@@ -3360,7 +3706,6 @@
     }
 
     applyTheme(getSavedTheme());
-    applyTabTitle();
     bindEvents();
     setAuthMode("signin");
     renderPreview();
