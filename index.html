@@ -133,6 +133,12 @@
       box-sizing: border-box;
     }
 
+    html,
+    body {
+      max-width: 100%;
+      overflow-x: hidden;
+    }
+
     body {
       margin: 0;
       color: var(--text);
@@ -233,7 +239,7 @@
     }
 
     .page {
-      width: min(1280px, calc(100vw - 32px));
+      width: min(1280px, calc(100% - 32px));
       margin: 20px auto 40px;
       border-radius: 18px;
       overflow: hidden;
@@ -274,7 +280,18 @@
       padding: 14px 22px;
       backdrop-filter: saturate(180%) blur(20px);
       -webkit-backdrop-filter: saturate(180%) blur(20px);
+      position: relative;
+      z-index: 300;
     }
+
+    #appBrand {
+      cursor: pointer;
+      border-radius: 8px;
+      padding: 2px 4px;
+      margin: -2px -4px;
+      transition: background 0.15s;
+    }
+    #appBrand:hover { background: var(--panel-3); }
 
     .brand {
       display: flex;
@@ -646,7 +663,7 @@
 
     .box-title {
       border-bottom: 0.5px solid var(--line);
-      background: var(--box-title);
+      background: transparent;
       color: var(--box-title-text);
       font-weight: 600;
       font-size: 11px;
@@ -726,23 +743,25 @@
       flex-direction: column;
       align-items: center;
       border: none;
-      background: rgba(0,0,0,0.025);
-      padding: 14px 8px;
+      background: transparent;
+      padding: 14px 6px 12px;
       text-align: center;
-      border-radius: 12px;
+      border-radius: 0;
       font-size: 10px;
       color: var(--muted);
       text-transform: uppercase;
       letter-spacing: 0.07em;
-      gap: 3px;
+      gap: 2px;
     }
 
     .counter strong {
       display: block;
-      font-size: 26px;
-      font-weight: 700;
-      letter-spacing: -0.04em;
-      color: var(--text);
+      font-family: "Instrument Serif", Georgia, serif;
+      font-style: italic;
+      font-size: 32px;
+      font-weight: 400;
+      letter-spacing: -0.02em;
+      color: var(--title);
     }
 
     .post-list {
@@ -759,6 +778,8 @@
       box-shadow: 0 0 0 0.5px rgba(0,0,0,0.07), 0 1px 4px rgba(0,0,0,0.05);
       transition: box-shadow 0.2s ease, transform 0.15s ease;
     }
+
+    .post { cursor: pointer; }
 
     .post:hover {
       box-shadow: 0 0 0 0.5px rgba(0,0,0,0.1), 0 4px 18px rgba(0,0,0,0.1);
@@ -811,29 +832,11 @@
 
     .post-title button:hover {
       color: var(--link);
-      text-decoration: none;
+      text-decoration: underline;
       transform: none;
       box-shadow: none;
     }
 
-    .post-title button::before {
-      content: "›";
-      display: inline-block;
-      font-size: 18px;
-      font-weight: 300;
-      color: var(--muted);
-      margin-right: 6px;
-      vertical-align: middle;
-      text-decoration: none;
-      line-height: 0.9;
-      transition: transform 0.2s ease;
-    }
-
-    .post.expanded .post-title button::before {
-      content: "›";
-      display: inline-block;
-      transform: rotate(90deg);
-    }
 
     .post-meta {
       color: var(--muted);
@@ -862,13 +865,6 @@
       white-space: nowrap;
     }
 
-    .post-content {
-      display: none;
-    }
-
-    .post.expanded .post-content {
-      display: block;
-    }
 
     .post-body {
       padding: 14px 16px;
@@ -957,8 +953,18 @@
       overflow: auto;
     }
 
-    #bodyInput {
-      min-height: 560px;
+    .preview .post-body h1,
+    .preview .post-body h2,
+    .preview .post-body h3 {
+      font-family: "Plus Jakarta Sans", system-ui, -apple-system, sans-serif;
+      font-style: normal;
+      letter-spacing: 0;
+    }
+
+    .preview .post-body h1,
+    .preview .post-body h2 {
+      font-size: 18px;
+      font-weight: 700;
     }
 
     #postForm .box-body {
@@ -1053,20 +1059,6 @@
       font-size: 12px;
     }
 
-    #toolsView {
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-      align-items: start;
-    }
-
-    #toolsView:not(.hidden) {
-      display: grid;
-    }
-
-    #toolsView .box {
-      margin-bottom: 0;
-    }
-
     .subscription-item {
       display: flex;
       align-items: center;
@@ -1101,7 +1093,7 @@
 
     @media (max-width: 800px) {
       .page {
-        width: calc(100vw - 8px);
+        width: calc(100% - 8px);
         margin-top: 4px;
         border-radius: 6px;
       }
@@ -1156,11 +1148,6 @@
         justify-content: flex-start;
       }
 
-      #toolsView:not(.hidden) {
-        display: grid;
-        grid-template-columns: 1fr;
-      }
-
       .sidebar {
         border-right: 0;
         border-bottom: 1px solid var(--line);
@@ -1173,7 +1160,7 @@
 
     @media (max-width: 640px) {
       /* Page: edge to edge */
-      .page { width: 100vw; margin: 0; border-radius: 0; }
+      .page { width: 100%; margin: 0; border-radius: 0; }
 
       /* Topbar: single row — brand left, user menu right */
       .topbar { flex-wrap: nowrap; padding: 10px 14px; gap: 8px; align-items: center; }
@@ -1187,32 +1174,8 @@
       /* Sidebar: hidden */
       .sidebar { display: none; }
 
-      /* Nav: 5 equal-width tabs in one row, no scroll, no wrap */
-      .nav { flex-wrap: nowrap; padding: 0; gap: 0; overflow: visible; }
-      .tab {
-        flex: 1 1 0;
-        min-width: 0;
-        padding: 12px 2px;
-        font-size: 11px;
-        font-weight: 600;
-        letter-spacing: -0.01em;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        text-align: center;
-        border-radius: 0;
-        border-bottom: 2.5px solid transparent;
-        margin-bottom: -0.5px;
-        box-shadow: none;
-        transform: none;
-      }
-      .tab.active {
-        color: var(--accent);
-        border-bottom-color: var(--accent);
-        background: transparent;
-        font-weight: 700;
-      }
-      .tab:hover:not(.active) { background: rgba(0,0,0,0.02); transform: none; }
+      /* Nav hidden on mobile (hamburger in topbar handles navigation) */
+      .nav { display: none; }
 
       /* Main area */
       .main { padding: 10px; }
@@ -1279,16 +1242,11 @@
       letter-spacing: 0.01em;
     }
 
-    /* Recover form button */
-    #recoverForm .form-actions button[type="submit"] {
-      border-radius: 12px;
-      min-height: 46px;
-      font-weight: 700;
-      box-shadow: 0 4px 14px rgba(28,25,23,0.18);
-    }
-
     /* User menu trigger pill */
     .user-menu-trigger {
+      display: flex;
+      align-items: center;
+      gap: 4px;
       background: var(--panel-3);
       border: 1.5px solid var(--line-dark);
       color: var(--text);
@@ -1304,16 +1262,6 @@
       background: var(--panel-3);
       transform: none;
       box-shadow: none;
-    }
-
-    /* Counter editorial number */
-    .counter strong {
-      font-family: "Instrument Serif", Georgia, serif;
-      font-style: italic;
-      font-size: 32px;
-      font-weight: 400;
-      letter-spacing: -0.02em;
-      color: var(--title);
     }
 
     /* Timeline year serif */
@@ -1353,6 +1301,40 @@
       padding: 16px;
     }
 
+    /* Google OAuth button */
+    .google-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      min-height: 40px;
+      border: 1px solid var(--line-dark);
+      border-radius: 10px;
+      background: var(--panel);
+      color: var(--text);
+      font-size: 14px;
+      font-weight: 500;
+      text-decoration: none;
+      margin-top: 4px;
+      transition: background 0.15s ease;
+    }
+    .google-btn:hover { background: var(--panel-3); text-decoration: none; }
+    .auth-divider {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 12px;
+      margin: 8px 0;
+    }
+    .auth-divider::before, .auth-divider::after {
+      content: "";
+      flex: 1;
+      height: 1px;
+      background: var(--line);
+    }
+
     /* Auth tab active — warm shadow */
     .auth-tab.active {
       box-shadow: 0 1px 4px rgba(28,25,23,0.12), 0 0 0 0.5px rgba(28,25,23,0.06);
@@ -1361,6 +1343,7 @@
     /* Tag hidden */
     .tag-hidden {
       background: rgba(220,38,38,0.1);
+      border-color: var(--danger);
       color: var(--danger);
     }
 
@@ -1469,30 +1452,6 @@
     }
 
 
-    /* Lock screen */
-    .lock-screen {
-      position: fixed;
-      inset: 0;
-      z-index: 600;
-      background: var(--page);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .lock-box {
-      border: none;
-      background: var(--panel);
-      padding: 40px 52px;
-      text-align: center;
-      width: 320px;
-      border-radius: 24px;
-      box-shadow:
-        0 0 0 0.5px rgba(0,0,0,0.08),
-        0 8px 40px rgba(0,0,0,0.15),
-        0 32px 80px rgba(0,0,0,0.12);
-    }
-
     #loadingView {
       display: flex;
       align-items: center;
@@ -1509,87 +1468,6 @@
       animation: spin 0.7s linear infinite;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
-
-    .lock-label {
-      font-size: 20px;
-      font-weight: 700;
-      letter-spacing: -0.02em;
-      color: var(--title);
-      margin-bottom: 6px;
-    }
-
-    .lock-hint {
-      color: var(--muted);
-      font-size: 12px;
-    }
-
-    .lock-form-fields {
-      display: grid;
-      gap: 8px;
-      margin-top: 16px;
-    }
-
-    .lock-status {
-      color: var(--danger);
-      font-size: 12px;
-      min-height: 16px;
-      margin-top: 6px;
-      text-align: center;
-    }
-
-    .lock-actions {
-      margin-top: 10px;
-    }
-
-    .lock-actions button {
-      width: 100%;
-      border-radius: 12px;
-      min-height: 50px;
-      font-size: 15px;
-      font-weight: 700;
-      letter-spacing: 0.01em;
-      box-shadow: 0 4px 14px rgba(28,25,23,0.2), 0 1px 4px rgba(28,25,23,0.1);
-    }
-
-    .lock-secondary {
-      margin-top: 14px;
-      text-align: center;
-    }
-
-    .lock-divider {
-      border-top: 1px solid var(--line);
-      margin-top: 24px;
-      padding-top: 14px;
-      text-align: center;
-    }
-
-    /* Blur overlay (tab switch) */
-    .blur-overlay {
-      position: fixed;
-      inset: 0;
-      z-index: 500;
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      background: rgba(0, 0, 0, 0.08);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-    }
-
-    .blur-reveal-hint {
-      background: var(--panel);
-      padding: 12px 20px;
-      color: var(--muted);
-      font-size: 13px;
-      border-radius: 14px;
-      box-shadow: 0 0 0 0.5px rgba(0,0,0,0.1), 0 8px 24px rgba(0,0,0,0.15);
-    }
-
-    .tag-hidden {
-      border-color: var(--danger);
-      color: var(--danger);
-    }
 
     /* Collapsible sidebar boxes */
     .box-collapsible .box-title {
@@ -1626,14 +1504,15 @@
       vertical-align: middle;
       flex-shrink: 0;
     }
-    .user-menu {
-      position: relative;
+    .content-tab.active {
+      background: var(--panel-3);
+      color: var(--text);
+      font-weight: 600;
     }
 
-    .user-menu-trigger {
-      display: flex;
-      align-items: center;
-      gap: 4px;
+    .user-menu {
+      position: relative;
+      z-index: 310;
     }
 
     .user-menu-caret {
@@ -1650,7 +1529,7 @@
       border: none;
       border-radius: 14px;
       box-shadow: 0 0 0 0.5px rgba(0,0,0,0.1), 0 8px 30px rgba(0,0,0,0.15);
-      z-index: 200;
+      z-index: 400;
       overflow: hidden;
       padding: 4px 0;
     }
@@ -1687,27 +1566,10 @@
       margin: 4px 0;
     }
 
-    /* ── Backup page: single column to match other views ── */
-    #toolsView:not(.hidden) {
-      display: block;
-    }
-    #toolsView .box {
-      margin-bottom: 12px;
-    }
-
     /* ── Stats grid: no individual card boxes ── */
     .counter-grid { gap: 0; }
-    .counter {
-      background: transparent;
-      border-radius: 0;
-      padding: 14px 6px 12px;
-      gap: 2px;
-    }
     .counter:nth-child(-n+2) { border-bottom: 0.5px solid var(--line); }
     .counter:nth-child(odd)  { border-right: 0.5px solid var(--line); }
-
-    /* ── Section headers: remove heavy parchment bar ── */
-    .box-title { background: transparent; }
 
     /* ── Sidebar boxes: use border, drop elevation shadow ── */
     .sidebar .box {
@@ -1778,13 +1640,1096 @@
       box-shadow: none;
     }
 
+    /* ── Post preview snippet ── */
+    .post-preview {
+      color: var(--muted);
+      font-size: 13px;
+      margin-top: 5px;
+      line-height: 1.5;
+      overflow: hidden;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+    }
+
+    /* ── Post reading modal ── */
+    .post-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 400;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .post-modal.hidden { display: none; }
+
+    .post-modal-backdrop {
+      position: absolute;
+      inset: 0;
+      background: rgba(12, 10, 9, 0.5);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+    }
+
+    .post-modal-panel {
+      position: relative;
+      width: 100%;
+      max-width: 700px;
+      max-height: 88vh;
+      background: var(--panel);
+      border-radius: 22px;
+      box-shadow:
+        0 0 0 0.5px rgba(0,0,0,0.12),
+        0 8px 32px rgba(0,0,0,0.12),
+        0 32px 80px rgba(0,0,0,0.28);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      animation: modal-appear 0.24s cubic-bezier(0.34, 1.3, 0.64, 1);
+    }
+
+    @keyframes modal-appear {
+      from { opacity: 0; transform: scale(0.94) translateY(16px); }
+      to   { opacity: 1; transform: scale(1)    translateY(0); }
+    }
+
+    .post-modal-header {
+      padding: 20px 22px 16px;
+      border-bottom: 0.5px solid var(--line);
+      flex-shrink: 0;
+    }
+
+    .post-modal-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .post-modal-meta-line {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.6;
+      flex: 1;
+    }
+
+    .post-modal-action-group {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      flex-shrink: 0;
+    }
+
+    .post-modal-icon-btn {
+      background: transparent;
+      border: none;
+      color: var(--muted);
+      font-size: 16px;
+      min-height: 28px;
+      min-width: 28px;
+      padding: 0 4px;
+      box-shadow: none;
+      border-radius: 6px;
+    }
+
+    .post-modal-icon-btn:hover {
+      background: transparent;
+      color: var(--pin);
+      transform: none;
+      box-shadow: none;
+    }
+
+    .post-modal-action-btn {
+      background: transparent;
+      border: 0.5px solid var(--line-dark);
+      color: var(--muted);
+      font-size: 11px;
+      min-height: 26px;
+      padding: 0 10px;
+      border-radius: 7px;
+      box-shadow: none;
+      font-weight: 500;
+    }
+
+    .post-modal-action-btn:hover {
+      background: var(--panel-3);
+      color: var(--text);
+      transform: none;
+      box-shadow: none;
+    }
+
+    .post-modal-delete-btn {
+      color: var(--danger);
+      border-color: rgba(220,38,38,0.25);
+    }
+
+    .post-modal-delete-btn:hover {
+      background: rgba(220,38,38,0.06);
+      color: var(--danger);
+      border-color: rgba(220,38,38,0.4);
+    }
+
+    .post-modal-title-el {
+      font-family: "Instrument Serif", Georgia, serif;
+      font-style: italic;
+      font-size: 28px;
+      font-weight: 400;
+      letter-spacing: -0.02em;
+      line-height: 1.2;
+      color: var(--title);
+      margin: 0 0 12px;
+    }
+
+    .post-modal-body-wrap {
+      flex: 1;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      padding: 24px 22px;
+    }
+
+    .post-modal-body { line-height: 1.8; font-size: 15px; }
+
+    .post-modal-danger {
+      margin-top: 40px;
+      padding-top: 20px;
+      border-top: 0.5px dashed var(--line);
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    .post-modal-danger button {
+      background: transparent;
+      border: 0.5px solid rgba(220,38,38,0.3);
+      color: var(--danger);
+      font-size: 12px;
+      min-height: 28px;
+      padding: 0 12px;
+      border-radius: 8px;
+      box-shadow: none;
+    }
+
+    .post-modal-danger button:hover {
+      background: rgba(220,38,38,0.06);
+      border-color: rgba(220,38,38,0.5);
+      transform: none;
+      box-shadow: none;
+    }
+
+    /* ── Editor nav bar ── */
+    .editor-nav {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding-bottom: 14px;
+      border-bottom: 0.5px solid var(--line);
+      margin-bottom: 18px;
+      position: relative;
+      z-index: 30;
+    }
+    .editor-nav-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--muted);
+      flex: 1;
+      text-align: center;
+    }
+    .editor-nav-actions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 7px;
+    }
+
+    .editor-nav-actions button {
+      display: inline-grid;
+      place-items: center;
+      min-height: 34px;
+      min-width: 38px;
+      border: 0.5px solid var(--line);
+      background: var(--panel);
+      color: var(--text);
+      padding: 0 11px;
+      border-radius: 10px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+      transform: none;
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 0;
+    }
+
+    .editor-nav-actions .editor-text-button {
+      display: inline-flex;
+      min-width: 54px;
+      font-size: 12px;
+    }
+
+    .editor-nav-actions button:hover {
+      border-color: var(--line-dark);
+      background: var(--panel-2);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+      transform: none;
+    }
+
+    .editor-nav-actions button.active {
+      border-color: rgba(109,40,217,0.42);
+      background: rgba(109,40,217,0.09);
+      color: var(--link);
+      box-shadow: 0 3px 12px rgba(109,40,217,0.14);
+    }
+
+    .editor-nav-actions button:disabled {
+      opacity: 0.34;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    /* ── Editor form: open page feel ── */
+    .editor-form {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      padding: 0;
+    }
+    .editor-title-input {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: 0;
+      color: var(--title);
+      border: none;
+      border-bottom: 0.5px solid var(--line);
+      border-radius: 0;
+      background: transparent;
+      padding: 4px 0 12px;
+      box-shadow: none;
+      width: 100%;
+      font-family: "Plus Jakarta Sans", system-ui, -apple-system, sans-serif;
+    }
+    .editor-title-input:focus {
+      outline: none;
+      border-bottom-color: var(--line-dark);
+      box-shadow: none;
+    }
+    .editor-title-input::placeholder { color: var(--muted); font-style: normal; }
+    .editor-body-input {
+      border: none;
+      border-radius: 0;
+      background: transparent;
+      padding: 0;
+      box-shadow: none;
+      resize: none;
+      overflow: hidden;
+      width: 100%;
+      min-height: 380px;
+      font-size: 15px;
+      line-height: 1.8;
+      color: var(--text);
+      font-family: "Plus Jakarta Sans", system-ui, sans-serif;
+      -webkit-appearance: none;
+      appearance: none;
+    }
+    .editor-body-input:focus { outline: none; box-shadow: none; }
+    .editor-body-input::placeholder { color: var(--muted); }
+    .editor-footer-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: -4px;
+    }
+    .ghost-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      animation: fadeIn 0.15s ease;
+    }
+    .ghost-actions.hidden { display: none; }
+    .ghost-actions button {
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 6px;
+      border: 1px solid var(--line-dark);
+      background: var(--panel);
+      color: var(--text);
+      cursor: pointer;
+      box-shadow: none;
+      transform: none;
+      line-height: 1.4;
+      min-height: 0;
+    }
+    .ghost-actions button:hover { background: var(--panel-2); }
+    #ghostDismiss {
+      font-size: 11px;
+      padding: 4px 7px;
+      color: var(--muted);
+      border-color: var(--line);
+    }
+    .option-list-inline {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .option-list-inline label {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      min-height: 34px;
+      border: 0.5px solid var(--line);
+      background: var(--panel);
+      color: var(--text);
+      padding: 0 12px;
+      border-radius: 9px;
+      cursor: pointer;
+    }
+    .option-list-inline label:hover {
+      border-color: var(--line-dark);
+      background: var(--panel-2);
+    }
+
+    /* ── Editor: textarea (inherits from .editor-body-input) ── */
+    #bodyInput {
+      min-height: 380px;
+      overflow: hidden;
+      resize: none;
+    }
+
+    /* ── Editor tool panels ── */
+    .editor-tool-panel {
+      display: grid;
+      gap: 12px;
+      border: 0.5px solid var(--line-dark);
+      background: var(--panel);
+      border-radius: 14px;
+      padding: 14px;
+      box-shadow: 0 12px 30px rgba(0,0,0,0.14), 0 1px 4px rgba(0,0,0,0.05);
+      position: absolute;
+      top: calc(100% + 8px);
+      right: 0;
+      width: min(520px, 100%);
+      max-height: min(70vh, 620px);
+      overflow-y: auto;
+      overflow-x: hidden;
+      z-index: 120;
+    }
+
+    .editor-tool-panel.hidden {
+      display: none !important;
+    }
+
+    .editor-tool-panel input {
+      min-height: 38px;
+      border-radius: 9px;
+      background: var(--panel);
+    }
+
+    .editor-tool-panel .field {
+      gap: 5px;
+    }
+
+    .editor-meta-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .editor-meta-wide {
+      grid-column: 1 / -1;
+    }
+
+    @media (max-width: 640px) {
+      .editor-nav {
+        align-items: flex-start;
+        flex-wrap: wrap;
+      }
+      .editor-nav-title {
+        order: 3;
+        flex-basis: 100%;
+        text-align: left;
+      }
+      .editor-nav-actions {
+        flex: 1;
+      }
+      .editor-tool-panel {
+        left: 0;
+        right: 0;
+        width: auto;
+      }
+      .editor-meta-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* ── Autocomplete field + chevron ── */
+    .autocomplete-field { position: relative; }
+
+    .autocomplete-chevron {
+      position: absolute;
+      right: 10px;
+      bottom: 8px;
+      color: var(--text);
+      font-size: 18px;
+      pointer-events: none;
+      line-height: 1;
+      transition: transform 0.15s ease, color 0.15s;
+      opacity: 0.45;
+    }
+
+    .autocomplete-field.dropdown-open .autocomplete-chevron {
+      transform: rotate(180deg);
+      color: var(--accent);
+    }
+
+    .autocomplete-field.dropdown-open input {
+      border-color: var(--focus);
+      box-shadow: 0 0 0 4px rgba(109,40,217,0.12);
+    }
+
+    /* ── Autocomplete dropdown ── */
+    .autocomplete-dropdown {
+      position: absolute;
+      top: calc(100% + 4px);
+      left: 0;
+      right: 0;
+      z-index: 50;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+      overflow: hidden;
+      max-height: 180px;
+      overflow-y: auto;
+    }
+
+    .autocomplete-item {
+      display: block;
+      width: 100%;
+      text-align: left;
+      border: none;
+      border-radius: 0;
+      background: none;
+      box-shadow: none;
+      padding: 8px 12px;
+      font-size: 13px;
+      color: var(--text);
+      cursor: pointer;
+      min-height: 0;
+      transform: none;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .autocomplete-item + .autocomplete-item {
+      border-top: 0.5px solid var(--line);
+    }
+
+    .autocomplete-item:hover {
+      background: var(--panel-3);
+      transform: none;
+      box-shadow: none;
+    }
+
+    @media (max-width: 640px) {
+      .post-modal { padding: 0; align-items: flex-end; }
+      .post-modal-panel {
+        max-height: 92vh;
+        border-radius: 22px 22px 0 0;
+        animation: modal-slide-up 0.3s cubic-bezier(0.34, 1.1, 0.64, 1);
+      }
+      @keyframes modal-slide-up {
+        from { transform: translateY(40px); opacity: 0; }
+        to   { transform: translateY(0); opacity: 1; }
+      }
+      .post-modal-title-el { font-size: 22px; }
+      .post-modal-header { padding: 16px 16px 12px; }
+      .post-modal-body-wrap { padding: 16px; }
+    }
+
+    /* ─── Settings page ─── */
+    #toolsView { padding: 4px 0 48px; }
+    .settings-header {
+      margin-bottom: 28px;
+      padding-bottom: 18px;
+      border-bottom: 0.5px solid var(--line);
+    }
+    .settings-back {
+      display: inline-block;
+      margin-bottom: 8px;
+    }
+
+    /* ─── Theme toggle button ─── */
+    #themeToggleButton {
+      min-width: 30px;
+      min-height: 30px;
+      width: 30px;
+      height: 30px;
+      padding: 0;
+      border-radius: 50%;
+      border: 0.5px solid var(--line-dark);
+      background: none;
+      box-shadow: none;
+      font-size: 14px;
+      color: var(--muted);
+    }
+    #themeToggleButton:hover {
+      background: var(--panel-3);
+      color: var(--text);
+      transform: none;
+      box-shadow: none;
+    }
+
+    /* ─── Content tabs (Posts / Timeline / Collections) ─── */
+    .content-tabs {
+      display: flex;
+      gap: 2px;
+      align-items: center;
+      padding-bottom: 12px;
+      border-bottom: 0.5px solid var(--line);
+      margin-bottom: 14px;
+    }
+    .new-post-btn {
+      background: transparent !important;
+      color: var(--text) !important;
+      border: 1px solid var(--line-dark) !important;
+      font-weight: 600 !important;
+      box-shadow: none !important;
+    }
+    .new-post-btn:hover {
+      background: var(--panel-3) !important;
+      color: var(--text) !important;
+      box-shadow: none !important;
+    }
+    .content-tab {
+      background: none;
+      border: none;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 500;
+      padding: 4px 13px;
+      border-radius: 7px;
+      min-height: 0;
+      box-shadow: none;
+    }
+    .content-tab:hover {
+      background: var(--panel-3);
+      color: var(--text);
+      transform: none;
+      box-shadow: none;
+    }
+    .content-tab.active {
+      background: var(--panel-3);
+      color: var(--text);
+      font-weight: 600;
+    }
+    .settings-page-title {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.025em;
+      color: var(--title);
+      margin: 0;
+      line-height: 1.2;
+    }
+    .settings-section {
+      display: grid;
+      grid-template-columns: 150px 1fr;
+      gap: 16px 28px;
+      padding: 20px 0;
+      border-bottom: 0.5px solid var(--line);
+      align-items: start;
+      max-width: 620px;
+    }
+    .settings-section-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+      padding-top: 5px;
+    }
+    .settings-section-body {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .settings-name-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .settings-save-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: 2px;
+    }
+    .settings-save-row button {
+      min-width: 72px;
+    }
+    .settings-backup-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .settings-backup-row button {
+      font-size: 13px;
+      min-height: 34px;
+      padding: 0 14px;
+    }
+    @media (max-width: 640px) {
+      .settings-section {
+        grid-template-columns: 1fr;
+        gap: 10px;
+      }
+      .settings-name-row {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* ─── AI Writing Tools ─── */
+    .ai-feature { display: none; }
+    body.ai-ready .ai-feature { display: revert; }
+
+    @keyframes ai-pulse { 0%,100% { opacity: 0.45; } 50% { opacity: 1; } }
+    .ai-loading { animation: ai-pulse 1.1s ease-in-out infinite; display: inline-block; }
+
+    /* Inline ghost text overlay (VS Code-style) */
+    .editor-body-wrapper {
+      position: relative;
+      width: 100%;
+    }
+    .editor-ghost-bg {
+      position: absolute;
+      inset: 0;
+      padding: 0;
+      box-sizing: border-box;
+      display: block;
+      font-family: "Plus Jakarta Sans", system-ui, sans-serif;
+      font-size: 15px;
+      font-weight: 400;
+      line-height: 1.8;
+      letter-spacing: normal;
+      color: transparent;
+      pointer-events: none;
+      white-space: pre-wrap;
+      overflow-wrap: break-word;
+      word-break: normal;
+      overflow: hidden;
+      z-index: 0;
+      border: none;
+      background: none;
+    }
+    .ghost-suggestion {
+      color: var(--muted);
+      opacity: 0.45;
+      font-style: italic;
+      font-weight: 400;
+    }
+    .editor-body-input {
+      background: transparent !important;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Floating selection toolbar */
+    #aiFloatBar {
+      position: fixed;
+      z-index: 350;
+      background: var(--panel);
+      border: 0.5px solid var(--line-dark);
+      border-radius: 9px;
+      box-shadow: 0 4px 18px rgba(0,0,0,0.18);
+      display: flex;
+      gap: 2px;
+      padding: 4px;
+    }
+    #aiFloatBar.hidden { display: none !important; }
+    #aiFloatBar button {
+      background: none;
+      border: none;
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 600;
+      font-family: inherit;
+      padding: 5px 11px;
+      border-radius: 6px;
+      cursor: pointer;
+      white-space: nowrap;
+      min-height: 0;
+      box-shadow: none;
+      transform: none;
+    }
+    #aiFloatBar button:hover { background: var(--panel-3); box-shadow: none; transform: none; }
+
+    /* Rephrase panel — centered modal */
+    #aiRephrasePanel {
+      position: fixed;
+      z-index: 500;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: var(--panel);
+      border: 0.5px solid var(--line-dark);
+      border-radius: 14px;
+      box-shadow: 0 16px 48px rgba(0,0,0,0.25);
+      padding: 6px;
+      min-width: 260px;
+      max-width: 400px;
+      width: calc(100vw - 48px);
+      overflow: hidden;
+    }
+    #aiRephrasePanel.hidden { display: none !important; }
+    .rephrase-header {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--muted);
+      padding: 4px 10px 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .rephrase-item {
+      width: 100%;
+      text-align: left;
+      background: none;
+      border: none;
+      padding: 8px 10px;
+      border-radius: 7px;
+      font-size: 13px;
+      font-family: inherit;
+      color: var(--text);
+      cursor: pointer;
+      line-height: 1.5;
+      display: block;
+      min-height: 0;
+      box-shadow: none;
+      transform: none;
+      white-space: normal;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+    }
+    .rephrase-item:hover { background: var(--panel-3); box-shadow: none; transform: none; }
+    .rephrase-item + .rephrase-item { border-top: 0.5px solid var(--line); }
+
+    /* AI Spark panel */
+    .ai-spark-section {
+      display: grid;
+      gap: 10px;
+    }
+
+    .ai-spark-section + .ai-spark-section {
+      border-top: 0.5px solid var(--line);
+      margin-top: 2px;
+      padding-top: 14px;
+    }
+
+    .ai-spark-section-title {
+      margin: 0;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0;
+      text-transform: none;
+    }
+
+    .ai-spark-result {
+      border: 0.5px solid var(--line);
+      background: var(--panel);
+      color: var(--text);
+      font-size: 14px;
+      line-height: 1.65;
+      padding: 12px 13px;
+      border-radius: 10px;
+    }
+
+    .ai-spark-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+    }
+
+    .ai-spark-actions button {
+      font-size: 12px; padding: 0 12px; min-height: 31px;
+      border-radius: 8px; font-weight: 650;
+    }
+
+    .editor-tool-panel button {
+      border: 0.5px solid var(--line);
+      background: var(--panel);
+      color: var(--text);
+      box-shadow: none;
+      transform: none;
+    }
+
+    .editor-tool-panel button:hover {
+      border-color: var(--line-dark);
+      background: var(--panel-2);
+      box-shadow: none;
+      transform: none;
+    }
+
+    .brainstorm-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 8px;
+      align-items: center;
+    }
+    .brainstorm-row input {
+      min-width: 0;
+      width: auto;
+    }
+    .brainstorm-row button {
+      min-width: 0;
+      white-space: nowrap;
+      min-height: 38px;
+      border-radius: 9px;
+      padding: 0 14px;
+    }
+    .brainstorm-list { display: grid; gap: 4px; margin-top: 8px; }
+    .brainstorm-item {
+      text-align: left; background: var(--panel); border: 0.5px solid var(--line);
+      padding: 8px 10px; border-radius: 8px; font-size: 13px; font-family: inherit;
+      color: var(--text); cursor: pointer; width: 100%; line-height: 1.4;
+      min-height: 0; box-shadow: none; transform: none;
+    }
+    .brainstorm-item:hover { background: var(--panel-3); border-color: var(--link); box-shadow: none; transform: none; }
+    @media (max-width: 640px) {
+      .brainstorm-row {
+        align-items: stretch;
+        grid-template-columns: 1fr;
+      }
+      .brainstorm-row button {
+        width: 100%;
+      }
+    }
+
+    /* AI status badge */
+    .ai-status-badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      font-size: 12px; font-weight: 700; padding: 6px 12px;
+      border-radius: 999px; margin-bottom: 12px;
+      width: 100%;
+    }
+    .ai-status-badge.active { background: rgba(22,163,74,0.12); color: var(--ok); }
+    .ai-status-badge.inactive { background: var(--panel-3); color: var(--muted); }
+
+    /* AI toggle rows */
+    .ai-toggle-list {
+      display: grid;
+      border: 0.5px solid var(--line);
+      border-radius: 14px;
+      overflow: hidden;
+      background: var(--panel);
+    }
+
+    .ai-toggle-group {
+      margin-top: 10px;
+    }
+
+    .toggle-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 16px;
+      min-height: 58px;
+      padding: 11px 14px;
+      border-top: 0.5px solid var(--line);
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .toggle-row:hover {
+      background: var(--panel-2);
+    }
+
+    .toggle-row:first-child { border-top: none; }
+    .toggle-row-text {
+      display: grid;
+      gap: 2px;
+      min-width: 0;
+    }
+    .toggle-row-title {
+      font-size: 14px;
+      color: var(--text);
+      font-weight: 650;
+      line-height: 1.25;
+    }
+    .toggle-row .toggle-hint {
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 400;
+      line-height: 1.35;
+    }
+    .switch-input {
+      position: absolute;
+      opacity: 0;
+      pointer-events: none;
+    }
+    .switch-control {
+      position: relative;
+      width: 42px;
+      height: 24px;
+      border-radius: 999px;
+      background: var(--panel-3);
+      box-shadow: inset 0 0 0 1px var(--line-dark);
+      transition: background 0.18s ease, box-shadow 0.18s ease;
+      flex-shrink: 0;
+    }
+    .switch-control::after {
+      content: "";
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: var(--panel);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.22);
+      transition: transform 0.18s ease;
+    }
+    .switch-input:checked + .switch-control {
+      background: var(--accent);
+      box-shadow: inset 0 0 0 1px rgba(0,0,0,0.08);
+    }
+    .switch-input:checked + .switch-control::after {
+      transform: translateX(18px);
+    }
+    .switch-input:focus-visible + .switch-control {
+      outline: 3px solid rgba(109,40,217,0.28);
+      outline-offset: 2px;
+    }
+    #aiFeatureToggles[aria-disabled="true"] .toggle-row {
+      cursor: default;
+    }
+
+    /* Insights page */
+    .insights-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      align-items: start;
+    }
+
+    .insight-panel {
+      border: 0.5px solid var(--line);
+      background: var(--panel);
+      border-radius: 14px;
+      padding: 16px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+    }
+
+    .insight-panel-wide {
+      grid-column: 1 / -1;
+    }
+
+    .insight-panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+
+    .insight-panel-title {
+      display: grid;
+      gap: 2px;
+      min-width: 0;
+    }
+
+    .insight-panel-title h3 {
+      margin: 0;
+      color: var(--text);
+      font-size: 14px;
+      font-weight: 750;
+      letter-spacing: 0;
+    }
+
+    .insight-panel-title span {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.35;
+    }
+
+    .insight-panel-body {
+      color: var(--text);
+      font-size: 14px;
+      line-height: 1.65;
+    }
+
+    .insight-panel-body .muted {
+      font-size: 13px;
+    }
+
+    .insight-panel button {
+      border: 0.5px solid var(--line-dark);
+      background: var(--panel);
+      color: var(--text);
+      box-shadow: none;
+      transform: none;
+      font-weight: 650;
+    }
+
+    .insight-panel button:hover {
+      background: var(--panel-2);
+      box-shadow: none;
+      transform: none;
+    }
+
+    .insight-action {
+      flex: 0 0 auto;
+      min-height: 32px;
+      padding: 0 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    @media (max-width: 800px) {
+      .insights-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Weekly digest */
+
+    /* Insight stats grid */
+    .insight-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+    .insight-stat {
+      background: var(--panel-3); border-radius: 10px;
+      padding: 10px 12px; font-size: 12px; color: var(--muted);
+    }
+    .insight-stat strong {
+      display: block; font-family: "Instrument Serif", Georgia, serif;
+      font-style: italic; font-size: 26px; font-weight: 400;
+      color: var(--title); letter-spacing: -0.02em; margin-bottom: 2px;
+    }
+    .insight-result {
+      font-size: 13px; line-height: 1.7; margin-top: 10px;
+      padding: 12px 14px;
+      background: var(--panel);
+      border: 0.5px solid var(--line);
+      border-radius: 10px;
+    }
+    .insight-result ul { margin: 0; padding-left: 16px; }
+    .insight-result li { margin-bottom: 4px; }
+
+    /* Auto-suggest toggle button */
+    #autoSuggestButton.active {
+      border-color: rgba(109,40,217,0.42);
+      color: var(--link);
+      background: rgba(109,40,217,0.09);
+      box-shadow: 0 3px 12px rgba(109,40,217,0.14);
+    }
+
   </style>
 </head>
 <body>
   <a class="skip-link" href="#mainContent">Skip to main content</a>
   <div class="page">
     <header class="topbar">
-      <div class="brand">
+      <div class="brand" id="appBrand">
         <h1>Mind Archive</h1>
         <span>plain old thoughts, dated and kept</span>
       </div>
@@ -1795,13 +2740,12 @@
             <span id="currentUserLabel" class="hidden"></span><span class="user-menu-caret" aria-hidden="true">▾</span>
           </button>
           <div class="user-menu-dropdown hidden" id="userMenuDropdown" role="menu">
-            <button type="button" id="themeMenuItem" class="menu-item" role="menuitem">Dark mode</button>
-            <div class="menu-divider" role="separator"></div>
-            <button type="button" id="lockButton" class="menu-item" role="menuitem">Lock screen</button>
+            <button type="button" id="settingsMenuItem" class="menu-item" role="menuitem">Settings</button>
             <div class="menu-divider" role="separator"></div>
             <button type="button" id="logoutButton" class="menu-item" role="menuitem">Sign out</button>
           </div>
         </div>
+        <button id="themeToggleButton" type="button" class="auth-only hidden" title="Toggle theme">◐</button>
       </div>
     </header>
 
@@ -1820,6 +2764,11 @@
         </div>
         <div class="box-body">
           <form id="signinForm" class="auth-form stack">
+            <a href="/api/auth/google" class="google-btn">
+              <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+              Continue with Google
+            </a>
+            <div class="auth-divider">or</div>
             <div class="field">
               <label for="signinEmail">Email</label>
               <input id="signinEmail" type="email" autocomplete="email" required>
@@ -1832,12 +2781,14 @@
               <button type="submit">Sign in</button>
               <span id="signinStatus" class="muted" role="status" aria-live="polite"></span>
             </div>
-            <div class="auth-extra">
-              <button type="button" id="showRecoverButton" class="link-button">Forgot password?</button>
-            </div>
           </form>
 
           <form id="signupForm" class="auth-form stack hidden">
+            <a href="/api/auth/google" class="google-btn">
+              <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+              Continue with Google
+            </a>
+            <div class="auth-divider">or</div>
             <div class="form-grid">
               <div class="field">
                 <label for="signupFirstName">First name</label>
@@ -1861,61 +2812,18 @@
               <input id="signupPasswordAgain" type="password" autocomplete="new-password" minlength="8" required>
             </div>
             <div class="form-actions">
-              <button type="submit">Create private archive</button>
+              <button type="submit">Create account</button>
               <span id="signupStatus" class="muted" role="status" aria-live="polite"></span>
-            </div>
-            <div id="recoveryKeyPanel" class="recovery-box hidden">
-              <strong>Save this recovery key now.</strong>
-              <p class="muted">It can reset your password if you forget it. It will not be shown again.</p>
-              <div id="recoveryKeyValue" class="recovery-key"></div>
-              <div class="form-actions recovery-actions">
-                <button type="button" id="copyRecoveryKey">Copy recovery key</button>
-              </div>
             </div>
           </form>
         </div>
       </div>
       <div class="auth-note">
-        Each archive is encrypted in your browser before it is stored on the server. Other users cannot open it, and the server cannot read it without your password or your recovery key.
+        Sign in to access your private archive.
       </div>
     </section>
 
-    <section id="recoveryView" class="auth-panel hidden">
-      <form id="recoverForm" class="box">
-        <div class="box-title">Recover Account</div>
-        <div class="box-body stack">
-          <div class="field">
-            <label for="recoverEmail">Email</label>
-            <input id="recoverEmail" type="email" autocomplete="email" required>
-          </div>
-          <div class="field">
-            <label for="recoverKey">Recovery key</label>
-            <input id="recoverKey" required>
-          </div>
-          <div class="field">
-            <label for="recoverPassword">New password</label>
-            <input id="recoverPassword" type="password" autocomplete="new-password" minlength="8" required>
-          </div>
-          <div class="field">
-            <label for="recoverPasswordAgain">Repeat new password</label>
-            <input id="recoverPasswordAgain" type="password" autocomplete="new-password" minlength="8" required>
-          </div>
-          <div class="form-actions">
-            <button type="submit">Reset password</button>
-            <button type="button" id="recoverBackButton">Back</button>
-            <span id="recoverStatus" class="muted" role="status" aria-live="polite"></span>
-          </div>
-        </div>
-      </form>
-    </section>
-
-    <nav id="appNav" class="nav hidden" aria-label="Main views" role="tablist">
-      <button class="tab active" data-view="postsView" role="tab" aria-controls="postsView" aria-selected="true">Posts</button>
-      <button class="tab" data-view="editorView" role="tab" aria-controls="editorView" aria-selected="false">Write</button>
-      <button class="tab" data-view="timelineView" role="tab" aria-controls="timelineView" aria-selected="false">Timeline</button>
-      <button class="tab" data-view="collectionsView" role="tab" aria-controls="collectionsView" aria-selected="false">Collections</button>
-      <button class="tab" data-view="toolsView" role="tab" aria-controls="toolsView" aria-selected="false">Backup</button>
-    </nav>
+    <nav id="appNav" class="nav hidden" aria-hidden="true"></nav>
 
     <div id="appLayout" class="layout hidden">
       <aside class="sidebar">
@@ -1931,15 +2839,13 @@
           </div>
         </section>
 
+
         <section class="box box-collapsible collapsed" id="findBox">
           <div class="box-title" id="findBoxTitle" role="button" tabindex="0" aria-expanded="false" aria-controls="findBoxBody">Find <span id="findActiveDot" class="find-active-dot" style="display:none"></span></div>
           <div class="box-body stack" id="findBoxBody">
             <input id="searchInput" type="search" placeholder="search thoughts">
             <select id="filterCollection" aria-label="Filter by collection">
               <option value="">all collections</option>
-            </select>
-            <select id="filterSeries" aria-label="Filter by series">
-              <option value="">all series</option>
             </select>
             <div class="field">
               <label for="searchFrom">From</label>
@@ -1981,14 +2887,21 @@
       </aside>
 
       <main class="main">
+        <div class="content-tabs auth-only hidden" id="contentTabs">
+          <button type="button" class="content-tab" data-view="postsView">Posts</button>
+          <button type="button" class="content-tab" data-view="timelineView">Timeline</button>
+          <button type="button" class="content-tab" data-view="collectionsView">Collections</button>
+          <button type="button" class="content-tab" data-view="insightsView">Insights</button>
+        </div>
+
         <section id="postsView" class="view" role="tabpanel">
           <div class="box">
             <div class="box-title with-actions">
               <span id="postsBoxTitle">Posts</span>
               <div class="action-group">
+                <button type="button" id="newPostButton" class="compact-button new-post-btn">+ New post</button>
                 <button type="button" id="toggleHiddenButton" class="compact-button">Show hidden</button>
                 <button type="button" id="randomPostButton" class="compact-button">Random</button>
-                <button type="button" id="newPostButton" class="compact-button">+ New post</button>
               </div>
             </div>
             <div class="box-body">
@@ -1998,60 +2911,86 @@
         </section>
 
         <section id="editorView" class="view hidden" role="tabpanel">
-          <div class="split">
-            <form id="postForm" class="box">
-              <div class="box-title with-actions">
-                <span id="editorTitle">Write Post</span>
-                <div class="action-group">
-                  <button type="button" id="focusButton" class="compact-button">Focus</button>
+          <div class="editor-nav">
+            <button type="button" id="editorBackButton" class="link-button">← Posts</button>
+            <span id="editorTitle" class="editor-nav-title">New post</span>
+            <div class="editor-nav-actions">
+              <button type="button" id="detailsToolButton" aria-label="Post details" title="Post details" aria-expanded="false" aria-controls="metaDetailsPanel">☰</button>
+              <button type="button" id="sparkToolButton" class="ai-feature" aria-label="Writing ideas" title="Writing ideas" aria-expanded="false" aria-controls="aiSparkPanel">✦</button>
+              <button type="button" id="autoSuggestButton" class="ai-feature" aria-label="Inline suggestions" title="Inline suggestions">↝</button>
+              <button type="button" id="focusButton" class="editor-text-button">Focus</button>
+            </div>
+            <div id="metaDetailsPanel" class="editor-tool-panel hidden">
+              <div class="editor-meta-grid">
+                <div class="field">
+                  <label for="moodInput">Mood</label>
+                  <input id="moodInput" maxlength="80" placeholder="tired, clear, grateful…">
+                </div>
+                <div class="field">
+                  <label for="placeInput">Place</label>
+                  <input id="placeInput" maxlength="120" placeholder="home, train, café…">
+                </div>
+                <div class="field editor-meta-wide">
+                  <label for="collectionsInput">Collections</label>
+                  <input id="collectionsInput" placeholder="life, college, work">
                 </div>
               </div>
-              <div class="box-body stack">
-                <div id="draftBanner" class="draft-banner hidden">
-                  <span>You have an unsaved draft.</span>
-                  <button type="button" id="restoreDraft">Restore</button>
-                  <button type="button" id="discardDraft">Discard</button>
+              <div class="option-list-inline">
+                <label><input id="pinnedInput" type="checkbox"> Pin</label>
+                <label><input id="hiddenInput" type="checkbox"> Hidden</label>
+              </div>
+            </div>
+            <div id="aiSparkPanel" class="editor-tool-panel ai-feature hidden">
+              <div id="aiSparkContent" class="ai-spark-section">
+                <div class="ai-spark-section-title">Ask me</div>
+                <div id="aiSparkResult" class="ai-spark-result hidden"></div>
+                <div class="ai-spark-actions">
+                  <button type="button" id="aiSparkGenerate">Suggest</button>
+                  <button type="button" id="aiSparkAnother" class="hidden">New</button>
+                  <button type="button" id="aiSparkUse" class="hidden">Add</button>
                 </div>
-                <input id="postId" type="hidden">
-                <div class="field">
-                  <label for="titleInput">Title</label>
-                  <input id="titleInput" required maxlength="160" placeholder="what was today about?">
+              </div>
+              <div class="ai-spark-section">
+                <div class="ai-spark-section-title">Ideas</div>
+                <div class="brainstorm-row">
+                  <input type="text" id="brainstormInput" placeholder="Topic" maxlength="120">
+                  <button type="button" id="brainstormGenerate">List ideas</button>
                 </div>
-                <div class="form-grid">
-                  <div class="field">
-                    <label for="moodInput">Mood</label>
-                    <input id="moodInput" maxlength="80" placeholder="tired, clear, angry, grateful">
-                  </div>
-                  <div class="field">
-                    <label for="placeInput">Place</label>
-                    <input id="placeInput" maxlength="120" placeholder="room, city, train, college">
-                  </div>
+                <div id="brainstormList" class="brainstorm-list hidden"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="split">
+            <form id="postForm" class="editor-form">
+              <input id="postId" type="hidden">
+
+              <div id="draftBanner" class="draft-banner hidden">
+                <span>Unsaved draft.</span>
+                <button type="button" id="restoreDraft">Restore</button>
+                <button type="button" id="discardDraft">Discard</button>
+              </div>
+
+              <input id="titleInput" class="editor-title-input" required maxlength="160" placeholder="Title">
+
+              <div class="editor-body-wrapper">
+                <div class="editor-ghost-bg" id="bodyGhost" aria-hidden="true"></div>
+                <textarea id="bodyInput" class="editor-body-input" required placeholder="Write what's on your mind…"></textarea>
+              </div>
+              <div class="editor-footer-row">
+                <div class="editor-wordcount" id="editorWordCount">0 words</div>
+                <div id="ghostActions" class="ghost-actions hidden" aria-live="polite">
+                  <button type="button" id="ghostAcceptWord" title="Accept next word (→)">+ word</button>
+                  <button type="button" id="ghostAcceptAll" title="Accept full suggestion (Tab)">Accept all</button>
+                  <button type="button" id="ghostDismiss" title="Dismiss (Esc)" aria-label="Dismiss suggestion">✕</button>
                 </div>
-                <div class="form-grid">
-                  <div class="field">
-                    <label for="collectionsInput">Collections</label>
-                    <input id="collectionsInput" placeholder="life, college, work">
-                  </div>
-                  <div class="field">
-                    <label for="seriesInput">Series</label>
-                    <input id="seriesInput" placeholder="becoming 20">
-                  </div>
-                </div>
-                <div class="field">
-                  <label for="bodyInput">Markdown</label>
-                  <textarea id="bodyInput" required placeholder="Write exactly what is in your head. Markdown works: # heading, **bold**, *italic*, - list, > quote."></textarea>
-                  <div class="editor-wordcount" id="editorWordCount">0 words</div>
-                </div>
-                <div class="option-list">
-                  <label class="row"><input id="pinnedInput" type="checkbox"> pin this thought</label>
-                  <label class="row"><input id="hiddenInput" type="checkbox"> keep hidden</label>
-                </div>
-                <div class="form-actions">
-                  <button type="submit">Save post</button>
-                  <button type="button" id="clearEditor">Clear</button>
-                  <button type="button" id="cancelEdit" class="hidden">Cancel</button>
-                  <span class="muted" id="editorStatus" role="status" aria-live="polite"></span>
-                </div>
+              </div>
+
+              <div class="form-actions">
+                <button type="submit">Save</button>
+                <button type="button" id="clearEditor">New</button>
+                <button type="button" id="cancelEdit" class="hidden">Cancel edit</button>
+                <span class="muted" id="editorStatus" role="status" aria-live="polite"></span>
               </div>
             </form>
 
@@ -2073,37 +3012,153 @@
 
         <section id="collectionsView" class="view hidden" role="tabpanel">
           <div class="box">
-            <div class="box-title">Collections and Series</div>
+            <div class="box-title">Collections</div>
             <div class="box-body">
               <div id="collectionsList" class="collection-list"></div>
             </div>
           </div>
         </section>
 
+        <section id="insightsView" class="view hidden" role="tabpanel">
+          <div class="insights-grid">
+            <section class="insight-panel" id="insightsDigestPanel">
+              <div class="insight-panel-header">
+                <div class="insight-panel-title">
+                  <h3>Weekly digest</h3>
+                  <span>A short summary of recent entries</span>
+                </div>
+              </div>
+              <div class="insight-panel-body" id="insightsDigestBody"></div>
+            </section>
+
+            <section class="insight-panel" id="insightsOnThisDayPanel">
+              <div class="insight-panel-header">
+                <div class="insight-panel-title">
+                  <h3>On This Day</h3>
+                  <span>Past entries from today</span>
+                </div>
+              </div>
+              <div class="insight-panel-body" id="insightsOnThisDayList"></div>
+            </section>
+
+            <section class="insight-panel insight-panel-wide">
+              <div class="insight-panel-header">
+                <div class="insight-panel-title">
+                  <h3>Themes</h3>
+                  <span>Find recurring patterns across your writing</span>
+                </div>
+                <div style="display:flex;gap:8px;align-items:center">
+                  <button type="button" id="generateInsight" class="compact-button insight-action">Find themes</button>
+                  <button type="button" id="clearInsight" class="compact-button" style="display:none">Clear</button>
+                </div>
+              </div>
+              <div class="insight-panel-body">
+                <div id="insightResult" class="insight-result hidden"></div>
+              </div>
+            </section>
+          </div>
+        </section>
+
         <section id="toolsView" class="view hidden" role="tabpanel">
-          <div class="box">
-            <div class="box-title">Account</div>
-            <div class="box-body stack">
-              <div class="field">
-                <label for="accountFirstName">First name</label>
-                <input id="accountFirstName" type="text" maxlength="80" autocomplete="given-name">
+          <div class="settings-header">
+            <button type="button" id="settingsBackButton" class="settings-back link-button">← Posts</button>
+            <h2 class="settings-page-title">Settings</h2>
+          </div>
+
+          <div class="settings-section">
+            <div class="settings-section-label">Account</div>
+            <div class="settings-section-body">
+              <div class="settings-name-row">
+                <div class="field">
+                  <label for="accountFirstName">First name</label>
+                  <input id="accountFirstName" type="text" maxlength="80" autocomplete="given-name">
+                </div>
+                <div class="field">
+                  <label for="accountLastName">Last name</label>
+                  <input id="accountLastName" type="text" maxlength="80" autocomplete="family-name">
+                </div>
               </div>
-              <div class="field">
-                <label for="accountLastName">Last name</label>
-                <input id="accountLastName" type="text" maxlength="80" autocomplete="family-name">
-              </div>
-              <div class="button-row">
+              <div class="settings-save-row">
                 <button id="saveAccount" type="button">Save</button>
                 <span id="accountStatus" class="muted" role="status" aria-live="polite"></span>
               </div>
             </div>
           </div>
 
+          <div class="settings-section">
+            <div class="settings-section-label">AI Writing Tools</div>
+            <div class="settings-section-body">
+              <div id="aiToggles" class="hidden">
+                <div class="ai-toggle-list">
+                  <label class="toggle-row" for="aiGlobalToggle">
+                    <span class="toggle-row-text">
+                      <span class="toggle-row-title">AI features</span>
+                      <span class="toggle-hint">Turn all writing assistance on or off</span>
+                    </span>
+                    <input class="switch-input" type="checkbox" id="aiGlobalToggle">
+                    <span class="switch-control" aria-hidden="true"></span>
+                  </label>
+                </div>
+                <div id="aiFeatureToggles" class="ai-toggle-list ai-toggle-group">
+                  <label class="toggle-row" for="aiToggleGhost">
+                    <span class="toggle-row-text">
+                      <span class="toggle-row-title">Ghost text</span>
+                      <span class="toggle-hint">Suggests the next sentence while writing</span>
+                    </span>
+                    <input class="switch-input" type="checkbox" id="aiToggleGhost" checked>
+                    <span class="switch-control" aria-hidden="true"></span>
+                  </label>
+                  <label class="toggle-row" for="aiToggleToolbar">
+                    <span class="toggle-row-text">
+                      <span class="toggle-row-title">Selection tools</span>
+                      <span class="toggle-hint">Rephrase or expand selected text</span>
+                    </span>
+                    <input class="switch-input" type="checkbox" id="aiToggleToolbar" checked>
+                    <span class="switch-control" aria-hidden="true"></span>
+                  </label>
+                  <label class="toggle-row" for="aiTogglePrompts">
+                    <span class="toggle-row-text">
+                      <span class="toggle-row-title">Writing ideas</span>
+                      <span class="toggle-hint">Questions and idea lists</span>
+                    </span>
+                    <input class="switch-input" type="checkbox" id="aiTogglePrompts" checked>
+                    <span class="switch-control" aria-hidden="true"></span>
+                  </label>
+                  <label class="toggle-row" for="aiToggleDigest">
+                    <span class="toggle-row-text">
+                      <span class="toggle-row-title">Weekly digest</span>
+                      <span class="toggle-hint">A short summary in Insights</span>
+                    </span>
+                    <input class="switch-input" type="checkbox" id="aiToggleDigest" checked>
+                    <span class="switch-control" aria-hidden="true"></span>
+                  </label>
+                  <label class="toggle-row" for="aiToggleOTD">
+                    <span class="toggle-row-text">
+                      <span class="toggle-row-title">On This Day note</span>
+                      <span class="toggle-hint">Past entries from today in Insights</span>
+                    </span>
+                    <input class="switch-input" type="checkbox" id="aiToggleOTD" checked>
+                    <span class="switch-control" aria-hidden="true"></span>
+                  </label>
+                  <label class="toggle-row" for="aiToggleInsights">
+                    <span class="toggle-row-text">
+                      <span class="toggle-row-title">Pattern insights</span>
+                      <span class="toggle-hint">Themes you can generate in Insights</span>
+                    </span>
+                    <input class="switch-input" type="checkbox" id="aiToggleInsights" checked>
+                    <span class="switch-control" aria-hidden="true"></span>
+                  </label>
+                </div>
+              </div>
+              <p class="muted" id="aiSessionTokens" style="font-size:12px;margin:4px 0 0"></p>
+              <p class="muted" id="aiUnavailableNote" style="font-size:12px;margin:0">AI features require a Groq API key configured on the server.</p>
+            </div>
+          </div>
 
-          <div class="box">
-            <div class="box-title">Backup &amp; Restore</div>
-            <div class="box-body stack">
-              <div class="button-row">
+          <div class="settings-section">
+            <div class="settings-section-label">Backup &amp; Restore</div>
+            <div class="settings-section-body">
+              <div class="settings-backup-row">
                 <button id="downloadJson">Export JSON</button>
                 <button id="downloadMarkdown">Export Markdown</button>
                 <button id="printPdf">Print / PDF</button>
@@ -2120,65 +3175,35 @@
     </div>
 
     <footer class="footer">
-      Your posts are encrypted in your browser. The server cannot read them. Export a backup regularly.
+      Your posts are stored on the server. Export a backup regularly.
     </footer>
   </div>
 
-  <div id="lockScreen" class="lock-screen hidden" role="dialog" aria-modal="true" aria-label="Screen locked">
-    <div class="lock-box">
-      <div class="lock-label" id="lockTitle">Locked</div>
-
-      <!-- Password unlock form -->
-      <div id="lockUnlockSection">
-        <form id="lockUnlockForm" autocomplete="off">
-          <div class="lock-form-fields">
-            <div class="field">
-              <input id="lockPasswordInput" type="password" placeholder="Enter your password" autocomplete="current-password">
-            </div>
-          </div>
-          <div id="lockError" class="lock-status"></div>
-          <div class="lock-actions">
-            <button type="submit">Unlock</button>
-          </div>
-        </form>
-        <div class="lock-secondary">
-          <button type="button" id="lockForgotButton" class="link-button">Forgot password?</button>
-        </div>
-      </div>
-
-      <!-- Inline recovery form (shown when Forgot password? is clicked) -->
-      <div id="lockRecoverSection" class="hidden">
-        <form id="lockRecoverForm" autocomplete="off">
-          <div class="lock-form-fields">
-            <div class="field">
-              <input id="lockRecoverKey" placeholder="Recovery key">
-            </div>
-            <div class="field">
-              <input id="lockRecoverPassword" type="password" placeholder="New password" autocomplete="new-password">
-            </div>
-            <div class="field">
-              <input id="lockRecoverPasswordAgain" type="password" placeholder="Repeat new password" autocomplete="new-password">
-            </div>
-          </div>
-          <div id="lockRecoverError" class="lock-status"></div>
-          <div class="lock-actions">
-            <button type="submit">Recover account</button>
-          </div>
-        </form>
-        <div class="lock-secondary">
-          <button type="button" id="lockRecoverBackButton" class="link-button">← Back to unlock</button>
-        </div>
-      </div>
-
-      <!-- Sign out divider — always visible, below both sections -->
-      <div class="lock-divider">
-        <button type="button" id="lockSignOutButton" class="link-button">Sign out of this device</button>
-      </div>
-    </div>
+  <div id="aiFloatBar" class="hidden ai-feature" role="toolbar" aria-label="AI writing tools">
+    <button type="button" id="aiRephraseBtn">✦ Rephrase</button>
+    <button type="button" id="aiGrammarBtn">✦ Fix Grammar</button>
   </div>
+  <div id="aiRephrasePanel" class="hidden ai-feature"></div>
 
-  <div id="blurOverlay" class="blur-overlay hidden" aria-hidden="true">
-    <div class="blur-reveal-hint">Click to continue</div>
+  <div id="postModal" class="post-modal hidden" role="dialog" aria-modal="true" aria-labelledby="postModalTitle">
+    <div class="post-modal-backdrop" id="postModalBackdrop"></div>
+    <article class="post-modal-panel">
+      <div class="post-modal-header">
+        <div class="post-modal-top">
+          <div class="post-modal-meta-line" id="postModalMeta"></div>
+          <div class="post-modal-action-group">
+            <div id="postModalHeaderActions" class="post-modal-action-group"></div>
+            <button type="button" id="closePostModal" class="close-button" aria-label="Close post">×</button>
+          </div>
+        </div>
+        <h2 class="post-modal-title-el" id="postModalTitle"></h2>
+        <div id="postModalTags"></div>
+      </div>
+      <div class="post-modal-body-wrap">
+        <div class="post-body post-modal-body" id="postModalBody"></div>
+        <div class="post-modal-danger" id="postModalDanger"></div>
+      </div>
+    </article>
   </div>
 
   <div id="shortcutsOverlay" class="shortcuts-overlay hidden" role="dialog" aria-modal="true" aria-label="Keyboard shortcuts">
@@ -2192,7 +3217,7 @@
           <tr><td><kbd>n</kbd></td><td>New post</td></tr>
           <tr><td><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>F</kbd></td><td>Toggle focus mode</td></tr>
           <tr><td><kbd>Ctrl</kbd> + <kbd>/</kbd></td><td>Jump to search</td></tr>
-          <tr><td><kbd>Escape</kbd></td><td>Exit focus mode · collapse all posts · cancel edit</td></tr>
+          <tr><td><kbd>Escape</kbd></td><td>Close post · exit focus mode · cancel edit</td></tr>
           <tr><td><kbd>?</kbd></td><td>Show / hide this panel</td></tr>
         </table>
       </div>
@@ -2200,20 +3225,12 @@
   </div>
 
   <script>
-    const LEGACY_STORAGE_KEY = "mind-archive-v1";
     const THEME_STORAGE_KEY = "mind-archive-theme";
-    const SESSION_KEY_STORAGE = "mind-archive-session-key";
-    const AUTO_LOCK_MS = 15 * 60 * 1000;
-    let lastActivity = Date.now();
-    const cryptoApi = window.crypto && window.crypto.subtle ? window.crypto : null;
-    const encoder = new TextEncoder();
-    const decoder = new TextDecoder();
     const state = {
       posts: [],
       view: "postsView",
       query: "",
       collection: "",
-      series: "",
       onlyPinned: false,
       searchFrom: "",
       searchTo: "",
@@ -2223,13 +3240,9 @@
       currentUser: "",
       currentFirstName: "",
       currentLastName: "",
-      currentKey: null,
-      currentArchiveKeyRaw: "",
-      currentClientSalt: "",
-      currentWrappedKey: null,
-      previousScreen: "auth",
-      locked: false,
-      showHidden: false
+      showHidden: false,
+      aiReady: false,
+      autoSuggestOn: false
     };
 
     const $ = (id) => document.getElementById(id);
@@ -2245,133 +3258,14 @@
       const nextTheme = theme === "dark" ? "dark" : "light";
       document.documentElement.dataset.theme = nextTheme;
       localStorage.setItem(THEME_STORAGE_KEY, nextTheme);
-      if ($("themeMenuItem")) {
-        $("themeMenuItem").textContent = nextTheme === "dark" ? "Light mode" : "Dark mode";
-      }
     }
 
     function uid() {
       return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
     }
 
-    function bytesToBase64(bytes) {
-      const view = new Uint8Array(bytes);
-      let binary = "";
-      for (let index = 0; index < view.length; index += 0x8000) {
-        binary += String.fromCharCode(...view.subarray(index, index + 0x8000));
-      }
-      return btoa(binary);
-    }
-
-    function base64ToBytes(value) {
-      return Uint8Array.from(atob(value), (char) => char.charCodeAt(0));
-    }
-
-    function randomBase64(length) {
-      const bytes = new Uint8Array(length);
-      crypto.getRandomValues(bytes);
-      return bytesToBase64(bytes);
-    }
-
-    function formatRecoveryKey(value) {
-      return value.replace(/(.{4})/g, "$1-").replace(/-$/, "");
-    }
-
-    function parseRecoveryKey(value) {
-      return String(value || "").replace(/[^a-zA-Z0-9+/=]/g, "");
-    }
-
     function normalizeEmail(value) {
       return String(value || "").trim().toLowerCase();
-    }
-
-    async function deriveKey(email, password, salt) {
-      const material = await cryptoApi.subtle.importKey(
-        "raw",
-        encoder.encode(`${email}:${password}:vault`),
-        "PBKDF2",
-        false,
-        ["deriveKey"]
-      );
-      return cryptoApi.subtle.deriveKey(
-        { name: "PBKDF2", salt: base64ToBytes(salt), iterations: 250000, hash: "SHA-256" },
-        material,
-        { name: "AES-GCM", length: 256 },
-        false,
-        ["encrypt", "decrypt"]
-      );
-    }
-
-    async function deriveRecoveryWrapKey(recoveryKey, salt) {
-      const material = await cryptoApi.subtle.importKey(
-        "raw",
-        encoder.encode(`recovery:${parseRecoveryKey(recoveryKey)}`),
-        "PBKDF2",
-        false,
-        ["deriveKey"]
-      );
-      return cryptoApi.subtle.deriveKey(
-        { name: "PBKDF2", salt: base64ToBytes(salt), iterations: 250000, hash: "SHA-256" },
-        material,
-        { name: "AES-GCM", length: 256 },
-        false,
-        ["encrypt", "decrypt"]
-      );
-    }
-
-    async function deriveLoginSecret(email, password, salt) {
-      const material = await cryptoApi.subtle.importKey(
-        "raw",
-        encoder.encode(`${email}:${password}:login`),
-        "PBKDF2",
-        false,
-        ["deriveBits"]
-      );
-      const bits = await cryptoApi.subtle.deriveBits(
-        { name: "PBKDF2", salt: base64ToBytes(salt), iterations: 250000, hash: "SHA-256" },
-        material,
-        256
-      );
-      return bytesToBase64(bits);
-    }
-
-    async function encryptJson(key, value) {
-      const iv = randomBase64(12);
-      const encrypted = await cryptoApi.subtle.encrypt(
-        { name: "AES-GCM", iv: base64ToBytes(iv) },
-        key,
-        encoder.encode(JSON.stringify(value))
-      );
-      return { iv, data: bytesToBase64(encrypted) };
-    }
-
-    async function wrapArchiveKey(wrapKey, archiveKeyRaw) {
-      return encryptJson(wrapKey, { k: archiveKeyRaw });
-    }
-
-    async function unwrapArchiveKey(wrapKey, wrappedKey) {
-      const decoded = await decryptJson(wrapKey, wrappedKey);
-      if (!decoded || typeof decoded.k !== "string") throw new Error("Invalid archive key.");
-      return decoded.k;
-    }
-
-    async function importArchiveKey(rawKey) {
-      return cryptoApi.subtle.importKey(
-        "raw",
-        base64ToBytes(rawKey),
-        { name: "AES-GCM" },
-        false,
-        ["encrypt", "decrypt"]
-      );
-    }
-
-    async function decryptJson(key, record) {
-      const decrypted = await cryptoApi.subtle.decrypt(
-        { name: "AES-GCM", iv: base64ToBytes(record.iv) },
-        key,
-        base64ToBytes(record.data)
-      );
-      return JSON.parse(decoder.decode(decrypted));
     }
 
     async function api(path, options = {}) {
@@ -2387,9 +3281,8 @@
 
 
     async function savePosts() {
-      if (!state.currentUser || !state.currentKey) return;
-      const vault = await encryptJson(state.currentKey, state.posts);
-      await api("/api/vault", { method: "PUT", body: JSON.stringify({ vault }) });
+      if (!state.currentUser) return;
+      await api("/api/vault", { method: "PUT", body: JSON.stringify({ vault: state.posts }) });
     }
 
     let _saveTimer = null;
@@ -2400,119 +3293,35 @@
       }, 500);
     }
 
-    function hasLegacyPosts() {
-      try {
-        const saved = JSON.parse(localStorage.getItem(LEGACY_STORAGE_KEY) || "[]");
-        return Array.isArray(saved) && saved.length > 0;
-      } catch {
-        return false;
-      }
-    }
-
-    function readLegacyPosts() {
-      try {
-        const saved = JSON.parse(localStorage.getItem(LEGACY_STORAGE_KEY) || "[]");
-        return Array.isArray(saved) ? saved : [];
-      } catch {
-        return [];
-      }
-    }
-
     async function signUp(firstName, lastName, emailValue, password, passwordAgain) {
       const email = normalizeEmail(emailValue);
       if (password !== passwordAgain) throw new Error("Passwords do not match.");
-      if (!cryptoApi) throw new Error("This browser does not support Web Crypto.");
-
-      const clientSalt = randomBase64(16);
-      const recoverySalt = randomBase64(16);
-      const archiveKeyRaw = randomBase64(32);
-      const key = await importArchiveKey(archiveKeyRaw);
-      const passwordWrapKey = await deriveKey(email, password, clientSalt);
-      const recoveryKey = randomBase64(32);
-      const recoveryWrapKey = await deriveRecoveryWrapKey(recoveryKey, recoverySalt);
-      const loginSecret = await deriveLoginSecret(email, password, clientSalt);
-      let startingPosts = [];
-      if (hasLegacyPosts() && confirm("Import the old local archive into this new encrypted account?")) {
-        startingPosts = readLegacyPosts();
-      }
-      const vault = await encryptJson(key, startingPosts);
-      const wrappedKey = await wrapArchiveKey(passwordWrapKey, archiveKeyRaw);
-      const recoveryWrappedKey = await wrapArchiveKey(recoveryWrapKey, archiveKeyRaw);
+      if (password.length < 8) throw new Error("Password must be at least 8 characters.");
       const result = await api("/api/signup", {
         method: "POST",
-        body: JSON.stringify({ firstName, lastName, email, loginSecret, clientSalt, recoverySalt, vault, wrappedKey, recoveryWrappedKey })
+        body: JSON.stringify({ firstName, lastName, email, password })
       });
-      $("recoveryKeyValue").textContent = formatRecoveryKey(recoveryKey);
-      $("recoveryKeyPanel").classList.remove("hidden");
-      unlock(result.email, result.feedId, result.firstName || firstName, result.lastName || lastName, key, startingPosts, archiveKeyRaw);
-      state.currentClientSalt = result.clientSalt || clientSalt;
-      state.currentWrappedKey = result.wrappedKey || wrappedKey;
+      unlock(result.email, result.feedId, result.firstName || firstName, result.lastName || lastName, []);
     }
 
     async function signIn(emailValue, password) {
       const email = normalizeEmail(emailValue);
-      if (!cryptoApi) throw new Error("This browser does not support Web Crypto.");
-
-      const session = await api(`/api/user-salt?email=${encodeURIComponent(email)}`);
-      const loginSecret = await deriveLoginSecret(email, password, session.clientSalt);
       const result = await api("/api/signin", {
         method: "POST",
-        body: JSON.stringify({ email, loginSecret })
+        body: JSON.stringify({ email, password })
       });
-      const passwordWrapKey = await deriveKey(result.email, password, result.clientSalt);
-      const archiveKeyRaw = result.wrappedKey
-        ? await unwrapArchiveKey(passwordWrapKey, result.wrappedKey)
-        : "";
-      const key = archiveKeyRaw ? await importArchiveKey(archiveKeyRaw) : passwordWrapKey;
-      const posts = result.vault ? await decryptJson(key, result.vault) : [];
-      unlock(result.email, result.feedId, result.firstName || "", result.lastName || "", key, Array.isArray(posts) ? posts : [], archiveKeyRaw);
-      state.currentClientSalt = result.clientSalt || "";
-      state.currentWrappedKey = result.wrappedKey || null;
-    }
-
-    async function recoverAccount(emailValue, recoveryKeyValue, password, passwordAgain) {
-      const email = normalizeEmail(emailValue);
-      if (password !== passwordAgain) throw new Error("Passwords do not match.");
-      if (!cryptoApi) throw new Error("This browser does not support Web Crypto.");
-
-      const session = await api(`/api/user-salt?email=${encodeURIComponent(email)}`);
-      if (!session.recoverySalt || !session.recoveryWrappedKey) {
-        throw new Error("This account does not have a recovery key.");
-      }
-      const recoveryWrapKey = await deriveRecoveryWrapKey(recoveryKeyValue, session.recoverySalt);
-      const archiveKeyRaw = await unwrapArchiveKey(recoveryWrapKey, session.recoveryWrappedKey);
-      const archiveKey = await importArchiveKey(archiveKeyRaw);
-      const posts = session.vault ? await decryptJson(archiveKey, session.vault) : [];
-      const loginSecret = await deriveLoginSecret(email, password, session.clientSalt);
-      const passwordWrapKey = await deriveKey(email, password, session.clientSalt);
-      const wrappedKey = await wrapArchiveKey(passwordWrapKey, archiveKeyRaw);
-
-      const result = await api("/api/recover", {
-        method: "POST",
-        body: JSON.stringify({ email, loginSecret, recoveryWrappedKey: session.recoveryWrappedKey, wrappedKey })
-      });
-      unlock(result.email, result.feedId, result.firstName || "", result.lastName || "", archiveKey, Array.isArray(posts) ? posts : [], archiveKeyRaw);
-      state.currentClientSalt = result.clientSalt || "";
-      state.currentWrappedKey = result.wrappedKey || null;
+      unlock(result.email, result.feedId, result.firstName || "", result.lastName || "", Array.isArray(result.vault) ? result.vault : []);
     }
 
     async function logout() {
       try {
         await api("/api/logout", { method: "POST", body: "{}" });
       } finally {
-        localStorage.removeItem(SESSION_KEY_STORAGE);
         localStorage.removeItem(DRAFT_KEY);
-        clearTabBlur();
-        $("lockScreen").classList.add("hidden");
         state.currentUser = "";
         state.currentFirstName = "";
         state.currentLastName = "";
-        state.currentKey = null;
-        state.currentArchiveKeyRaw = "";
-        state.currentClientSalt = "";
-        state.currentWrappedKey = null;
         state.posts = [];
-        state.locked = false;
         state.showHidden = false;
         clearEditor();
         showAuth();
@@ -2520,154 +3329,35 @@
     }
 
     async function tryRestoreSession() {
-      const archiveKeyRaw = localStorage.getItem(SESSION_KEY_STORAGE);
-      if (!archiveKeyRaw) return false;
       try {
-        const [result, key] = await Promise.all([api("/api/session"), importArchiveKey(archiveKeyRaw)]);
-        const posts = result.vault ? await decryptJson(key, result.vault) : [];
-        unlock(result.email, result.feedId, result.firstName || "", result.lastName || "", key, Array.isArray(posts) ? posts : [], archiveKeyRaw);
-        state.currentClientSalt = result.clientSalt || "";
-        state.currentWrappedKey = result.wrappedKey || null;
+        const result = await api("/api/session");
+        unlock(result.email, result.feedId, result.firstName || "", result.lastName || "", Array.isArray(result.vault) ? result.vault : []);
         return true;
       } catch {
-        localStorage.removeItem(SESSION_KEY_STORAGE);
         return false;
       }
     }
 
-    function showLockPasswordSection() {
-      $("lockTitle").textContent = "Locked";
-      $("lockUnlockSection").classList.remove("hidden");
-      $("lockRecoverSection").classList.add("hidden");
-      $("lockPasswordInput").value = "";
-      $("lockError").textContent = "";
-      setTimeout(() => $("lockPasswordInput").focus(), 50);
-    }
-
-    function showLockRecoverSection() {
-      $("lockTitle").textContent = "Recover Account";
-      $("lockUnlockSection").classList.add("hidden");
-      $("lockRecoverSection").classList.remove("hidden");
-      $("lockRecoverKey").value = "";
-      $("lockRecoverPassword").value = "";
-      $("lockRecoverPasswordAgain").value = "";
-      $("lockRecoverError").textContent = "";
-      setTimeout(() => $("lockRecoverKey").focus(), 50);
-    }
-
-    function lockScreen() {
-      if (!state.currentUser) return;
-      state.locked = true;
-      clearTabBlur();
-      showLockPasswordSection();
-      $("lockScreen").classList.remove("hidden");
-    }
-
-    function unlockScreen() {
-      state.locked = false;
-      $("lockScreen").classList.add("hidden");
-      showLockPasswordSection();
-      lastActivity = Date.now();
-    }
-
-    async function tryUnlockWithPassword(password) {
-      try {
-        const passwordWrapKey = await deriveKey(state.currentUser, password, state.currentClientSalt);
-        const archiveKeyRaw = await unwrapArchiveKey(passwordWrapKey, state.currentWrappedKey);
-        if (archiveKeyRaw === state.currentArchiveKeyRaw) {
-          unlockScreen();
-        } else {
-          $("lockError").textContent = "Incorrect password.";
-          $("lockPasswordInput").value = "";
-          $("lockPasswordInput").focus();
-        }
-      } catch {
-        $("lockError").textContent = "Incorrect password.";
-        $("lockPasswordInput").value = "";
-        $("lockPasswordInput").focus();
-      }
-    }
-
-    async function tryLockScreenRecover(recoveryKeyValue, newPassword, newPasswordAgain) {
-      if (newPassword !== newPasswordAgain) {
-        $("lockRecoverError").textContent = "Passwords do not match.";
-        return;
-      }
-      if (newPassword.length < 8) {
-        $("lockRecoverError").textContent = "Password must be at least 8 characters.";
-        return;
-      }
-      $("lockRecoverError").textContent = "Recovering...";
-      try {
-        const email = state.currentUser;
-        const session = await api(`/api/user-salt?email=${encodeURIComponent(email)}`);
-        if (!session.recoverySalt || !session.recoveryWrappedKey) {
-          $("lockRecoverError").textContent = "No recovery key found for this account.";
-          return;
-        }
-        const recoveryWrapKey = await deriveRecoveryWrapKey(parseRecoveryKey(recoveryKeyValue), session.recoverySalt);
-        const archiveKeyRaw = await unwrapArchiveKey(recoveryWrapKey, session.recoveryWrappedKey);
-        if (archiveKeyRaw !== state.currentArchiveKeyRaw) {
-          $("lockRecoverError").textContent = "Incorrect recovery key.";
-          $("lockRecoverKey").value = "";
-          $("lockRecoverKey").focus();
-          return;
-        }
-        const loginSecret = await deriveLoginSecret(email, newPassword, session.clientSalt);
-        const passwordWrapKey = await deriveKey(email, newPassword, session.clientSalt);
-        const wrappedKey = await wrapArchiveKey(passwordWrapKey, archiveKeyRaw);
-        const result = await api("/api/recover", {
-          method: "POST",
-          body: JSON.stringify({ email, loginSecret, recoveryWrappedKey: session.recoveryWrappedKey, wrappedKey })
-        });
-        state.currentClientSalt = result.clientSalt || session.clientSalt;
-        state.currentWrappedKey = result.wrappedKey || wrappedKey;
-        unlockScreen();
-      } catch (err) {
-        $("lockRecoverError").textContent = err.message || "Recovery failed.";
-        $("lockRecoverKey").focus();
-      }
-    }
-
-    function applyTabBlur() {
-      if (!state.currentUser || state.locked) return;
-      $("blurOverlay").classList.remove("hidden");
-    }
-
-    function clearTabBlur() {
-      $("blurOverlay").classList.add("hidden");
-    }
-
-    function unlock(email, feedId, firstName, lastName, key, posts, archiveKeyRaw = "") {
-      if (archiveKeyRaw) localStorage.setItem(SESSION_KEY_STORAGE, archiveKeyRaw);
-      lastActivity = Date.now();
+    function unlock(email, feedId, firstName, lastName, posts) {
       state.currentUser = email;
       state.currentFirstName = firstName || "";
       state.currentLastName = lastName || "";
-      state.currentKey = key;
-      state.currentArchiveKeyRaw = archiveKeyRaw;
       state.posts = posts;
-      state.locked = false;
       state.showHidden = false;
       state.query = "";
       state.collection = "";
-      state.series = "";
       state.onlyPinned = false;
       $("searchInput").value = "";
       $("onlyPinned").checked = false;
-      const displayName = firstName || email;
-      $("currentUserLabel").textContent = displayName;
+      $("currentUserLabel").textContent = firstName || email;
       showApp();
       renderAll();
       setView("postsView");
     }
 
     function showAuth() {
-      state.previousScreen = "auth";
       $("loadingView").classList.add("hidden");
-      $("recoveryView").classList.add("hidden");
       $("authView").classList.remove("hidden");
-      $("appNav").classList.add("hidden");
       $("appLayout").classList.add("hidden");
       $("currentUserLabel").classList.add("hidden");
       document.querySelectorAll(".auth-only").forEach((el) => el.classList.add("hidden"));
@@ -2679,21 +3369,12 @@
     }
 
     function showApp() {
-      state.previousScreen = "app";
       $("loadingView").classList.add("hidden");
-      $("recoveryView").classList.add("hidden");
       $("authView").classList.add("hidden");
-      $("appNav").classList.remove("hidden");
       $("appLayout").classList.remove("hidden");
       $("currentUserLabel").classList.remove("hidden");
       document.querySelectorAll(".auth-only").forEach((el) => el.classList.remove("hidden"));
-    }
-
-    function showRecovery() {
-      $("authView").classList.add("hidden");
-      $("appNav").classList.add("hidden");
-      $("appLayout").classList.add("hidden");
-      $("recoveryView").classList.remove("hidden");
+      checkAiStatus();
     }
 
     function setAuthMode(mode) {
@@ -2853,11 +3534,6 @@
         .sort((a, b) => a.localeCompare(b));
     }
 
-    function getSeries() {
-      return [...new Set(state.posts.map((post) => post.series).filter(Boolean))]
-        .sort((a, b) => a.localeCompare(b));
-    }
-
     function wordsIn(text) {
       return String(text || "").trim().split(/\s+/).filter(Boolean).length;
     }
@@ -2902,11 +3578,10 @@
     function filteredPosts() {
       const q = state.query.toLowerCase();
       return sortedPosts().filter((post) => {
-        if (post.hidden && !state.showHidden) return false;
+        if (!!post.hidden !== state.showHidden) return false;
         const haystack = `${post.title} ${post.body} ${post.mood} ${post.place} ${(post.collections || []).join(" ")} ${post.series}`.toLowerCase();
         if (q && !haystack.includes(q)) return false;
         if (state.collection && !(post.collections || []).includes(state.collection)) return false;
-        if (state.series && post.series !== state.series) return false;
         if (state.onlyPinned && !post.pinned) return false;
         if (state.searchFrom && new Date(post.createdAt) < new Date(state.searchFrom)) return false;
         if (state.searchTo) {
@@ -2923,13 +3598,20 @@
     function setView(view) {
       state.view = view;
       document.querySelectorAll(".view").forEach((el) => el.classList.toggle("hidden", el.id !== view));
-      document.querySelectorAll(".tab").forEach((tab) => {
-        const active = tab.dataset.view === view;
-        tab.classList.toggle("active", active);
-        tab.setAttribute("aria-selected", active ? "true" : "false");
+      document.querySelectorAll(".nav-item").forEach((item) => {
+        item.classList.toggle("active", item.dataset.view === view);
       });
+      const contentViews = ["postsView", "timelineView", "collectionsView", "insightsView"];
+      const contentTabs = $("contentTabs");
+      if (contentTabs) {
+        contentTabs.classList.toggle("hidden", !contentViews.includes(view));
+        contentTabs.querySelectorAll(".content-tab").forEach((tab) => {
+          tab.classList.toggle("active", tab.dataset.view === view);
+        });
+      }
       if (view === "timelineView") renderTimeline();
       if (view === "collectionsView") renderCollections();
+      if (view === "insightsView") renderInsights();
       if (view === "toolsView") renderTools();
       if (view === "editorView" && !$("postId").value) checkDraft();
     }
@@ -2941,43 +3623,38 @@
     }
 
     function renderPost(post) {
-      const tags = [
-        ...(post.hidden ? [{ text: "hidden", hidden: true }] : []),
-        ...(post.mood ? [{ text: `mood: ${post.mood}`, color: null }] : []),
-        ...(post.place ? [{ text: `place: ${post.place}`, color: null }] : []),
-        ...(post.collections || []).map((name) => ({ text: `collection: ${name}`, color: collectionColor(name) })),
-        ...(post.series ? [{ text: `series: ${post.series}`, color: null }] : []),
-        ];
-
       const ageClass = postAgeClass(post.createdAt);
       const todayPost = isToday(post.createdAt);
       const absDate = escapeHtml(formatDate(post.createdAt));
       const relDate = relativeDate(post.createdAt);
+      const preview = String(post.body || "")
+        .replace(/```[\s\S]*?```/g, "")
+        .replace(/[#*`>_~\[\]()]/g, "")
+        .replace(/\s+/g, " ")
+        .trim()
+        .slice(0, 160);
 
       return `
-        <article class="post ${post.pinned ? "pinned" : ""} ${ageClass}" id="post-${escapeHtml(post.id)}">
+        <article class="post ${post.pinned ? "pinned" : ""} ${ageClass}" id="post-${escapeHtml(post.id)}" data-post-id="${escapeHtml(post.id)}">
           <div class="post-head">
             <div class="post-summary">
-              <h2 class="post-title"><button type="button" data-action="toggle" data-id="${post.id}">${escapeHtml(post.title)}</button></h2>
+              <h2 class="post-title"><button type="button" data-action="open" data-id="${post.id}">${escapeHtml(post.title)}</button></h2>
               <div class="post-meta">
                 ${todayPost ? '<span class="today-badge">today</span>' : ""}
-                ${post.pinned ? '<span class="pin">📌 pinned</span> &middot; ' : ""}
+                ${post.pinned ? '<span class="pin">📌</span> &middot; ' : ""}
                 ${post.favourite ? '<span class="fav-star">★</span> &middot; ' : ""}
                 <time title="${absDate}">${relDate}</time>
                 ${post.updatedAt && post.updatedAt !== post.createdAt ? ` &middot; edited` : ""}
                 &middot; ${wordsIn(post.body)} words &middot; ~${readTime(post.body)} min read
               </div>
+              ${preview ? `<p class="post-preview">${escapeHtml(preview)}${post.body.trim().length > 160 ? "…" : ""}</p>` : ""}
             </div>
             <div class="post-actions">
               <button type="button" data-action="favourite" data-id="${post.id}" title="${post.favourite ? "Remove favourite" : "Mark as favourite"}">${post.favourite ? "★" : "☆"}</button>
               <button type="button" data-action="pin" data-id="${post.id}">📌 ${post.pinned ? "Unpin" : "Pin"}</button>
               <button type="button" data-action="edit" data-id="${post.id}">Edit</button>
-              <button type="button" data-action="delete" data-id="${post.id}" class="danger">Delete</button>
+              <button type="button" data-action="delete" data-id="${post.id}">Delete</button>
             </div>
-          </div>
-          <div class="post-content">
-            <div class="post-body">${renderMarkdown(post.body)}</div>
-            ${tags.length ? `<div class="tags">${tags.map((t) => t.color ? `<span class="tag"><span class="tag-dot" style="background:${t.color}"></span>${escapeHtml(t.text)}</span>` : `<span class="tag${t.hidden ? " tag-hidden" : ""}">${escapeHtml(t.text)}</span>`).join("")}</div>` : ""}
           </div>
         </article>
       `;
@@ -2985,7 +3662,9 @@
 
     function renderPosts() {
       const posts = filteredPosts();
-      const isFiltered = state.query || state.collection || state.series || state.onlyPinned || state.onlyFavourite || state.searchFrom || state.searchTo || state.minWords;
+      const btn = $("toggleHiddenButton");
+      if (btn) btn.textContent = state.showHidden ? "Hide hidden" : "Show hidden";
+      const isFiltered = state.query || state.collection || state.onlyPinned || state.onlyFavourite || state.searchFrom || state.searchTo || state.minWords;
       $("postsBoxTitle").textContent = isFiltered
         ? `Posts · ${posts.length} of ${state.posts.length}`
         : "Posts";
@@ -3014,33 +3693,11 @@
         : '<div class="muted">Nothing pinned yet.</div>';
 
       const selectedCollection = state.collection;
-      const selectedSeries = state.series;
       $("filterCollection").innerHTML = '<option value="">all collections</option>' + getCollections().map((name) => `<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`).join("");
-      $("filterSeries").innerHTML = '<option value="">all series</option>' + getSeries().map((name) => `<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`).join("");
       $("filterCollection").value = selectedCollection;
-      $("filterSeries").value = selectedSeries;
 
-      const today = new Date();
-      const todayM = today.getMonth();
-      const todayD = today.getDate();
-      const onThisDay = state.posts
-        .filter((post) => {
-          const d = new Date(post.createdAt);
-          return d.getMonth() === todayM && d.getDate() === todayD && d.getFullYear() !== today.getFullYear();
-        })
-        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-      const otdBox = $("onThisDayBox");
-      if (onThisDay.length) {
-        otdBox.style.display = "";
-        $("onThisDayList").innerHTML = onThisDay
-          .map((post) => {
-            const year = new Date(post.createdAt).getFullYear();
-            return `<div><a data-action="open" data-id="${post.id}">${escapeHtml(post.title)}</a><div class="muted">${year}</div></div>`;
-          })
-          .join("<hr>");
-      } else {
-        otdBox.style.display = "none";
-      }
+      renderOnThisDay("onThisDayBox", "onThisDayList", false);
+      renderWeeklyDigest();
     }
 
     function renderTimeline() {
@@ -3086,21 +3743,19 @@
       for (const name of getCollections()) {
         groups.push({ type: "Collection", name, posts: sortedPosts(state.posts.filter((post) => (post.collections || []).includes(name))) });
       }
-      for (const name of getSeries()) {
-        groups.push({ type: "Series", name, posts: sortedPosts(state.posts.filter((post) => post.series === name)) });
-      }
+
 
       $("collectionsList").innerHTML = groups.length
         ? groups.map((group) => `
           <section class="collection-item">
-            <h3>${escapeHtml(group.type)}: ${escapeHtml(group.name)}</h3>
+            <h3>${escapeHtml(group.name)}</h3>
             <div class="muted">${group.posts.length} post${group.posts.length > 1 ? "s" : ""}</div>
             <ul>
               ${group.posts.map((post) => `<li><a data-action="open" data-id="${post.id}">${escapeHtml(post.title)}</a> <span class="muted">${escapeHtml(formatDate(post.createdAt))}</span></li>`).join("")}
             </ul>
           </section>
         `).join("")
-        : '<div class="empty">Add collection names or a series while writing posts.</div>';
+        : '<div class="empty">Add collection names while writing posts.</div>';
     }
 
     function buildMarkdownExport() {
@@ -3140,23 +3795,53 @@
       document.body.appendChild(link);
       link.click();
       link.remove();
-      URL.revokeObjectURL(url);
+      setTimeout(() => URL.revokeObjectURL(url), 10000);
+    }
+
+    function setEditorToolPanel(panel) {
+      const panels = [
+        ["details", "detailsToolButton", "metaDetailsPanel"],
+        ["spark", "sparkToolButton", "aiSparkPanel"]
+      ];
+      for (const [name, buttonId, panelId] of panels) {
+        const isOpen = panel === name;
+        const button = $(buttonId);
+        const panelEl = $(panelId);
+        if (!button || !panelEl) continue;
+        button.classList.toggle("active", isOpen);
+        button.setAttribute("aria-expanded", isOpen ? "true" : "false");
+        panelEl.classList.toggle("hidden", !isOpen);
+      }
+      const userMenuDropdown = $("userMenuDropdown");
+      const userMenuButton = $("userMenuButton");
+      if (panel && userMenuDropdown && userMenuButton) {
+        userMenuDropdown.classList.add("hidden");
+        userMenuButton.setAttribute("aria-expanded", "false");
+      }
+    }
+
+    function toggleEditorToolPanel(panel) {
+      const panelId = panel === "spark" ? "aiSparkPanel" : "metaDetailsPanel";
+      setEditorToolPanel($(panelId).classList.contains("hidden") ? panel : "");
     }
 
     function clearEditor() {
       $("postId").value = "";
-      $("titleInput").value = "";
+      $("titleInput").value = new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric", year: "numeric" });
       $("moodInput").value = "";
       $("placeInput").value = "";
       $("collectionsInput").value = "";
-      $("seriesInput").value = "";
       $("bodyInput").value = "";
+      autoGrowBody();
       $("pinnedInput").checked = false;
       $("hiddenInput").checked = false;
+      setEditorToolPanel("");
       $("editorTitle").textContent = "Write Post";
       $("editorStatus").textContent = "";
       $("cancelEdit").classList.add("hidden");
       $("draftBanner").classList.add("hidden");
+      clearGhost();
+      hideFloatBar();
       renderPreview();
     }
 
@@ -3168,20 +3853,25 @@
       $("moodInput").value = post.mood || "";
       $("placeInput").value = post.place || "";
       $("collectionsInput").value = (post.collections || []).join(", ");
-      $("seriesInput").value = post.series || "";
       $("bodyInput").value = post.body;
+      autoGrowBody();
       $("pinnedInput").checked = Boolean(post.pinned);
       $("hiddenInput").checked = Boolean(post.hidden);
       $("editorTitle").textContent = "Edit Post";
       $("editorStatus").textContent = `created ${formatDate(post.createdAt)}`;
       $("cancelEdit").classList.remove("hidden");
+      const hasMeta = post.mood || post.place || (post.collections || []).length;
+      setEditorToolPanel(hasMeta ? "details" : "");
       clearDraft();
       renderPreview();
       setView("editorView");
-      $("titleInput").focus();
+      $("bodyInput").focus();
     }
 
     const DRAFT_KEY = "mind-archive-draft";
+    const AI_PREFS_KEY = "ma_ai_prefs";
+    const AI_DIGEST_KEY = "ma_ai_digest";
+    const AI_INSIGHT_KEY = "ma_ai_insight";
 
     function saveDraft() {
       if ($("postId").value) return;
@@ -3193,7 +3883,6 @@
         mood: $("moodInput").value,
         place: $("placeInput").value,
         collections: $("collectionsInput").value,
-        series: $("seriesInput").value,
       }));
     }
 
@@ -3217,6 +3906,7 @@
     function toggleFocusMode() {
       const on = document.body.classList.toggle("focus-mode");
       $("focusButton").textContent = on ? "Exit focus" : "Focus";
+      $("focusButton").classList.toggle("active", on);
     }
 
     function randomPost() {
@@ -3225,27 +3915,65 @@
       openPost(post.id);
     }
 
-    function togglePost(id) {
-      const article = document.getElementById(`post-${id}`);
-      if (article) article.classList.toggle("expanded");
+    function openPost(id) {
+      if (state.view !== "postsView") {
+        state.query = "";
+        state.collection = "";
+        state.onlyPinned = false;
+        $("searchInput").value = "";
+        $("onlyPinned").checked = false;
+        setView("postsView");
+        renderAll();
+      }
+      openPostModal(id);
     }
 
-    function openPost(id) {
-      state.query = "";
-      state.collection = "";
-      state.series = "";
-      state.onlyPinned = false;
-      $("searchInput").value = "";
-      $("onlyPinned").checked = false;
-      setView("postsView");
-      renderAll();
-      requestAnimationFrame(() => {
-        const article = document.getElementById(`post-${CSS.escape(id)}`);
-        if (article) {
-          article.classList.add("expanded");
-          article.scrollIntoView({ behavior: "smooth", block: "start" });
-        }
-      });
+    function openPostModal(id) {
+      const post = state.posts.find((p) => p.id === id);
+      if (!post) return;
+
+      const absDate = escapeHtml(formatDate(post.createdAt));
+      const relDate = relativeDate(post.createdAt);
+      const todayPost = isToday(post.createdAt);
+
+      const metaParts = [
+        todayPost ? '<span class="today-badge">today</span>' : "",
+        `<time title="${absDate}">${escapeHtml(relDate)}</time>`,
+        `${wordsIn(post.body)} words`,
+        `~${readTime(post.body)} min read`,
+        post.updatedAt && post.updatedAt !== post.createdAt ? "edited" : ""
+      ].filter(Boolean);
+      $("postModalMeta").innerHTML = metaParts.join(" &middot; ");
+
+      $("postModalTitle").textContent = post.title;
+
+      const tagChips = [
+        ...(post.hidden ? [`<span class="tag tag-hidden">hidden</span>`] : []),
+        ...(post.mood ? [`<span class="tag">mood: ${escapeHtml(post.mood)}</span>`] : []),
+        ...(post.place ? [`<span class="tag">place: ${escapeHtml(post.place)}</span>`] : []),
+        ...(post.collections || []).map((name) => `<span class="tag"><span class="tag-dot" style="background:${collectionColor(name)}"></span>${escapeHtml(name)}</span>`),
+        ...(post.series ? [`<span class="tag">series: ${escapeHtml(post.series)}</span>`] : []),
+      ];
+      $("postModalTags").innerHTML = tagChips.length ? `<div class="tags" style="margin-top:10px">${tagChips.join("")}</div>` : "";
+
+      $("postModalHeaderActions").innerHTML = `
+        <button type="button" data-action="modal-favourite" data-id="${post.id}" title="${post.favourite ? "Remove favourite" : "Add to favourites"}" class="post-modal-icon-btn">${post.favourite ? "★" : "☆"}</button>
+        <button type="button" data-action="modal-pin" data-id="${post.id}" class="post-modal-action-btn">${post.pinned ? "Unpin" : "📌 Pin"}</button>
+        <button type="button" data-action="modal-edit" data-id="${post.id}" class="post-modal-action-btn">Edit</button>
+        <button type="button" data-action="modal-delete" data-id="${post.id}" class="post-modal-action-btn post-modal-delete-btn">Delete</button>
+      `;
+
+      $("postModalBody").innerHTML = renderMarkdown(post.body);
+      $("postModalDanger").innerHTML = "";
+
+      $("postModal").classList.remove("hidden");
+      document.body.style.overflow = "hidden";
+      setTimeout(() => $("closePostModal").focus(), 50);
+    }
+
+    function closePostModal() {
+      $("postModal").classList.add("hidden");
+      document.body.style.overflow = "";
     }
 
     async function deletePost(id) {
@@ -3284,6 +4012,7 @@
     function renderTools() {
       $("accountFirstName").value = state.currentFirstName;
       $("accountLastName").value = state.currentLastName;
+      renderAiStatus();
     }
 
     function renderAll() {
@@ -3291,7 +4020,628 @@
       renderPosts();
       if (state.view === "timelineView") renderTimeline();
       if (state.view === "collectionsView") renderCollections();
+      if (state.view === "insightsView") renderInsights();
       if (state.view === "toolsView") renderTools();
+    }
+
+    // ─── AI helpers ───
+
+    function aiPrefs() {
+      try { return JSON.parse(localStorage.getItem(AI_PREFS_KEY) || "{}"); } catch { return {}; }
+    }
+
+    function aiPref(key) {
+      const p = aiPrefs();
+      return key in p ? Boolean(p[key]) : true;
+    }
+
+    function setAiPref(key, value) {
+      const p = aiPrefs();
+      p[key] = value;
+      localStorage.setItem(AI_PREFS_KEY, JSON.stringify(p));
+    }
+
+    function aiEnabled(feature) {
+      if (!state.aiReady) return false;
+      if (!aiPref("global")) return false;
+      if (feature && !aiPref(feature)) return false;
+      return true;
+    }
+
+    async function callAI(feature, payload) {
+      const res = await fetch("/api/ai", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ feature, payload })
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(body.error || "AI request failed.");
+      if (body.usage?.total_tokens) {
+        state.sessionTokens = (state.sessionTokens || 0) + body.usage.total_tokens;
+        const el = $("aiSessionTokens");
+        if (el) el.textContent = `~${state.sessionTokens.toLocaleString()} tokens this session`;
+      }
+      return body.text || "";
+    }
+
+    async function checkAiStatus() {
+      try {
+        const res = await fetch("/api/ai/status", { credentials: "same-origin" });
+        const body = await res.json().catch(() => ({}));
+        state.aiReady = Boolean(body.ok);
+      } catch {
+        state.aiReady = false;
+      }
+      if (state.aiReady) document.body.classList.add("ai-ready");
+      else document.body.classList.remove("ai-ready");
+      renderAiStatus();
+      renderWeeklyDigest();
+    }
+
+    function renderAiStatus() {
+      const toggles = $("aiToggles");
+      const note = $("aiUnavailableNote");
+      if (!toggles || !note) return;
+      if (state.aiReady) {
+        toggles.classList.remove("hidden");
+        note.classList.add("hidden");
+        const global = aiPref("global");
+        $("aiGlobalToggle").checked = global;
+        $("aiFeatureToggles").style.opacity = global ? "1" : "0.4";
+        $("aiFeatureToggles").style.pointerEvents = global ? "" : "none";
+        $("aiFeatureToggles").setAttribute("aria-disabled", global ? "false" : "true");
+        $("aiFeatureToggles").querySelectorAll("input").forEach((input) => { input.disabled = !global; });
+        $("aiToggleGhost").checked    = aiPref("ghost");
+        $("aiToggleToolbar").checked  = aiPref("toolbar");
+        $("aiTogglePrompts").checked  = aiPref("prompts");
+        $("aiToggleDigest").checked   = aiPref("digest");
+        $("aiToggleOTD").checked      = aiPref("otd");
+        $("aiToggleInsights").checked = aiPref("insights");
+      } else {
+        toggles.classList.add("hidden");
+        note.classList.remove("hidden");
+      }
+      syncAutoSuggestButton();
+    }
+
+    // ─── Ghost text (inline overlay) ───
+
+    function autoGrowBody() {
+      const ta = $("bodyInput");
+      if (!ta) return;
+      ta.style.height = "auto";
+      ta.style.height = Math.max(380, ta.scrollHeight) + "px";
+    }
+
+    const GHOST_MIN_CHARS = 24;
+    const GHOST_DELAY_MS = 650;
+    let ghostTimer = null;
+    let ghostSuffix = ""; // exact gray text shown after cursor (may or may not have leading space)
+    let ghostGen = 0;
+    let lastAcceptedSuggestion = "";
+
+    function setEditorNotice(message, ms = 2200) {
+      const status = $("editorStatus");
+      if (!status) return;
+      status.textContent = message;
+      if (!message) return;
+      setTimeout(() => {
+        if (status.textContent === message) status.textContent = "";
+      }, ms);
+    }
+
+    function syncAutoSuggestButton() {
+      const btn = $("autoSuggestButton");
+      if (!btn) return;
+      const available = aiEnabled("ghost");
+      if (!available) {
+        state.autoSuggestOn = false;
+        clearTimeout(ghostTimer);
+        clearGhost();
+      }
+      btn.disabled = !state.aiReady;
+      btn.classList.toggle("active", available && state.autoSuggestOn);
+      btn.setAttribute("aria-pressed", String(available && state.autoSuggestOn));
+      btn.title = available
+        ? (state.autoSuggestOn ? "Inline suggestions on" : "Inline suggestions off")
+        : "Turn on AI features and Ghost text in Settings";
+      btn.setAttribute("aria-label", btn.title);
+    }
+
+    function syncGhostLayer(suffix) {
+      ghostSuffix = suffix;
+      const bg = $("bodyGhost");
+      if (!bg) return;
+      const body = $("bodyInput").value || "";
+      if (suffix) {
+        bg.innerHTML = escapeHtml(body) + '<span class="ghost-suggestion">' + escapeHtml(suffix) + '</span>';
+      } else {
+        bg.textContent = body;
+      }
+      bg.scrollTop = $("bodyInput").scrollTop;
+      bg.scrollLeft = $("bodyInput").scrollLeft;
+      const ga = $("ghostActions");
+      if (ga) ga.classList.toggle("hidden", !suffix);
+    }
+
+    function clearGhost() {
+      clearTimeout(ghostTimer);
+      ghostGen++;
+      syncGhostLayer(""); // sets ghostSuffix = "" and hides ghost actions
+    }
+
+    // ── Ghost cache: avoid redundant AI calls for repeated contexts ──
+    const ghostCache = new Map();
+    function getCachedGhost(key) {
+      const e = ghostCache.get(key);
+      if (!e || Date.now() - e.t > 30000) { ghostCache.delete(key); return null; }
+      return e.v;
+    }
+    function setCachedGhost(key, value) {
+      if (ghostCache.size >= 25) ghostCache.delete(ghostCache.keys().next().value);
+      ghostCache.set(key, { v: value, t: Date.now() });
+    }
+
+    // Triggers after a word boundary (trailing space or punctuation).
+    // Uses cache to avoid redundant API calls for repeated contexts.
+    function scheduleGhost() {
+      clearTimeout(ghostTimer);
+      clearGhost();
+      if (!state.autoSuggestOn || !aiEnabled("ghost")) return;
+      const body = $("bodyInput").value;
+      const trimmed = body.trimEnd();
+      if (trimmed.length < GHOST_MIN_CHARS) return;
+      // Only fire after a word boundary — trailing space or sentence-ending punctuation
+      if (body.length === trimmed.length && !/[.!?,;:]$/.test(trimmed)) return;
+
+      if (lastAcceptedSuggestion && trimmed.length > lastAcceptedSuggestion.length + 20) {
+        lastAcceptedSuggestion = "";
+      }
+
+      const tail = ghostContext(trimmed);
+      const cacheKey = tail.slice(-250);
+      const cached = getCachedGhost(cacheKey);
+      if (cached) { applySuggestion(cached, body); return; }
+
+      ghostTimer = setTimeout(() => triggerGhost(body), GHOST_DELAY_MS);
+    }
+
+    // Send full entry context so the AI understands the topic, voice, and references.
+    function ghostContext(text) {
+      return text.slice(-800);
+    }
+
+    async function triggerGhost(bodySnapshot) {
+      if (!state.autoSuggestOn || !aiEnabled("ghost")) return;
+      const gen = ghostGen;
+      const tail = ghostContext(bodySnapshot.trimEnd());
+      const bg = $("bodyGhost");
+      if (bg) {
+        bg.innerHTML = escapeHtml(bodySnapshot) + '<span class="ghost-suggestion ai-loading"> ✦</span>';
+      }
+      try {
+        const text = (await callAI("suggest", { tail })).trim();
+        if (gen !== ghostGen) return;
+        if (!text) { clearGhost(); return; }
+        setCachedGhost(tail.slice(-250), text);
+        applySuggestion(text, bodySnapshot);
+      } catch { if (gen === ghostGen) clearGhost(); }
+    }
+
+    function applySuggestion(text, bodySnapshot) {
+      if (lastAcceptedSuggestion && text.toLowerCase() === lastAcceptedSuggestion.toLowerCase()) {
+        clearGhost(); return;
+      }
+      let suggestion = text;
+      const lastChar = bodySnapshot.trimEnd().slice(-1);
+      if (/[.!?]/.test(lastChar)) suggestion = suggestion[0].toUpperCase() + suggestion.slice(1);
+      syncGhostLayer(" " + suggestion);
+    }
+
+    // → accepts one word at a time from the phrase ghost.
+    function acceptGhostWord() {
+      if (!ghostSuffix) return false;
+      const ta = $("bodyInput");
+      const trimmed = ghostSuffix.trimStart();
+      const spaceIdx = trimmed.indexOf(" ");
+      const word = spaceIdx === -1 ? trimmed : trimmed.slice(0, spaceIdx);
+      const remaining = spaceIdx === -1 ? "" : trimmed.slice(spaceIdx + 1).trimStart();
+
+      ta.value = ta.value.trimEnd() + " " + word;
+      if (remaining) {
+        syncGhostLayer(" " + remaining);
+      } else {
+        lastAcceptedSuggestion = trimmed;
+        clearGhost();
+      }
+      autoGrowBody();
+      renderPreview();
+      return true;
+    }
+
+    // ─── Continue writing ───
+
+    let continueAbort = false;
+
+    async function continueWriting() {
+      if (!aiEnabled("ghost")) return;
+      const body = $("bodyInput").value;
+      if (!body.trim()) return;
+      continueAbort = false;
+      const origCount = $("editorWordCount").textContent;
+      $("editorWordCount").innerHTML = '<span class="ai-loading">✦ writing…</span>';
+      try {
+        const text = await callAI("continue", { body });
+        if (continueAbort) return;
+        const ta = $("bodyInput");
+        ta.value = ta.value.trimEnd() + "\n\n" + text;
+        autoGrowBody();
+        renderPreview();
+      } catch (e) {
+        $("editorWordCount").textContent = origCount;
+        $("editorStatus").textContent = e.message;
+        setTimeout(() => { if ($("editorStatus").textContent === e.message) $("editorStatus").textContent = ""; }, 3000);
+      }
+      $("editorWordCount").textContent = `${wordsIn($("bodyInput").value)} words`;
+    }
+
+    // ─── Selection float bar ───
+
+    let floatSelection = null;
+
+    function positionFloatBar() {
+      const bar = $("aiFloatBar");
+      const rect = $("bodyInput").getBoundingClientRect();
+      const barW = bar.offsetWidth || 160;
+      const barH = bar.offsetHeight || 36;
+      // Float just above the textarea's top edge, left-aligned
+      const top = rect.top - barH - 6;
+      bar.style.top = `${Math.max(top, 8)}px`;
+      bar.style.left = `${Math.max(Math.min(rect.left, window.innerWidth - barW - 8), 8)}px`;
+    }
+
+    function hideFloatBar() {
+      $("aiFloatBar").classList.add("hidden");
+      $("aiRephrasePanel").classList.add("hidden");
+      floatSelection = null;
+    }
+
+    function showFloatBar(selected) {
+      floatSelection = selected;
+      $("aiRephrasePanel").classList.add("hidden");
+      $("aiFloatBar").classList.remove("hidden");
+      positionFloatBar();
+    }
+
+    async function doRephrase() {
+      if (!floatSelection) return;
+      const panel = $("aiRephrasePanel");
+      panel.innerHTML = '<div class="rephrase-header">Rephrase</div><div class="rephrase-item ai-loading">✦ thinking…</div>';
+      panel.classList.remove("hidden");
+      try {
+        const text = await callAI("rephrase", { text: floatSelection });
+        const alts = text.split("\n").map((s) => s.trim()).filter(Boolean).slice(0, 3);
+        panel.innerHTML = '<div class="rephrase-header">Choose a rephrasing</div>' + alts.map((alt) =>
+          `<button type="button" class="rephrase-item" data-rephrase="${escapeHtml(alt)}">${escapeHtml(alt)}</button>`
+        ).join("");
+      } catch { panel.classList.add("hidden"); }
+    }
+
+    async function doGrammar() {
+      if (!floatSelection) return;
+      const sel = floatSelection;
+      hideFloatBar();
+      const ta = $("bodyInput");
+      const start = ta.value.indexOf(sel);
+      if (start === -1) return;
+      try {
+        const text = await callAI("grammar", { text: sel });
+        ta.value = ta.value.slice(0, start) + text + ta.value.slice(start + sel.length);
+        autoGrowBody();
+        renderPreview();
+      } catch {}
+    }
+
+    // ─── Spark & brainstorm ───
+
+    let sparkText = "";
+    const sparkVarietyCues = [
+      "focus on a practical next step",
+      "focus on an overlooked feeling",
+      "focus on a memory or origin point",
+      "focus on a relationship pattern",
+      "focus on what has changed recently",
+      "focus on what the writer is avoiding",
+      "focus on hope, relief, or possibility",
+      "focus on a small concrete scene"
+    ];
+
+    async function generateSpark() {
+      if (!aiEnabled("prompts")) return;
+      const recent = state.posts.slice().sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).slice(0, 5);
+      const context = recent.map((p) => `${p.title}\n${p.body.slice(0, 200)}`).join("\n---\n");
+      const previous = sparkText;
+      const variety = sparkVarietyCues[Math.floor(Math.random() * sparkVarietyCues.length)];
+      $("aiSparkResult").innerHTML = '<span class="ai-loading">✦ generating…</span>';
+      $("aiSparkResult").classList.remove("hidden");
+      $("aiSparkAnother").classList.add("hidden");
+      $("aiSparkUse").classList.add("hidden");
+      try {
+        sparkText = await callAI("spark", { context, previous, variety });
+        $("aiSparkResult").textContent = sparkText;
+        $("aiSparkAnother").classList.remove("hidden");
+        $("aiSparkUse").classList.remove("hidden");
+      } catch (e) {
+        $("aiSparkResult").textContent = "Couldn't generate a prompt right now.";
+      }
+    }
+
+    async function generateBrainstorm() {
+      if (!aiEnabled("prompts")) return;
+      const topic = $("brainstormInput").value.trim();
+      if (!topic) return;
+      $("brainstormList").innerHTML = '<div class="ai-loading">✦ brainstorming…</div>';
+      $("brainstormList").classList.remove("hidden");
+      try {
+        const text = await callAI("brainstorm", { topic });
+        const items = text.split("\n").map((s) => s.trim()).filter(Boolean).slice(0, 5);
+        $("brainstormList").innerHTML = items.map((item) =>
+          `<button type="button" class="brainstorm-item" data-idea="${escapeHtml(item)}">${escapeHtml(item)}</button>`
+        ).join("");
+      } catch { $("brainstormList").classList.add("hidden"); }
+    }
+
+    // ─── Weekly digest ───
+
+    function digestCacheKey() {
+      const d = new Date();
+      const week = Math.ceil(d.getDate() / 7);
+      return `${AI_DIGEST_KEY}_${d.getFullYear()}_${d.getMonth()}_${week}`;
+    }
+
+    function getRecentPostsText(days) {
+      const cutoff = Date.now() - days * 24 * 60 * 60 * 1000;
+      return state.posts
+        .filter((p) => new Date(p.createdAt).getTime() > cutoff)
+        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+        .map((p) => `[${p.createdAt.slice(0, 10)}] ${p.title}\n${p.body}`)
+        .join("\n---\n");
+    }
+
+    function renderDigestTarget(boxId, bodyId, showEmpty) {
+      const box = $(boxId);
+      const body = $(bodyId);
+      if (!box || !body) return;
+      if (!aiEnabled("digest")) {
+        box.style.display = showEmpty ? "" : "none";
+        if (showEmpty) body.innerHTML = '<div class="muted">Turn on Weekly digest in Settings to use this.</div>';
+        return;
+      }
+      const recent = state.posts.filter((p) => Date.now() - new Date(p.createdAt).getTime() < 7 * 24 * 60 * 60 * 1000);
+      if (!recent.length) {
+        box.style.display = showEmpty ? "" : "none";
+        if (showEmpty) body.innerHTML = '<div class="muted">Write this week to generate a digest.</div>';
+        return;
+      }
+      box.style.display = "";
+      const cached = localStorage.getItem(digestCacheKey());
+      if (cached) {
+        body.innerHTML = `<div class="digest-text">${escapeHtml(cached)}</div><button type="button" class="compact-button" data-digest-action style="margin-top:20px;font-weight:500">Regenerate</button>`;
+      } else {
+        body.innerHTML = '<button type="button" data-digest-action>Generate digest</button>';
+      }
+    }
+
+    async function renderWeeklyDigest() {
+      renderDigestTarget("weeklyDigestBox", "weeklyDigestBody", false);
+      renderDigestTarget("insightsDigestPanel", "insightsDigestBody", true);
+    }
+
+    function updateDigestBodies(html) {
+      ["weeklyDigestBody", "insightsDigestBody"].forEach((id) => {
+        const el = $(id);
+        if (el) el.innerHTML = html;
+      });
+    }
+
+    async function generateDigest() {
+      if (!aiEnabled("digest")) return;
+      updateDigestBodies('<div class="ai-loading">✦ reading your week…</div>');
+      try {
+        const entries = getRecentPostsText(7);
+        const text = await callAI("digest", { entries });
+        localStorage.setItem(digestCacheKey(), text);
+        updateDigestBodies(`<div class="digest-text">${escapeHtml(text)}</div><button type="button" class="compact-button" data-digest-action style="margin-top:20px;font-weight:500">Regenerate</button>`);
+      } catch (e) {
+        updateDigestBodies(`<span class="muted">Couldn't generate: ${escapeHtml(e.message)}</span>`);
+      }
+    }
+
+    function getOnThisDayPosts() {
+      const today = new Date();
+      const todayM = today.getMonth();
+      const todayD = today.getDate();
+      return state.posts
+        .filter((post) => {
+          const d = new Date(post.createdAt);
+          return d.getMonth() === todayM && d.getDate() === todayD && d.getFullYear() !== today.getFullYear();
+        })
+        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    }
+
+    function renderOnThisDay(boxId, listId, showEmpty) {
+      const box = $(boxId);
+      const list = $(listId);
+      if (!box || !list) return;
+      const onThisDay = getOnThisDayPosts();
+      if (!onThisDay.length) {
+        box.style.display = showEmpty ? "" : "none";
+        list.dataset.aiLoaded = "";
+        if (showEmpty) list.innerHTML = '<div class="muted">No older entries from today yet.</div>';
+        return;
+      }
+      box.style.display = "";
+      list.innerHTML = onThisDay
+        .map((post) => {
+          const year = new Date(post.createdAt).getFullYear();
+          return `<div><a data-action="open" data-id="${post.id}">${escapeHtml(post.title)}</a><div class="muted">${year}</div></div>`;
+        })
+        .join("<hr>");
+      if (aiEnabled("otd") && !list.dataset.aiLoaded) {
+        list.dataset.aiLoaded = "1";
+        const otdContext = onThisDay.map((p) => `${new Date(p.createdAt).getFullYear()}: ${p.title}\n${p.body.slice(0, 200)}`).join("\n---\n");
+        callAI("onthisday", { entries: otdContext }).then((note) => {
+          if (note) {
+            const noteEl = document.createElement("p");
+            noteEl.style.cssText = "font-size:12px;font-style:italic;color:var(--muted);margin:0 0 8px;line-height:1.5;";
+            noteEl.textContent = note;
+            list.prepend(noteEl);
+          }
+        }).catch(() => {});
+      }
+    }
+
+    function renderInsights() {
+      renderWeeklyDigest();
+      renderOnThisDay("insightsOnThisDayPanel", "insightsOnThisDayList", true);
+      const btn = $("generateInsight");
+      const result = $("insightResult");
+      if (!btn || !result) return;
+      if (!aiEnabled("insights")) {
+        btn.disabled = true;
+        result.dataset.placeholder = "1";
+        result.textContent = "Turn on Pattern insights in Settings to use this.";
+        result.classList.remove("hidden");
+        return;
+      }
+      if (!state.posts.length) {
+        btn.disabled = true;
+        result.dataset.placeholder = "1";
+        result.textContent = "Write a few entries before finding themes.";
+        result.classList.remove("hidden");
+        return;
+      }
+      btn.disabled = false;
+      const cached = localStorage.getItem(insightCacheKey());
+      if (cached && result.classList.contains("hidden")) {
+        showInsightResult(`<ul>${cached.split("\n").filter(Boolean).map((l) => `<li>${escapeHtml(l.replace(/^[•\-*]\s*/, ""))}</li>`).join("")}</ul>`);
+      }
+      if (result.dataset.placeholder === "1") {
+        result.dataset.placeholder = "";
+        result.textContent = "";
+        result.classList.add("hidden");
+      }
+    }
+
+    // ─── Pattern insights ───
+
+    function insightCacheKey() {
+      const d = new Date();
+      return `${AI_INSIGHT_KEY}_${d.getFullYear()}_${d.getMonth()}`;
+    }
+
+    function showInsightResult(html) {
+      const result = $("insightResult");
+      const clear = $("clearInsight");
+      result.innerHTML = html;
+      result.classList.remove("hidden");
+      if (clear) clear.style.display = "";
+    }
+
+    async function generateInsight() {
+      if (!aiEnabled("insights")) return;
+      const btn = $("generateInsight");
+      const result = $("insightResult");
+      const cached = localStorage.getItem(insightCacheKey());
+      if (cached) { showInsightResult(`<ul>${cached.split("\n").filter(Boolean).map((l) => `<li>${escapeHtml(l.replace(/^[•\-*]\s*/, ""))}</li>`).join("")}</ul>`); return; }
+      btn.disabled = true;
+      btn.innerHTML = '<span class="ai-loading">✦ analysing…</span>';
+      try {
+        const entries = state.posts.map((p) => `${p.title}: ${p.body.slice(0, 120)}`).join("\n");
+        const text = await callAI("insight", { entries });
+        localStorage.setItem(insightCacheKey(), text);
+        showInsightResult(`<ul>${text.split("\n").filter(Boolean).map((l) => `<li>${escapeHtml(l.replace(/^[•\-*]\s*/, ""))}</li>`).join("")}</ul>`);
+      } catch (e) {
+        showInsightResult(`<span class="muted">${escapeHtml(e.message)}</span>`);
+      }
+      btn.disabled = false;
+      btn.textContent = "Find themes";
+    }
+
+    function clearInsight() {
+      localStorage.removeItem(insightCacheKey());
+      const result = $("insightResult");
+      const clear = $("clearInsight");
+      result.innerHTML = "";
+      result.classList.add("hidden");
+      if (clear) clear.style.display = "none";
+    }
+
+    function makeAutocomplete(inputEl, getSuggestions, isMulti) {
+      const wrap = inputEl.parentNode;
+      wrap.classList.add("autocomplete-field");
+      inputEl.style.paddingRight = "32px";
+
+      const chevron = document.createElement("span");
+      chevron.className = "autocomplete-chevron";
+      chevron.setAttribute("aria-hidden", "true");
+      chevron.textContent = "▾";
+      wrap.appendChild(chevron);
+
+      const dropdown = document.createElement("div");
+      dropdown.className = "autocomplete-dropdown hidden";
+      wrap.appendChild(dropdown);
+
+      function setOpen(open) {
+        dropdown.classList.toggle("hidden", !open);
+        wrap.classList.toggle("dropdown-open", open);
+      }
+
+      function getSegment() {
+        if (!isMulti) return inputEl.value.trim();
+        const val = inputEl.value;
+        const idx = val.lastIndexOf(",");
+        return idx === -1 ? val.trim() : val.slice(idx + 1).trimStart();
+      }
+
+      function refresh() {
+        const seg = getSegment().toLowerCase();
+        let options = getSuggestions();
+        if (isMulti) {
+          const used = inputEl.value.split(",").map((s) => s.trim().toLowerCase()).filter(Boolean);
+          options = options.filter((o) => !used.includes(o.toLowerCase()));
+        }
+        options = options.filter((o) => o.toLowerCase().includes(seg));
+        if (!options.length) { setOpen(false); return; }
+        dropdown.innerHTML = options.map((o) =>
+          `<button type="button" class="autocomplete-item">${escapeHtml(o)}</button>`
+        ).join("");
+        setOpen(true);
+      }
+
+      inputEl.addEventListener("input", refresh);
+      inputEl.addEventListener("focus", refresh);
+
+      dropdown.addEventListener("mousedown", (e) => {
+        const btn = e.target.closest(".autocomplete-item");
+        if (!btn) return;
+        e.preventDefault();
+        const chosen = btn.textContent;
+        if (!isMulti) {
+          inputEl.value = chosen;
+        } else {
+          const val = inputEl.value;
+          const idx = val.lastIndexOf(",");
+          inputEl.value = idx === -1 ? chosen : val.slice(0, idx + 1) + " " + chosen;
+        }
+        setOpen(false);
+        inputEl.focus();
+      });
+
+      inputEl.addEventListener("blur", () => {
+        setTimeout(() => setOpen(false), 150);
+      });
     }
 
     function bindEvents() {
@@ -3333,8 +4683,6 @@
         button.addEventListener("click", () => setAuthMode(button.dataset.authMode));
       });
 
-      $("lockButton").addEventListener("click", lockScreen);
-
       // User account dropdown
       const userMenuButton = $("userMenuButton");
       const userMenuDropdown = $("userMenuDropdown");
@@ -3345,75 +4693,37 @@
       userMenuButton.addEventListener("click", (e) => {
         e.stopPropagation();
         const isOpen = !userMenuDropdown.classList.contains("hidden");
+        if (!isOpen) setEditorToolPanel("");
         userMenuDropdown.classList.toggle("hidden");
         userMenuButton.setAttribute("aria-expanded", String(!isOpen));
       });
-      userMenuDropdown.addEventListener("click", closeUserMenu);
+      userMenuDropdown.addEventListener("click", (e) => {
+        const navItem = e.target.closest(".nav-item[data-view]");
+        if (navItem) setView(navItem.dataset.view);
+        closeUserMenu();
+      });
       document.addEventListener("click", (e) => {
         if (!e.target.closest("#userMenu")) closeUserMenu();
       });
 
-      $("lockUnlockForm").addEventListener("submit", (e) => {
-        e.preventDefault();
-        const pw = $("lockPasswordInput").value;
-        if (pw) tryUnlockWithPassword(pw);
+      $("closePostModal").addEventListener("click", closePostModal);
+      $("postModalBackdrop").addEventListener("click", closePostModal);
+
+
+      $("appBrand").addEventListener("click", () => {
+        if (state.currentUser) setView("postsView");
       });
-      $("lockForgotButton").addEventListener("click", showLockRecoverSection);
-      $("lockRecoverBackButton").addEventListener("click", showLockPasswordSection);
-      $("lockSignOutButton").addEventListener("click", () => {
-        if (confirm("Sign out of this device?\n\nYour encrypted archive stays on the server — you can sign back in any time.")) {
-          logout();
-        }
-      });
-      $("lockRecoverForm").addEventListener("submit", (e) => {
-        e.preventDefault();
-        tryLockScreenRecover(
-          $("lockRecoverKey").value,
-          $("lockRecoverPassword").value,
-          $("lockRecoverPasswordAgain").value
-        );
-      });
-      $("blurOverlay").addEventListener("click", clearTabBlur);
+      $("settingsMenuItem").addEventListener("click", () => setView("toolsView"));
+      $("settingsBackButton").addEventListener("click", () => setView("postsView"));
       $("logoutButton").addEventListener("click", logout);
-      $("themeMenuItem").addEventListener("click", () => {
+      $("themeToggleButton").addEventListener("click", () => {
         applyTheme(document.documentElement.dataset.theme === "dark" ? "light" : "dark");
       });
-      $("showRecoverButton").addEventListener("click", showRecovery);
-      $("recoverBackButton").addEventListener("click", showAuth);
-      $("copyRecoveryKey").addEventListener("click", async () => {
-        const value = $("recoveryKeyValue").textContent;
-        try {
-          await navigator.clipboard.writeText(value);
-          $("copyRecoveryKey").textContent = "Copied";
-          setTimeout(() => $("copyRecoveryKey").textContent = "Copy recovery key", 1200);
-        } catch {
-          window.prompt("Recovery key", value);
-        }
-      });
 
-      $("recoverForm").addEventListener("submit", async (event) => {
-        event.preventDefault();
-        $("recoverStatus").textContent = "checking...";
-        try {
-          await recoverAccount(
-            $("recoverEmail").value,
-            $("recoverKey").value,
-            $("recoverPassword").value,
-            $("recoverPasswordAgain").value
-          );
-          $("recoverStatus").textContent = "";
-        } catch (error) {
-          $("recoverStatus").textContent = error.message;
-        }
+      $("contentTabs").addEventListener("click", (e) => {
+        const tab = e.target.closest(".content-tab[data-view]");
+        if (tab) setView(tab.dataset.view);
       });
-
-      document.querySelectorAll(".tab").forEach((tab) => {
-        tab.addEventListener("click", () => {
-          if (tab.dataset.view === "editorView" && !$("postId").value) clearEditor();
-          setView(tab.dataset.view);
-        });
-      });
-
       document.addEventListener("toggle", (event) => {
         const menu = event.target.closest?.("details.action-menu");
         if (menu && menu.open) closeActionMenus(menu);
@@ -3434,23 +4744,29 @@
       });
 
       document.addEventListener("keydown", (event) => {
-        if (state.locked) return;
         const inInput = ["INPUT", "TEXTAREA", "SELECT"].includes(event.target.tagName);
         if (event.key === "Escape") {
+          if (!$("postModal").classList.contains("hidden")) { closePostModal(); return; }
           if (!$("shortcutsOverlay").classList.contains("hidden")) { toggleShortcuts(); return; }
           if (document.body.classList.contains("focus-mode")) { toggleFocusMode(); return; }
+          hideFloatBar();
           closeActionMenus();
-          if (inInput) return;
-          document.querySelectorAll(".post.expanded").forEach((el) => el.classList.remove("expanded"));
         }
         if (event.ctrlKey && event.shiftKey && event.key === "F") { event.preventDefault(); toggleFocusMode(); return; }
         if (event.ctrlKey && event.key === "/") { event.preventDefault(); $("searchInput").focus(); return; }
         if (inInput) return;
-        if (event.key === "n") { clearEditor(); setView("editorView"); $("titleInput").focus(); }
+        if (event.key === "n") { clearEditor(); setView("editorView"); $("bodyInput").focus(); }
         if (event.key === "?") toggleShortcuts();
       });
 
+      $("editorBackButton").addEventListener("click", () => setView("postsView"));
       $("clearEditor").addEventListener("click", clearEditor);
+      $("detailsToolButton").addEventListener("click", () => toggleEditorToolPanel("details"));
+      $("sparkToolButton").addEventListener("click", () => toggleEditorToolPanel("spark"));
+      document.addEventListener("click", (event) => {
+        if (event.target.closest("#editorView .editor-nav")) return;
+        setEditorToolPanel("");
+      });
 
       $("cancelEdit").addEventListener("click", () => {
         const id = $("postId").value;
@@ -3461,7 +4777,7 @@
       $("newPostButton").addEventListener("click", () => {
         clearEditor();
         setView("editorView");
-        $("titleInput").focus();
+        $("bodyInput").focus();
       });
 
       // Collapsible Find box
@@ -3479,7 +4795,6 @@
       $("clearFilters").addEventListener("click", () => {
         state.query = "";
         state.collection = "";
-        state.series = "";
         state.onlyPinned = false;
         state.onlyFavourite = false;
         state.searchFrom = "";
@@ -3488,7 +4803,6 @@
         state.sort = "newest";
         $("searchInput").value = "";
         $("filterCollection").value = "";
-        $("filterSeries").value = "";
         $("onlyPinned").checked = false;
         $("onlyFavourite").checked = false;
         $("searchFrom").value = "";
@@ -3513,7 +4827,7 @@
           mood: $("moodInput").value.trim(),
           place: $("placeInput").value.trim(),
           collections,
-          series: $("seriesInput").value.trim(),
+          series: "",
           pinned: $("pinnedInput").checked,
           hidden: $("hiddenInput").checked,
           favourite: existing?.favourite || false,
@@ -3539,15 +4853,24 @@
       });
 
       document.body.addEventListener("click", async (event) => {
+        // Clicking anywhere on a post card (outside action buttons) opens the modal
+        if (!event.target.closest("[data-action]")) {
+          const article = event.target.closest(".post[data-post-id]");
+          if (article) { openPostModal(article.dataset.postId); return; }
+        }
+
         const target = event.target.closest("[data-action]");
         if (!target) return;
         const id = target.dataset.id;
-        if (target.dataset.action === "toggle") togglePost(id);
         if (target.dataset.action === "favourite") toggleFavourite(id);
         if (target.dataset.action === "edit") editPost(id);
         if (target.dataset.action === "delete") await deletePost(id);
         if (target.dataset.action === "pin") togglePin(id);
         if (target.dataset.action === "open") openPost(id);
+        if (target.dataset.action === "modal-favourite") { toggleFavourite(id); openPostModal(id); }
+        if (target.dataset.action === "modal-pin") { togglePin(id); openPostModal(id); }
+        if (target.dataset.action === "modal-edit") { closePostModal(); editPost(id); }
+        if (target.dataset.action === "modal-delete") { closePostModal(); await deletePost(id); }
       });
 
       $("searchInput").addEventListener("input", (event) => {
@@ -3557,11 +4880,6 @@
 
       $("filterCollection").addEventListener("change", (event) => {
         state.collection = event.target.value;
-        renderPosts();
-      });
-
-      $("filterSeries").addEventListener("change", (event) => {
-        state.series = event.target.value;
         renderPosts();
       });
 
@@ -3601,7 +4919,6 @@
 
       $("toggleHiddenButton").addEventListener("click", () => {
         state.showHidden = !state.showHidden;
-        $("toggleHiddenButton").textContent = state.showHidden ? "Hide hidden" : "Show hidden";
         renderPosts();
       });
 
@@ -3613,7 +4930,6 @@
           $("moodInput").value = draft.mood || "";
           $("placeInput").value = draft.place || "";
           $("collectionsInput").value = draft.collections || "";
-          $("seriesInput").value = draft.series || "";
           renderPreview();
         } catch {}
         clearDraft();
@@ -3623,7 +4939,7 @@
 
       // Save draft immediately on any edit, debounced to avoid hammering localStorage
       let draftSaveTimer = null;
-      ["titleInput", "bodyInput", "moodInput", "placeInput", "collectionsInput", "seriesInput"].forEach((id) => {
+      ["titleInput", "bodyInput", "moodInput", "placeInput", "collectionsInput"].forEach((id) => {
         $(id).addEventListener("input", () => {
           clearTimeout(draftSaveTimer);
           draftSaveTimer = setTimeout(saveDraft, 1000);
@@ -3656,22 +4972,219 @@
       });
 
 
-      // Auto-lock: check every 30s, trigger after 15 min inactivity
-      setInterval(() => {
-        if (state.currentUser && !state.locked && Date.now() - lastActivity > AUTO_LOCK_MS) {
-          lockScreen();
+      // ─── AI event listeners ───
+
+      // Ghost text: → accepts one word, Tab accepts whole suggestion, Esc dismisses
+      $("bodyInput").addEventListener("keydown", (e) => {
+        if (ghostSuffix) {
+          const ta = $("bodyInput");
+          const atEnd = ta.selectionStart === ta.value.length && ta.selectionEnd === ta.value.length;
+          if (e.key === "ArrowRight" && atEnd) {
+            e.preventDefault();
+            acceptGhostWord();
+            return;
+          }
+          if (e.key === "Tab") {
+            e.preventDefault();
+            // Accept full suggestion
+            ta.value = ta.value.trimEnd() + ghostSuffix;
+            lastAcceptedSuggestion = ghostSuffix.trim();
+            autoGrowBody();
+            renderPreview();
+            clearGhost();
+            return;
+          }
+          if (e.key === "Escape") { clearGhost(); return; }
         }
-      }, 30000);
-
-
-      // Reset inactivity timer on any user interaction
-      ["mousemove", "keydown", "click", "touchstart", "scroll"].forEach((evt) => {
-        document.addEventListener(evt, () => { lastActivity = Date.now(); }, { passive: true });
+        if (e.key === "Enter" && e.ctrlKey) {
+          e.preventDefault();
+          continueWriting();
+        }
       });
 
-      // Blur content when returning to tab (tab switch protection)
-      document.addEventListener("visibilitychange", () => {
-        if (!document.hidden && state.currentUser && !state.locked) applyTabBlur();
+      // Ghost text: prefix-match typed chars against active ghost, otherwise reschedule
+      $("bodyInput").addEventListener("input", () => {
+        autoGrowBody();
+        const val = $("bodyInput").value;
+
+        if (ghostSuffix) {
+          // Space = accept whole suggestion (works on mobile and desktop)
+          if (val.slice(-1) === " " && ghostSuffix.startsWith(" ")) {
+            const ta = $("bodyInput");
+            ta.value = val.trimEnd() + ghostSuffix;
+            lastAcceptedSuggestion = ghostSuffix.trim();
+            autoGrowBody();
+            renderPreview();
+            clearGhost();
+            return;
+          }
+
+          let matchLen = 0;
+          for (let len = Math.min(ghostSuffix.length, val.length); len >= 1; len--) {
+            if (val.endsWith(ghostSuffix.slice(0, len))) { matchLen = len; break; }
+          }
+          if (matchLen > 0) {
+            const remaining = ghostSuffix.slice(matchLen);
+            if (!remaining) {
+              lastAcceptedSuggestion = ghostSuffix.trim();
+              clearGhost();
+            } else {
+              syncGhostLayer(remaining);
+            }
+            return;
+          }
+        }
+
+        scheduleGhost();
+      });
+
+      // Ghost text: sync scroll (fallback if somehow scroll still occurs)
+      $("bodyInput").addEventListener("scroll", () => {
+        const bg = $("bodyGhost");
+        if (bg) bg.scrollTop = $("bodyInput").scrollTop;
+      });
+
+      // Ghost action buttons (mobile-friendly tap targets)
+      $("ghostAcceptWord").addEventListener("click", () => { acceptGhostWord(); $("bodyInput").focus(); });
+      $("ghostAcceptAll").addEventListener("click", () => {
+        if (!ghostSuffix) return;
+        const ta = $("bodyInput");
+        ta.value = ta.value.trimEnd() + ghostSuffix;
+        lastAcceptedSuggestion = ghostSuffix.trim();
+        autoGrowBody();
+        renderPreview();
+        clearGhost();
+        ta.focus();
+      });
+      $("ghostDismiss").addEventListener("click", () => { clearGhost(); $("bodyInput").focus(); });
+
+      // Auto-suggest toggle
+      $("autoSuggestButton").addEventListener("click", () => {
+        if (!aiEnabled("ghost")) {
+          state.autoSuggestOn = false;
+          syncAutoSuggestButton();
+          clearGhost();
+          setEditorNotice("Turn on Ghost text in Settings to use inline suggestions.");
+          return;
+        }
+        state.autoSuggestOn = !state.autoSuggestOn;
+        syncAutoSuggestButton();
+        if (state.autoSuggestOn) {
+          setEditorNotice("Inline suggestions on. → next word · Tab whole sentence · Esc dismiss");
+          scheduleGhost();
+        } else {
+          setEditorNotice("Inline suggestions off.");
+          clearGhost();
+        }
+      });
+
+      // Selection float bar
+      // preventDefault on mousedown keeps focus on the textarea so selection stays intact.
+      [$("aiFloatBar"), $("aiRephrasePanel")].forEach(el => {
+        el.addEventListener("mousedown", (e) => e.preventDefault());
+      });
+
+      function checkFloatBar() {
+        const ta = $("bodyInput");
+        const sel = ta.value.slice(ta.selectionStart, ta.selectionEnd).trim();
+        if (sel && aiEnabled("toolbar")) {
+          showFloatBar(sel);
+        } else {
+          hideFloatBar();
+        }
+      }
+
+      // Keyboard selection: Shift+arrow, Ctrl+A
+      document.addEventListener("selectionchange", () => {
+        if (document.activeElement === $("bodyInput")) setTimeout(checkFloatBar, 0);
+      });
+      // Mouse selection: document-level catches fast drags where mouse leaves textarea
+      // 25ms delay lets the browser finalize the selection after the mouseup
+      document.addEventListener("mouseup", () => {
+        setTimeout(() => {
+          const ta = $("bodyInput");
+          if (ta.selectionStart !== ta.selectionEnd) checkFloatBar();
+        }, 25);
+      });
+      // click outside: hide
+      document.addEventListener("click", (e) => {
+        if (!e.target.closest("#aiFloatBar") && !e.target.closest("#aiRephrasePanel") && !e.target.closest("#bodyInput")) hideFloatBar();
+      });
+
+      $("aiRephraseBtn").addEventListener("click", doRephrase);
+      $("aiGrammarBtn").addEventListener("click", doGrammar);
+
+      // Rephrase panel item click
+      $("aiRephrasePanel").addEventListener("click", (e) => {
+        const btn = e.target.closest("[data-rephrase]");
+        if (!btn) return;
+        const chosen = btn.dataset.rephrase;
+        const ta = $("bodyInput");
+        const start = ta.selectionStart;
+        const end = ta.selectionEnd;
+        if (floatSelection && ta.value.slice(start, end) === floatSelection) {
+          ta.value = ta.value.slice(0, start) + chosen + ta.value.slice(end);
+          ta.setSelectionRange(start, start + chosen.length);
+        } else {
+          const idx = ta.value.indexOf(floatSelection || "");
+          if (idx !== -1) ta.value = ta.value.slice(0, idx) + chosen + ta.value.slice(idx + (floatSelection || "").length);
+        }
+        hideFloatBar();
+        renderPreview();
+      });
+
+      // Spark panel
+      $("aiSparkGenerate").addEventListener("click", generateSpark);
+      $("aiSparkAnother").addEventListener("click", generateSpark);
+      $("aiSparkUse").addEventListener("click", () => {
+        if (!sparkText) return;
+        const ta = $("bodyInput");
+        ta.value = ta.value ? ta.value + "\n\n" + sparkText : sparkText;
+        setEditorToolPanel("");
+        renderPreview();
+      });
+
+      // Brainstorm
+      $("brainstormGenerate").addEventListener("click", generateBrainstorm);
+      $("brainstormInput").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); generateBrainstorm(); } });
+      $("brainstormList").addEventListener("click", (e) => {
+        const btn = e.target.closest("[data-idea]");
+        if (!btn) return;
+        const ta = $("bodyInput");
+        const heading = "\n\n## " + btn.dataset.idea;
+        ta.value = ta.value ? ta.value + heading : heading.trim();
+        setEditorToolPanel("");
+        renderPreview();
+        ta.focus();
+      });
+
+      // Weekly digest
+      document.addEventListener("click", (e) => {
+        if (e.target.closest("[data-digest-action]")) generateDigest();
+      });
+
+      // Pattern insights
+      $("generateInsight")?.addEventListener("click", generateInsight);
+      $("clearInsight")?.addEventListener("click", clearInsight);
+
+      // AI Settings toggles
+      $("aiGlobalToggle").addEventListener("change", (e) => {
+        setAiPref("global", e.target.checked);
+        renderAiStatus();
+        renderWeeklyDigest();
+        if (state.view === "insightsView") renderInsights();
+      });
+      [["aiToggleGhost","ghost"],["aiToggleToolbar","toolbar"],["aiTogglePrompts","prompts"],
+       ["aiToggleDigest","digest"],["aiToggleOTD","otd"],["aiToggleInsights","insights"]
+      ].forEach(([id, key]) => {
+        $(id).addEventListener("change", (e) => {
+          setAiPref(key, e.target.checked);
+          if (key === "ghost") syncAutoSuggestButton();
+          if (key === "digest") renderWeeklyDigest();
+          if (key === "digest" || key === "otd" || key === "insights") {
+            if (state.view === "insightsView") renderInsights();
+          }
+        });
       });
 
       $("importFile").addEventListener("change", async (event) => {
@@ -3690,6 +5203,8 @@
             collections: Array.isArray(post.collections) ? post.collections.map(String) : [],
             series: String(post.series || ""),
             pinned: Boolean(post.pinned),
+            hidden: Boolean(post.hidden),
+            favourite: Boolean(post.favourite),
             rssPublic: Boolean(post.rssPublic),
             createdAt: post.createdAt || new Date().toISOString(),
             updatedAt: post.updatedAt || post.createdAt || new Date().toISOString()
@@ -3707,16 +5222,15 @@
 
     applyTheme(getSavedTheme());
     bindEvents();
+    makeAutocomplete($("moodInput"),        () => [...new Set(state.posts.map((p) => p.mood).filter(Boolean))]);
+    makeAutocomplete($("placeInput"),       () => [...new Set(state.posts.map((p) => p.place).filter(Boolean))]);
+    makeAutocomplete($("collectionsInput"), () => getCollections(), true);
     setAuthMode("signin");
     renderPreview();
-    if (localStorage.getItem(SESSION_KEY_STORAGE)) {
-      $("loadingView").classList.remove("hidden");
-      tryRestoreSession()
-        .then((restored) => { if (!restored) showAuth(); })
-        .catch(() => showAuth());
-    } else {
-      showAuth();
-    }
+    $("loadingView").classList.remove("hidden");
+    tryRestoreSession()
+      .then((restored) => { if (!restored) showAuth(); })
+      .catch(() => showAuth());
   </script>
 </body>
 </html>

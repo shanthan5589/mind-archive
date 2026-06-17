@@ -2,15 +2,21 @@ const crypto = require("crypto");
 const fs = require("fs/promises");
 const http = require("http");
 const path = require("path");
+const { constants: zlibConstants } = require("zlib");
 
 const {
   ROOT, PORT, SESSION_COOKIE, SESSION_SECRET,
+  GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REDIRECT_URI,
+  RESEND_API_KEY, EMAIL_FROM, APP_URL,
   configErrors, gzip, brotliCompress, pool
 } = require("./lib/config");
 const { normalizeEmail, isValidEmail, escapeHtml, randomToken, hashLoginSecret } = require("./lib/utils");
 const {
-  getUser, createUser, ensureFeedId, updateUserVault, updateUserLogin, updateUserProfile
+  getUser, getUserByGoogleId, createUser, linkGoogleId,
+  ensureFeedId, updateUserVault, updateUserProfile
 } = require("./lib/db");
+
+const SESSION_EXPIRY_MS = 30 * 24 * 60 * 60 * 1000;
 
 const RATE_LIMITS = {
   auth: { windowMs: 15 * 60 * 1000, max: 20 },
@@ -60,7 +66,7 @@ function getClientIp(req) {
 // --- Rate limiting ---
 
 function limitKind(req, pathname) {
-  if (pathname === "/api/signup" || pathname === "/api/signin" || pathname === "/api/user-salt") return "auth";
+  if (pathname === "/api/signup" || pathname === "/api/signin") return "auth";
   if (req.method === "PUT" && pathname === "/api/vault") return "write";
   return "general";
 }
@@ -120,7 +126,7 @@ async function getIndexAsset() {
   const body = await fs.readFile(resolved);
   indexCache = {
     body,
-    br: await brotliCompress(body, { params: { [require("zlib").constants.BROTLI_PARAM_QUALITY]: 5 } }),
+    br: await brotliCompress(body, { params: { [zlibConstants.BROTLI_PARAM_QUALITY]: 5 } }),
     gzip: await gzip(body, { level: 6 }),
     etag: `W/"${stat.size.toString(16)}-${Math.floor(stat.mtimeMs).toString(16)}"`,
     mtimeMs: stat.mtimeMs,
@@ -187,7 +193,7 @@ function sign(value) {
 function createSessionToken(email) {
   const payload = Buffer.from(JSON.stringify({
     e: email,
-    exp: Date.now() + 1000 * 60 * 60 * 24 * 30,
+    exp: Date.now() + SESSION_EXPIRY_MS,
     n: randomToken(10)
   })).toString("base64url");
   return `${payload}.${sign(payload)}`;
@@ -231,30 +237,26 @@ async function readJson(req) {
   let body = "";
   for await (const chunk of req) {
     body += chunk;
-    if (body.length > 5_000_000) throw new Error("Request body is too large.");
+    if (body.length > 5_000_000) { const e = new Error("Request body is too large."); e.statusCode = 400; throw e; }
   }
   return body ? JSON.parse(body) : {};
 }
 
-function validateVault(vault) {
-  return vault
-    && typeof vault === "object"
-    && typeof vault.iv === "string"
-    && typeof vault.data === "string"
-    && vault.iv.length < 200
-    && vault.data.length < 4_500_000;
-}
-
-function validateWrappedKey(value) {
-  return value
-    && typeof value === "object"
-    && typeof value.iv === "string"
-    && typeof value.data === "string"
-    && value.iv.length < 200
-    && value.data.length < 2000;
+function isValidVault(v) {
+  return Array.isArray(v) && JSON.stringify(v).length < 4_500_000;
 }
 
 // --- Auth middleware ---
+
+const sessionCacheKey = (token) => token.slice(-32);
+
+function parseNames(body, res) {
+  const firstName = String(body.firstName || "").trim().slice(0, 80);
+  const lastName = String(body.lastName || "").trim().slice(0, 80);
+  if (!firstName) { json(res, 400, { error: "First name is required." }); return null; }
+  if (!lastName) { json(res, 400, { error: "Last name is required." }); return null; }
+  return { firstName, lastName };
+}
 
 async function requireUser(req, res) {
   const token = parseCookies(req)[SESSION_COOKIE];
@@ -263,20 +265,142 @@ async function requireUser(req, res) {
     json(res, 401, { error: "Not signed in." });
     return null;
   }
-  const cacheKey = token.slice(-32);
-  const cached = sessionCache.get(cacheKey);
+  const key = sessionCacheKey(token);
+  const cached = sessionCache.get(key);
   if (cached && cached.email === email && Date.now() < cached.expiresAt) {
     return { email, user: cached.user };
   }
   const user = await getUser(email);
   if (!user) {
     json(res, 401, { error: "Session no longer exists." }, clearSessionHeaders());
-    sessionCache.delete(cacheKey);
+    sessionCache.delete(key);
     return null;
   }
   await ensureFeedId(email, user);
-  sessionCache.set(cacheKey, { email, user, expiresAt: Date.now() + 2 * 60 * 1000 });
+  sessionCache.set(key, { email, user, expiresAt: Date.now() + 2 * 60 * 1000 });
   return { email, user };
+}
+
+// --- AI proxy ---
+
+const GROQ_API_KEY = process.env.GROQ_API_KEY || "";
+const GROQ_MODEL = "llama-3.3-70b-versatile";
+const GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions";
+
+const AI_MAX_TOKENS = {
+  suggest: 25, continue: 300, rephrase: 250, grammar: 600,
+  spark: 120, brainstorm: 220, digest: 350, insight: 250, onthisday: 100
+};
+
+function buildAiPrompt(feature, payload) {
+  const t = (s, max) => String(s || "").slice(0, max);
+  switch (feature) {
+    case "suggest":
+      return `You are an inline writing assistant for a personal journal.
+Suggest the single most natural next 3-6 words to continue the text.
+Rules:
+- Match the writer's voice, tense, and topic precisely
+- Never repeat phrases or fragments already present in the text
+- Never return partial words or word fragments
+- Do not start a new idea or add dramatic emotion
+- If nothing natural fits, return nothing at all — silence is better than a bad suggestion
+Return only whole words. No quotes, no punctuation at the end unless it flows naturally.
+
+Text:
+${t(payload.tail, 800)}`;
+    case "continue":
+      return `This is a personal journal entry. Continue it naturally with a new paragraph (around 100-150 words). Same voice, same train of thought. Return only the new paragraph, no preamble:\n\n${t(payload.body, 5000)}`;
+    case "rephrase":
+      return `Rewrite the following sentence or passage 3 different ways. Same meaning, different phrasing. Keep the personal, reflective journal tone. Return only the 3 alternatives, one per line, no numbering or labels:\n\n${t(payload.text, 600)}`;
+    case "grammar":
+      return `Fix the grammar, spelling, and punctuation in the following text. Keep every idea, fact, and detail exactly as written — do not add, remove, or rephrase the content. Only correct errors. Return only the corrected text, nothing else:\n\n${t(payload.text, 2000)}`;
+    case "spark":
+      return `Based on these recent journal entries, write ONE specific journaling question that would help this person reflect further on their life right now. Make it personal, not generic.
+If a previous question is provided, choose a clearly different emotional angle, topic, time horizon, or perspective. Do not rephrase the previous question.
+Return only the question.
+
+Previous question to avoid:
+${t(payload.previous, 500) || "(none)"}
+
+Variety cue:
+${t(payload.variety, 80)}
+
+Recent entries:
+${t(payload.context, 4000)}`;
+    case "brainstorm":
+      return `Give 5 different angles or aspects someone could explore when journaling about: ${t(payload.topic, 200)}. One per line, 8-12 words each. No preamble, no numbering.`;
+    case "digest":
+      return `You are reading someone's private journal. Summarize these entries from the past 7 days in 3-4 warm, observational sentences. Focus on themes and emotional arc. Address the writer as "you". Be personal, not clinical:\n\n${t(payload.entries, 8000)}`;
+    case "insight":
+      return `Based only on these journal entry titles and opening lines, identify 3-4 recurring themes in this person's life. Be specific and personal. Format as brief bullet points, one per line, no preamble:\n\n${t(payload.entries, 7000)}`;
+    case "onthisday":
+      return `In one warm sentence, note what's interesting about returning to these journal entries written on this date in past years. Focus on continuity or growth. Just the sentence:\n\n${t(payload.entries, 2500)}`;
+    default:
+      return null;
+  }
+}
+
+// --- Google OAuth helpers ---
+
+function googleAuthUrl() {
+  const params = new URLSearchParams({
+    client_id: GOOGLE_CLIENT_ID,
+    redirect_uri: GOOGLE_REDIRECT_URI,
+    response_type: "code",
+    scope: "openid email profile",
+    access_type: "online"
+  });
+  return `https://accounts.google.com/o/oauth2/v2/auth?${params}`;
+}
+
+async function exchangeGoogleCode(code) {
+  const res = await fetch("https://oauth2.googleapis.com/token", {
+    method: "POST",
+    headers: { "content-type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      code,
+      client_id: GOOGLE_CLIENT_ID,
+      client_secret: GOOGLE_CLIENT_SECRET,
+      redirect_uri: GOOGLE_REDIRECT_URI,
+      grant_type: "authorization_code"
+    }),
+    signal: AbortSignal.timeout(10000)
+  });
+  if (!res.ok) throw new Error("Failed to exchange Google code.");
+  return res.json();
+}
+
+async function getGoogleUserInfo(accessToken) {
+  const res = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
+    headers: { Authorization: `Bearer ${accessToken}` },
+    signal: AbortSignal.timeout(10000)
+  });
+  if (!res.ok) throw new Error("Failed to get Google user info.");
+  return res.json();
+}
+
+// --- Welcome email ---
+
+async function sendWelcomeEmail(email, firstName) {
+  if (!RESEND_API_KEY || !EMAIL_FROM) return;
+  const appUrl = APP_URL || "https://mind-archive-phi.vercel.app";
+  const html = `
+    <div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:32px 24px;color:#1a1a1a;line-height:1.7;font-size:15px">
+      <p style="margin:0 0 20px">Hi ${escapeHtml(firstName)},</p>
+      <p style="margin:0 0 20px">This isn't an app that wants your attention. It doesn't have a feed, a follower count, or a reason to keep you scrolling. It's just a place to put your thoughts down and come back to them when you need to.</p>
+      <p style="margin:0 0 20px">Some days you'll write a lot. Some days a single line. Some days nothing at all — and that's fine too. There's no streak to protect here. Your entries are yours. Only yours. Nobody else will read them, recommend them, or react to them. Just you, your words, and time.</p>
+      <p style="margin:0 0 20px">I built this because I wanted a place to express myself without any judgement. I hope this becomes a place for you to open up and be yourself.</p>
+      <p style="margin:0 0 20px">If anything feels off or you just want to share feedback, drop me a mail at <a href="mailto:shanthan.yxo@gmail.com" style="color:#1a1a1a">shanthan.yxo@gmail.com</a>. I'd love to hear from you.</p>
+      <p style="margin:0 0 32px">— Shanthan</p>
+      <a href="${appUrl}" style="color:#1a1a1a">Open Mind Archive</a>
+    </div>
+  `;
+  await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: { "Authorization": `Bearer ${RESEND_API_KEY}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ from: EMAIL_FROM, to: email, subject: "Some thoughts aren't meant to be shared 🌿", html }),
+    signal: AbortSignal.timeout(8000)
+  });
 }
 
 // --- Request handlers ---
@@ -303,40 +427,30 @@ async function handleApi(req, res, pathname) {
     if (req.method === "POST" && pathname === "/api/signup") {
       const body = await readJson(req);
       const email = normalizeEmail(body.email);
-      const loginSecret = String(body.loginSecret || "");
-      const firstName = String(body.firstName || "").trim().slice(0, 80);
-      const lastName = String(body.lastName || "").trim().slice(0, 80);
+      const password = String(body.password || "");
+      const names = parseNames(body, res);
+      if (!names) return;
+      const { firstName, lastName } = names;
 
-      if (!firstName) { json(res, 400, { error: "First name is required." }); return; }
-      if (!lastName) { json(res, 400, { error: "Last name is required." }); return; }
       if (!isValidEmail(email)) { json(res, 400, { error: "Enter a valid email address." }); return; }
-      if (loginSecret.length < 32) { json(res, 400, { error: "Missing login verifier." }); return; }
-      if (!validateVault(body.vault)) { json(res, 400, { error: "Missing encrypted vault." }); return; }
-      if (!validateWrappedKey(body.wrappedKey) || !validateWrappedKey(body.recoveryWrappedKey)) {
-        json(res, 400, { error: "Missing recovery metadata." });
-        return;
-      }
+      if (password.length < 8) { json(res, 400, { error: "Password must be at least 8 characters." }); return; }
+      if (await getUser(email)) { json(res, 409, { error: "That email already has an account." }); return; }
 
-      if (await getUser(email)) { json(res, 409, { error: "That email already has an archive." }); return; }
-
-      const loginSalt = randomToken(18);
+      const passwordSalt = randomToken(18);
+      const passwordHash = hashLoginSecret(password, passwordSalt);
       const user = {
-        loginSalt,
-        loginHash: hashLoginSecret(loginSecret, loginSalt),
-        clientSalt: String(body.clientSalt || ""),
-        recoverySalt: String(body.recoverySalt || ""),
-        wrappedKey: body.wrappedKey,
-        recoveryWrappedKey: body.recoveryWrappedKey,
-        vault: body.vault,
+        passwordSalt,
+        passwordHash,
+        googleId: null,
+        vault: [],
         feedId: randomToken(16),
         firstName,
-        lastName,
-        createdAt: new Date().toISOString()
+        lastName
       };
       try {
         await createUser(email, user);
       } catch (error) {
-        if (error.code === "USER_EXISTS") { json(res, 409, { error: "That email already has an archive." }); return; }
+        if (error.code === "USER_EXISTS") { json(res, 409, { error: "That email already has an account." }); return; }
         throw error;
       }
 
@@ -345,37 +459,20 @@ async function handleApi(req, res, pathname) {
         email,
         firstName: user.firstName,
         lastName: user.lastName,
-        clientSalt: user.clientSalt,
-        recoverySalt: user.recoverySalt,
-        vault: user.vault,
-        wrappedKey: user.wrappedKey,
-        recoveryWrappedKey: user.recoveryWrappedKey,
+        vault: [],
         feedId: user.feedId
       }, sessionHeaders(req, token));
-      return;
-    }
-
-    if (req.method === "GET" && pathname === "/api/user-salt") {
-      const url = new URL(req.url, `http://${req.headers.host || "localhost"}`);
-      const email = normalizeEmail(url.searchParams.get("email"));
-      const user = email ? await getUser(email) : null;
-      if (!user) { json(res, 404, { error: "Wrong email or password." }); return; }
-      json(res, 200, {
-        clientSalt: user.clientSalt,
-        recoverySalt: user.recoverySalt || "",
-        vault: user.vault,
-        recoveryWrappedKey: user.recoveryWrappedKey || null
-      });
+      sendWelcomeEmail(email, user.firstName).catch(() => {});
       return;
     }
 
     if (req.method === "POST" && pathname === "/api/signin") {
       const body = await readJson(req);
       const email = normalizeEmail(body.email);
-      const loginSecret = String(body.loginSecret || "");
+      const password = String(body.password || "");
       const user = await getUser(email);
 
-      if (!user || hashLoginSecret(loginSecret, user.loginSalt) !== user.loginHash) {
+      if (!user || !user.passwordHash || hashLoginSecret(password, user.passwordSalt) !== user.passwordHash) {
         json(res, 401, { error: "Wrong email or password." });
         return;
       }
@@ -385,52 +482,15 @@ async function handleApi(req, res, pathname) {
         email,
         firstName: user.firstName || "",
         lastName: user.lastName || "",
-        clientSalt: user.clientSalt,
-        recoverySalt: user.recoverySalt || "",
-        vault: user.vault,
-        wrappedKey: user.wrappedKey || null,
-        recoveryWrappedKey: user.recoveryWrappedKey || null,
+        vault: Array.isArray(user.vault) ? user.vault : [],
         feedId: await ensureFeedId(email, user)
-      }, sessionHeaders(req, token));
-      return;
-    }
-
-    if (req.method === "POST" && pathname === "/api/recover") {
-      const body = await readJson(req);
-      const email = normalizeEmail(body.email);
-      const loginSecret = String(body.loginSecret || "");
-      const user = await getUser(email);
-
-      if (!user || loginSecret.length < 32) { json(res, 401, { error: "Recovery failed." }); return; }
-      if (!validateWrappedKey(body.wrappedKey) || !validateWrappedKey(body.recoveryWrappedKey)) {
-        json(res, 400, { error: "Missing recovery metadata." });
-        return;
-      }
-      if (JSON.stringify(body.recoveryWrappedKey) !== JSON.stringify(user.recoveryWrappedKey || null)) {
-        json(res, 401, { error: "Recovery failed." });
-        return;
-      }
-
-      await updateUserLogin(email, loginSecret, body.wrappedKey);
-      const token = createSessionToken(email);
-      const feedId = await ensureFeedId(email, user);
-      json(res, 200, {
-        email,
-        firstName: user.firstName || "",
-        lastName: user.lastName || "",
-        clientSalt: user.clientSalt,
-        recoverySalt: user.recoverySalt || "",
-        vault: user.vault,
-        wrappedKey: body.wrappedKey,
-        recoveryWrappedKey: user.recoveryWrappedKey || null,
-        feedId
       }, sessionHeaders(req, token));
       return;
     }
 
     if (req.method === "POST" && pathname === "/api/logout") {
       const token = parseCookies(req)[SESSION_COOKIE];
-      if (token) sessionCache.delete(token.slice(-32));
+      if (token) sessionCache.delete(sessionCacheKey(token));
       json(res, 200, { ok: true }, clearSessionHeaders());
       return;
     }
@@ -442,11 +502,7 @@ async function handleApi(req, res, pathname) {
         email: auth.email,
         firstName: auth.user.firstName || "",
         lastName: auth.user.lastName || "",
-        clientSalt: auth.user.clientSalt,
-        recoverySalt: auth.user.recoverySalt || "",
-        vault: auth.user.vault,
-        wrappedKey: auth.user.wrappedKey || null,
-        recoveryWrappedKey: auth.user.recoveryWrappedKey || null,
+        vault: Array.isArray(auth.user.vault) ? auth.user.vault : [],
         feedId: auth.user.feedId
       });
       return;
@@ -455,7 +511,7 @@ async function handleApi(req, res, pathname) {
     if (req.method === "GET" && pathname === "/api/vault") {
       const auth = await requireUser(req, res);
       if (!auth) return;
-      json(res, 200, { vault: auth.user.vault });
+      json(res, 200, { vault: Array.isArray(auth.user.vault) ? auth.user.vault : [] });
       return;
     }
 
@@ -463,10 +519,10 @@ async function handleApi(req, res, pathname) {
       const auth = await requireUser(req, res);
       if (!auth) return;
       const body = await readJson(req);
-      if (!validateVault(body.vault)) { json(res, 400, { error: "Invalid encrypted vault." }); return; }
+      if (!isValidVault(body.vault)) { json(res, 400, { error: "Invalid vault." }); return; }
       await updateUserVault(auth.email, body.vault);
       const token = parseCookies(req)[SESSION_COOKIE];
-      if (token) sessionCache.delete(token.slice(-32));
+      if (token) sessionCache.delete(sessionCacheKey(token));
       json(res, 200, { ok: true });
       return;
     }
@@ -475,14 +531,111 @@ async function handleApi(req, res, pathname) {
       const auth = await requireUser(req, res);
       if (!auth) return;
       const body = await readJson(req);
-      const firstName = String(body.firstName || "").trim().slice(0, 80);
-      const lastName = String(body.lastName || "").trim().slice(0, 80);
-      if (!firstName) { json(res, 400, { error: "First name is required." }); return; }
-      if (!lastName) { json(res, 400, { error: "Last name is required." }); return; }
+      const names = parseNames(body, res);
+      if (!names) return;
+      const { firstName, lastName } = names;
       await updateUserProfile(auth.email, firstName, lastName);
       const token = parseCookies(req)[SESSION_COOKIE];
-      if (token) sessionCache.delete(token.slice(-32));
+      if (token) sessionCache.delete(sessionCacheKey(token));
       json(res, 200, { ok: true, firstName, lastName });
+      return;
+    }
+
+    // --- Google OAuth ---
+
+    if (req.method === "GET" && pathname === "/api/auth/google") {
+      if (!GOOGLE_CLIENT_ID) { text(res, 503, "Google OAuth not configured."); return; }
+      res.writeHead(302, { location: googleAuthUrl() });
+      res.end();
+      return;
+    }
+
+    if (req.method === "GET" && pathname === "/api/auth/google/callback") {
+      if (!GOOGLE_CLIENT_ID) { text(res, 503, "Google OAuth not configured."); return; }
+      const url = new URL(req.url, `http://${req.headers.host || "localhost"}`);
+      const code = url.searchParams.get("code");
+      if (!code) { text(res, 400, "Missing code."); return; }
+
+      try {
+        const tokens = await exchangeGoogleCode(code);
+        const info = await getGoogleUserInfo(tokens.access_token);
+        const googleId = String(info.sub || "");
+        const email = normalizeEmail(info.email || "");
+        if (!googleId || !email) { text(res, 400, "Invalid Google account."); return; }
+
+        let user = await getUserByGoogleId(googleId);
+        if (!user) {
+          user = await getUser(email);
+          if (user) {
+            await linkGoogleId(email, googleId);
+            user.googleId = googleId;
+          } else {
+            const newUser = {
+              passwordSalt: null,
+              passwordHash: null,
+              googleId,
+              vault: [],
+              feedId: randomToken(16),
+              firstName: String(info.given_name || "").slice(0, 80),
+              lastName: String(info.family_name || "").slice(0, 80)
+            };
+            try {
+              await createUser(email, newUser);
+            } catch (err) {
+              if (err.code !== "USER_EXISTS") throw err;
+            }
+            user = await getUser(email);
+          }
+        }
+
+        const token = createSessionToken(email);
+        res.writeHead(302, {
+          location: "/",
+          ...sessionHeaders(req, token)
+        });
+        res.end();
+      } catch (err) {
+        text(res, 500, err.message || "Google sign-in failed.");
+      }
+      return;
+    }
+
+    // --- AI proxy ---
+
+    if (req.method === "GET" && pathname === "/api/ai/status") {
+      const auth = await requireUser(req, res);
+      if (!auth) return;
+      json(res, 200, { ok: Boolean(GROQ_API_KEY) });
+      return;
+    }
+
+    if (req.method === "POST" && pathname === "/api/ai") {
+      const auth = await requireUser(req, res);
+      if (!auth) return;
+      if (!GROQ_API_KEY) { json(res, 503, { error: "AI features not configured." }); return; }
+      const body = await readJson(req);
+      const feature = String(body.feature || "");
+      const prompt = buildAiPrompt(feature, body.payload || {});
+      if (!prompt) { json(res, 400, { error: "Unknown AI feature." }); return; }
+      const groqRes = await fetch(GROQ_API_URL, {
+        method: "POST",
+        headers: { "Authorization": `Bearer ${GROQ_API_KEY}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: GROQ_MODEL,
+          messages: [{ role: "user", content: prompt }],
+          max_tokens: AI_MAX_TOKENS[feature] || 200,
+          temperature: feature === "suggest" ? 0.15 : 0.7
+        }),
+        signal: AbortSignal.timeout(15000)
+      });
+      if (!groqRes.ok) {
+        const errBody = await groqRes.json().catch(() => ({}));
+        json(res, 502, { error: errBody.error?.message || "AI request failed." });
+        return;
+      }
+      const groqData = await groqRes.json();
+      const text = groqData.choices?.[0]?.message?.content || "";
+      json(res, 200, { text: text.trim(), usage: groqData.usage || null });
       return;
     }
 
@@ -525,9 +678,9 @@ if (require.main === module) {
   setInterval(cleanRateBuckets, 5 * 60 * 1000).unref();
 
   server.listen(PORT, "0.0.0.0", () => {
-    console.log(`Mind Archive running on http://localhost:${PORT}`);
+    const port = server.address().port;
+    console.log(`Mind Archive running on http://localhost:${port}`);
   });
 }
 
 module.exports = handleRequest;
-module.exports.handleRequest = handleRequest;
