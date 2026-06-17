@@ -579,12 +579,15 @@ async function handleApi(req, res, pathname) {
               firstName: String(info.given_name || "").slice(0, 80),
               lastName: String(info.family_name || "").slice(0, 80)
             };
+            let isNewUser = true;
             try {
               await createUser(email, newUser);
             } catch (err) {
               if (err.code !== "USER_EXISTS") throw err;
+              isNewUser = false;
             }
             user = await getUser(email);
+            if (isNewUser) sendWelcomeEmail(email, newUser.firstName).catch(() => {});
           }
         }
 
