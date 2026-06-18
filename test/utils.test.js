@@ -47,19 +47,19 @@ test("randomToken: different calls return different values", () => {
   assert.notEqual(randomToken(16), randomToken(16));
 });
 
-test("hashLoginSecret: deterministic", () => {
-  const h1 = hashLoginSecret("password", "salt");
-  const h2 = hashLoginSecret("password", "salt");
+test("hashLoginSecret: deterministic", async () => {
+  const h1 = await hashLoginSecret("password", "salt");
+  const h2 = await hashLoginSecret("password", "salt");
   assert.equal(h1, h2);
 });
 
-test("hashLoginSecret: different inputs produce different hashes", () => {
-  assert.notEqual(hashLoginSecret("pass1", "salt"), hashLoginSecret("pass2", "salt"));
-  assert.notEqual(hashLoginSecret("pass", "salt1"), hashLoginSecret("pass", "salt2"));
+test("hashLoginSecret: different inputs produce different hashes", async () => {
+  assert.notEqual(await hashLoginSecret("pass1", "salt"), await hashLoginSecret("pass2", "salt"));
+  assert.notEqual(await hashLoginSecret("pass", "salt1"), await hashLoginSecret("pass", "salt2"));
 });
 
-test("hashLoginSecret: returns a base64 string", () => {
-  const h = hashLoginSecret("secret", "somesalt");
+test("hashLoginSecret: returns a base64 string", async () => {
+  const h = await hashLoginSecret("secret", "somesalt");
   assert.equal(typeof h, "string");
   assert.ok(h.length > 0);
   assert.ok(/^[A-Za-z0-9+/=]+$/.test(h));
