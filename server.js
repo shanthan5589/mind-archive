@@ -455,6 +455,7 @@ async function handleApi(req, res, pathname) {
         throw error;
       }
 
+      await sendWelcomeEmail(email, user.firstName).catch(() => {});
       const token = createSessionToken(email);
       json(res, 201, {
         email,
@@ -463,7 +464,6 @@ async function handleApi(req, res, pathname) {
         vault: [],
         feedId: user.feedId
       }, sessionHeaders(req, token));
-      sendWelcomeEmail(email, user.firstName).catch(() => {});
       return;
     }
 
@@ -588,7 +588,7 @@ async function handleApi(req, res, pathname) {
               isNewUser = false;
             }
             user = await getUser(email);
-            if (isNewUser) sendWelcomeEmail(email, newUser.firstName).catch(() => {});
+            if (isNewUser) await sendWelcomeEmail(email, newUser.firstName).catch(() => {});
           }
         }
 

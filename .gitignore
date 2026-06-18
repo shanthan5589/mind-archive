@@ -7,13 +7,13 @@ node_modules/
 # Environment & secrets
 .env
 .env.*
-!.env.example
 
 # Vercel local config
 .vercel/
 
 # Claude Code
 .claude/
+AGENTS.md
 
 # Certificates & keys
 *.pem
