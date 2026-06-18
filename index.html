@@ -5224,6 +5224,8 @@
       });
 
       function checkFloatBar() {
+        // Don't disturb state while the rephrase panel is open — user is picking an alternative
+        if (!$("aiRephrasePanel").classList.contains("hidden")) return;
         const ta = $("bodyInput");
         const sel = ta.value.slice(ta.selectionStart, ta.selectionEnd).trim();
         if (sel && aiEnabled("toolbar")) {
@@ -5262,8 +5264,8 @@
       $("aiRephraseBtn").addEventListener("pointerdown", (e) => { e.preventDefault(); doRephrase(); });
       $("aiGrammarBtn").addEventListener("pointerdown", (e) => { e.preventDefault(); doGrammar(); });
 
-      // Rephrase panel item click
-      $("aiRephrasePanel").addEventListener("click", (e) => {
+      // Use pointerup (not click) — pointerdown.preventDefault() on the panel blocks click on mobile
+      $("aiRephrasePanel").addEventListener("pointerup", (e) => {
         const btn = e.target.closest("[data-rephrase]");
         if (!btn) return;
         const chosen = btn.dataset.rephrase;
