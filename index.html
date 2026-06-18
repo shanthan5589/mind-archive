@@ -219,8 +219,19 @@
       padding: 9px 12px;
       border-radius: 10px;
       font: inherit;
-      font-size: 14px;
+      font-size: 16px;
       transition: border-color 0.18s, box-shadow 0.18s;
+    }
+
+    input[type="checkbox"],
+    input[type="radio"] {
+      width: auto;
+      min-height: 0;
+      border: none;
+      background: none;
+      padding: 0;
+      border-radius: 0;
+      transition: none;
     }
 
     input:focus,
@@ -706,11 +717,7 @@
       min-width: 0;
     }
 
-    .row input[type="checkbox"] {
-      width: auto;
-    }
-
-    .field {
+.field {
       display: grid;
       gap: 3px;
     }
