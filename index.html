@@ -1159,8 +1159,8 @@
     }
 
     @media (max-width: 640px) {
-      /* Page: edge to edge, bottom padding clears fixed tab bar */
-      .page { width: 100%; margin: 0; border-radius: 0; padding-bottom: calc(56px + env(safe-area-inset-bottom, 0px)); }
+      /* Page: edge to edge */
+      .page { width: 100%; margin: 0; border-radius: 0; }
 
       /* Topbar: sticky single row — brand left, user menu right */
       .topbar { position: sticky; top: 0; flex-wrap: nowrap; padding: 10px 14px; gap: 8px; align-items: center; }
@@ -1173,9 +1173,8 @@
       /* Sidebar: hidden */
       .sidebar { display: none; }
 
-      /* Nav hidden — bottom tab bar handles navigation on mobile */
+      /* Nav hidden on mobile */
       .nav { display: none; }
-      #contentTabs { display: none !important; }
 
       /* Main area */
       .main { padding: 12px; }
@@ -1195,41 +1194,6 @@
       #toolsView .button-row button { width: 100%; min-height: 46px; font-size: 14px; border-radius: 12px; }
     }
 
-    /* ── Mobile bottom tab bar ── */
-    #mobileTabBar { display: none; }
-    @media (max-width: 640px) {
-      #mobileTabBar {
-        position: fixed;
-        bottom: 0; left: 0; right: 0;
-        display: flex;
-        background: var(--topbar);
-        border-top: 0.5px solid var(--line);
-        backdrop-filter: saturate(180%) blur(20px);
-        -webkit-backdrop-filter: saturate(180%) blur(20px);
-        z-index: 300;
-        padding-bottom: env(safe-area-inset-bottom, 0px);
-      }
-      #mobileTabBar.hidden { display: none !important; }
-      .mobile-tab {
-        flex: 1;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        min-height: 52px;
-        font-size: 12px;
-        font-weight: 500;
-        letter-spacing: 0.01em;
-        color: var(--muted);
-        border: none;
-        background: none;
-        box-shadow: none;
-        transform: none;
-        padding: 0;
-        cursor: pointer;
-      }
-      .mobile-tab:hover, .mobile-tab:active { transform: none; box-shadow: none; background: none; }
-      .mobile-tab.active { color: var(--accent); font-weight: 600; }
-    }
 
     body.focus-mode .topbar,
     body.focus-mode .nav,
@@ -2100,6 +2064,28 @@
       .editor-meta-grid {
         grid-template-columns: 1fr;
       }
+
+      /* Bigger tap targets for content tabs */
+      .content-tab {
+        min-height: 36px;
+        padding: 6px 14px;
+        font-size: 13px;
+        white-space: nowrap;
+        flex-shrink: 0;
+      }
+
+      /* Post action buttons: easier to tap */
+      .post-actions button {
+        min-height: 32px;
+        padding: 0 10px;
+        font-size: 12px;
+      }
+
+      /* Editor textarea: shorter minimum on mobile */
+      #bodyInput { min-height: 260px; }
+
+      /* Footer: hidden on mobile to save space */
+      .footer { display: none; }
     }
 
     /* ── Autocomplete field + chevron ── */
@@ -2229,7 +2215,11 @@
       padding-bottom: 12px;
       border-bottom: 0.5px solid var(--line);
       margin-bottom: 14px;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
     }
+    .content-tabs::-webkit-scrollbar { display: none; }
     .new-post-btn {
       background: transparent !important;
       color: var(--text) !important;
@@ -3214,13 +3204,6 @@
     <footer class="footer">
       Your posts are stored on the server. Export a backup regularly.
     </footer>
-
-    <nav id="mobileTabBar" class="auth-only hidden" aria-label="Main navigation">
-      <button type="button" class="mobile-tab" data-view="postsView">Posts</button>
-      <button type="button" class="mobile-tab" data-view="timelineView">Timeline</button>
-      <button type="button" class="mobile-tab" data-view="collectionsView">Collections</button>
-      <button type="button" class="mobile-tab" data-view="insightsView">Insights</button>
-    </nav>
   </div>
 
   <div id="aiFloatBar" class="hidden ai-feature" role="toolbar" aria-label="AI writing tools">
@@ -3650,13 +3633,6 @@
       if (contentTabs) {
         contentTabs.classList.toggle("hidden", !contentViews.includes(view));
         contentTabs.querySelectorAll(".content-tab").forEach((tab) => {
-          tab.classList.toggle("active", tab.dataset.view === view);
-        });
-      }
-      const mobileBar = $("mobileTabBar");
-      if (mobileBar) {
-        mobileBar.classList.toggle("hidden", !contentViews.includes(view));
-        mobileBar.querySelectorAll(".mobile-tab").forEach((tab) => {
           tab.classList.toggle("active", tab.dataset.view === view);
         });
       }
@@ -4776,10 +4752,6 @@
         if (tab) setView(tab.dataset.view);
       });
 
-      $("mobileTabBar").addEventListener("click", (e) => {
-        const tab = e.target.closest(".mobile-tab[data-view]");
-        if (tab) setView(tab.dataset.view);
-      });
       document.addEventListener("toggle", (event) => {
         const menu = event.target.closest?.("details.action-menu");
         if (menu && menu.open) closeActionMenus(menu);
