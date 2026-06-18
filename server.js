@@ -239,7 +239,13 @@ async function readJson(req) {
     body += chunk;
     if (body.length > 5_000_000) { const e = new Error("Request body is too large."); e.statusCode = 400; throw e; }
   }
-  return body ? JSON.parse(body) : {};
+  try {
+    return body ? JSON.parse(body) : {};
+  } catch {
+    const e = new Error("Invalid request body.");
+    e.statusCode = 400;
+    throw e;
+  }
 }
 
 function isValidVault(v) {
@@ -288,7 +294,7 @@ const GROQ_MODEL = "llama-3.3-70b-versatile";
 const GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions";
 
 const AI_MAX_TOKENS = {
-  suggest: 25, continue: 300, rephrase: 250, grammar: 600,
+  suggest: 25, continue: 300, rephrase: 250, grammar: 1200,
   spark: 120, brainstorm: 220, digest: 350, insight: 250, onthisday: 100
 };
 
@@ -342,13 +348,34 @@ ${t(payload.context, 4000)}`;
 
 // --- Google OAuth helpers ---
 
-function googleAuthUrl() {
+function generateOAuthState() {
+  const nonce = randomToken(16);
+  const ts = Date.now().toString(36);
+  const data = `${nonce}.${ts}`;
+  const sig = crypto.createHmac("sha256", SESSION_SECRET).update(data).digest("base64url");
+  return `${data}.${sig}`;
+}
+
+function verifyOAuthState(state) {
+  if (!state || typeof state !== "string") return false;
+  const last = state.lastIndexOf(".");
+  const prev = state.lastIndexOf(".", last - 1);
+  if (last === -1 || prev === -1) return false;
+  const data = state.slice(0, last);
+  const sig = state.slice(last + 1);
+  const expected = crypto.createHmac("sha256", SESSION_SECRET).update(data).digest("base64url");
+  if (sig.length !== expected.length) return false;
+  try { return crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expected)); } catch { return false; }
+}
+
+function googleAuthUrl(state) {
   const params = new URLSearchParams({
     client_id: GOOGLE_CLIENT_ID,
     redirect_uri: GOOGLE_REDIRECT_URI,
     response_type: "code",
     scope: "openid email profile",
-    access_type: "online"
+    access_type: "online",
+    state
   });
   return `https://accounts.google.com/o/oauth2/v2/auth?${params}`;
 }
@@ -441,7 +468,7 @@ async function handleApi(req, res, pathname) {
       if (await getUser(email)) { json(res, 409, { error: "That email already has an account." }); return; }
 
       const passwordSalt = randomToken(18);
-      const passwordHash = hashLoginSecret(password, passwordSalt);
+      const passwordHash = await hashLoginSecret(password, passwordSalt);
       const user = {
         passwordSalt,
         passwordHash,
@@ -476,7 +503,7 @@ async function handleApi(req, res, pathname) {
       const password = String(body.password || "");
       const user = await getUser(email);
 
-      if (!user || !user.passwordHash || hashLoginSecret(password, user.passwordSalt) !== user.passwordHash) {
+      if (!user || !user.passwordHash || await hashLoginSecret(password, user.passwordSalt) !== user.passwordHash) {
         json(res, 401, { error: "Wrong email or password." });
         return;
       }
@@ -549,7 +576,8 @@ async function handleApi(req, res, pathname) {
 
     if (req.method === "GET" && pathname === "/api/auth/google") {
       if (!GOOGLE_CLIENT_ID) { text(res, 503, "Google OAuth not configured."); return; }
-      res.writeHead(302, { location: googleAuthUrl() });
+      const oauthState = generateOAuthState();
+      res.writeHead(302, { location: googleAuthUrl(oauthState), "set-cookie": `oauth_state=${oauthState}; HttpOnly; SameSite=Lax; Max-Age=300${isHttps(req) ? "; Secure" : ""}` });
       res.end();
       return;
     }
@@ -558,7 +586,10 @@ async function handleApi(req, res, pathname) {
       if (!GOOGLE_CLIENT_ID) { text(res, 503, "Google OAuth not configured."); return; }
       const url = new URL(req.url, `http://${req.headers.host || "localhost"}`);
       const code = url.searchParams.get("code");
+      const returnedState = url.searchParams.get("state");
+      const cookieState = parseCookies(req)["oauth_state"];
       if (!code) { text(res, 400, "Missing code."); return; }
+      if (!verifyOAuthState(returnedState) || returnedState !== cookieState) { text(res, 400, "Invalid OAuth state."); return; }
 
       try {
         const tokens = await exchangeGoogleCode(code);
@@ -679,10 +710,10 @@ async function handleRequest(req, res) {
   await serveStatic(req, res);
 }
 
+setInterval(cleanRateBuckets, 5 * 60 * 1000).unref();
+
 if (require.main === module) {
   const server = http.createServer(handleRequest);
-
-  setInterval(cleanRateBuckets, 5 * 60 * 1000).unref();
 
   server.listen(PORT, "0.0.0.0", () => {
     const port = server.address().port;

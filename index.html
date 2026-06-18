@@ -586,7 +586,7 @@
     .auth-form input {
       min-height: 46px;
       padding: 12px 14px;
-      font-size: 15px;
+      font-size: 16px;
       border-radius: 12px;
     }
 
@@ -3333,7 +3333,7 @@
     }
 
     function uid() {
-      return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+      return crypto.randomUUID ? crypto.randomUUID() : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
     }
 
     function normalizeEmail(value) {
@@ -3361,7 +3361,7 @@
     function scheduleSave() {
       clearTimeout(_saveTimer);
       _saveTimer = setTimeout(() => {
-        savePosts().catch(() => {});
+        savePosts().catch((e) => console.error("Auto-save failed:", e));
       }, 500);
     }
 
@@ -3433,11 +3433,14 @@
       $("appLayout").classList.add("hidden");
       $("currentUserLabel").classList.add("hidden");
       document.querySelectorAll(".auth-only").forEach((el) => el.classList.add("hidden"));
+      $("signinEmail").value = "";
       $("signinPassword").value = "";
       $("signupFirstName").value = "";
       $("signupLastName").value = "";
       $("signupPassword").value = "";
       $("signupPasswordAgain").value = "";
+      $("signupForm").querySelector("[type=submit]").disabled = false;
+      $("signinForm").querySelector("[type=submit]").disabled = false;
     }
 
     function showApp() {
@@ -4053,8 +4056,15 @@
       const post = state.posts.find((item) => item.id === id);
       if (!post) return;
       if (!confirm(`Delete "${post.title}"?`)) return;
+      const prev = state.posts;
       state.posts = state.posts.filter((item) => item.id !== id);
-      await savePosts();
+      try {
+        await savePosts();
+      } catch {
+        state.posts = prev;
+        alert("Couldn't delete — check your connection and try again.");
+        return;
+      }
       renderAll();
     }
 
@@ -4338,7 +4348,7 @@
     let continueAbort = false;
 
     async function continueWriting() {
-      if (!aiEnabled("ghost")) return;
+      if (!aiEnabled()) return;
       const body = $("bodyInput").value;
       if (!body.trim()) return;
       continueAbort = false;
@@ -4346,11 +4356,12 @@
       $("editorWordCount").innerHTML = '<span class="ai-loading">✦ writing…</span>';
       try {
         const text = await callAI("continue", { body });
-        if (continueAbort) return;
+        if (continueAbort) { $("editorWordCount").textContent = origCount; return; }
         const ta = $("bodyInput");
         ta.value = ta.value.trimEnd() + "\n\n" + text;
         autoGrowBody();
         renderPreview();
+        scheduleSave();
       } catch (e) {
         $("editorWordCount").textContent = origCount;
         $("editorStatus").textContent = e.message;
@@ -4406,15 +4417,18 @@
     async function doGrammar() {
       if (!floatSelection) return;
       const sel = floatSelection;
-      hideFloatBar();
       const ta = $("bodyInput");
-      const start = ta.value.indexOf(sel);
+      const selStart = ta.selectionStart;
+      const selEnd = ta.selectionEnd;
+      hideFloatBar();
+      const start = (ta.value.slice(selStart, selEnd) === sel) ? selStart : ta.value.indexOf(sel);
       if (start === -1) return;
       try {
         const text = await callAI("grammar", { text: sel });
         ta.value = ta.value.slice(0, start) + text + ta.value.slice(start + sel.length);
         autoGrowBody();
         renderPreview();
+        scheduleSave();
       } catch {}
     }
 
@@ -4509,15 +4523,12 @@
     }
 
     async function renderWeeklyDigest() {
-      renderDigestTarget("weeklyDigestBox", "weeklyDigestBody", false);
       renderDigestTarget("insightsDigestPanel", "insightsDigestBody", true);
     }
 
     function updateDigestBodies(html) {
-      ["weeklyDigestBody", "insightsDigestBody"].forEach((id) => {
-        const el = $(id);
-        if (el) el.innerHTML = html;
-      });
+      const el = $("insightsDigestBody");
+      if (el) el.innerHTML = html;
     }
 
     async function generateDigest() {
@@ -5351,10 +5362,12 @@
       $("importFile").addEventListener("change", async (event) => {
         const file = event.target.files[0];
         if (!file) return;
+        if (file.size > 5_000_000) { alert("File is too large to import (max 5 MB)."); event.target.value = ""; return; }
         try {
           const parsed = JSON.parse(await file.text());
           if (!Array.isArray(parsed)) throw new Error("Backup must be an array.");
           if (!confirm("Restore this backup? It will replace the current local archive.")) return;
+          const prev = state.posts;
           state.posts = parsed.map((post) => ({
             id: post.id || uid(),
             title: String(post.title || "Untitled"),
@@ -5370,7 +5383,12 @@
             createdAt: post.createdAt || new Date().toISOString(),
             updatedAt: post.updatedAt || post.createdAt || new Date().toISOString()
           }));
-          await savePosts();
+          try {
+            await savePosts();
+          } catch (saveError) {
+            state.posts = prev;
+            throw new Error(`Import parsed but could not save: ${saveError.message}`);
+          }
           renderAll();
           setView("postsView");
         } catch (error) {
