@@ -2411,6 +2411,8 @@
       background: none;
       border: none;
       color: var(--accent);
+      user-select: none;
+      -webkit-user-select: none;
       font-size: 12px;
       font-weight: 600;
       font-family: inherit;
@@ -2454,6 +2456,8 @@
       width: 100%;
       text-align: left;
       background: none;
+      user-select: none;
+      -webkit-user-select: none;
       border: none;
       padding: 8px 10px;
       border-radius: 7px;
@@ -4787,8 +4791,6 @@
         }
 
         panel.addEventListener("touchstart", (e) => {
-          const inBody = e.target.closest(".post-modal-body-wrap");
-          if (inBody && bodyWrap.scrollTop > 2) return;
           startX = lastX = e.touches[0].clientX;
           startY = lastY = e.touches[0].clientY;
           active = true; dir = null;
@@ -4803,6 +4805,8 @@
           if (!dir && (Math.abs(dx) > 8 || Math.abs(dy) > 8)) {
             dir = Math.abs(dx) > Math.abs(dy) ? "h" : "v";
           }
+          // Block dismiss swipe when body is scrolled — let the browser scroll instead
+          if (dir === "v" && bodyWrap.scrollTop > 2) { active = false; panel.style.transform = ""; return; }
           if (dir === "v" && dy > 0) panel.style.transform = `translateY(${dy}px)`;
           if (dir === "h") panel.style.transform = `translateX(${dx}px)`;
         }, { passive: true });
