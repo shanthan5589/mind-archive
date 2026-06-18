@@ -252,6 +252,24 @@ function isValidVault(v) {
   return Array.isArray(v) && JSON.stringify(v).length < 4_500_000;
 }
 
+function makeSamplePost() {
+  const now = new Date().toISOString();
+  return [{
+    id: "sample-post-welcome",
+    title: "Welcome to Mind Archive",
+    body: "This is your space.\n\nNo feed, no followers, no streaks. Just you and your thoughts.\n\nWrite whatever you want, a memory, a feeling, an idea, a bad day, a good one. Nobody else will ever read this. It's just yours.\n\nWhen you're ready, clear this and start writing. Or keep it. That's the point, you decide.",
+    mood: "",
+    place: "",
+    collections: [],
+    series: "",
+    pinned: false,
+    hidden: false,
+    favourite: false,
+    createdAt: now,
+    updatedAt: now
+  }];
+}
+
 // --- Auth middleware ---
 
 const sessionCacheKey = (token) => token.slice(-32);
@@ -473,7 +491,7 @@ async function handleApi(req, res, pathname) {
         passwordSalt,
         passwordHash,
         googleId: null,
-        vault: [],
+        vault: makeSamplePost(),
         feedId: randomToken(16),
         firstName,
         lastName
@@ -491,7 +509,7 @@ async function handleApi(req, res, pathname) {
         email,
         firstName: user.firstName,
         lastName: user.lastName,
-        vault: [],
+        vault: user.vault,
         feedId: user.feedId
       }, sessionHeaders(req, token));
       return;
@@ -609,7 +627,7 @@ async function handleApi(req, res, pathname) {
               passwordSalt: null,
               passwordHash: null,
               googleId,
-              vault: [],
+              vault: makeSamplePost(),
               feedId: randomToken(16),
               firstName: String(info.given_name || "").slice(0, 80),
               lastName: String(info.family_name || "").slice(0, 80)
