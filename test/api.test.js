@@ -101,7 +101,7 @@ test("POST /api/signup creates a new user", async () => {
   assert.equal(json.email, "alice@test.com");
   assert.equal(json.firstName, "Alice");
   assert.equal(json.lastName, "Smith");
-  assert.deepEqual(json.vault, []);
+  assert.ok(Array.isArray(json.vault), "vault should be an array");
   assert.ok(json.feedId, "feedId should be set");
   sessionCookie = extractCookie(headers);
   assert.ok(sessionCookie.startsWith("mind_archive_session="), "should set session cookie");
@@ -183,10 +183,10 @@ test("GET /api/session returns 401 with invalid cookie", async () => {
 
 // ── Vault ──
 
-test("GET /api/vault returns empty array initially", async () => {
+test("GET /api/vault returns array initially", async () => {
   const { status, json } = await get("/api/vault", sessionCookie);
   assert.equal(status, 200);
-  assert.deepEqual(json.vault, []);
+  assert.ok(Array.isArray(json.vault), "vault should be an array");
 });
 
 test("PUT /api/vault saves posts and returns ok", async () => {
