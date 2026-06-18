@@ -383,25 +383,28 @@ async function getGoogleUserInfo(accessToken) {
 
 async function sendWelcomeEmail(email, firstName) {
   if (!RESEND_API_KEY || !EMAIL_FROM) return;
-  const appUrl = APP_URL || "https://mind-archive-phi.vercel.app";
+  const name = firstName || "there";
   const html = `
     <div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:32px 24px;color:#1a1a1a;line-height:1.7;font-size:15px">
-      <p style="margin:0 0 20px">Hi ${escapeHtml(firstName)},</p>
+      <p style="margin:0 0 20px">Hi ${escapeHtml(name)},</p>
       <p style="margin:0 0 20px">This isn't an app that wants your attention. It doesn't have a feed, a follower count, or a reason to keep you scrolling. It's just a place to put your thoughts down and come back to them when you need to.</p>
       <p style="margin:0 0 20px">Some days you'll write a lot. Some days a single line. Some days nothing at all — and that's fine too. There's no streak to protect here. Your entries are yours. Only yours. Nobody else will read them, recommend them, or react to them. Just you, your words, and time.</p>
       <p style="margin:0 0 20px">Various AI tools have been deeply integrated into this product to give you more ways to write and reflect.</p>
       <p style="margin:0 0 20px">I built this because I wanted a place to express myself without any judgement. I hope this becomes a place for you to open up and be yourself.</p>
       <p style="margin:0 0 20px">If anything feels off or you just want to share feedback, drop me a mail at <a href="mailto:shanthan.yxo@gmail.com" style="color:#1a1a1a">shanthan.yxo@gmail.com</a>. I'd love to hear from you.</p>
-      <p style="margin:0 0 32px">— Shanthan</p>
-      <a href="${appUrl}" style="color:#1a1a1a">Open Mind Archive</a>
+      <p style="margin:0">— Shanthan</p>
     </div>
   `;
-  await fetch("https://api.resend.com/emails", {
+  const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: { "Authorization": `Bearer ${RESEND_API_KEY}`, "Content-Type": "application/json" },
     body: JSON.stringify({ from: EMAIL_FROM, to: email, subject: "Some thoughts aren't meant to be shared 🌿", html }),
     signal: AbortSignal.timeout(8000)
   });
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    console.error(`[welcome-email] Resend error ${res.status} for ${email}: ${body}`);
+  }
 }
 
 // --- Request handlers ---
@@ -455,7 +458,7 @@ async function handleApi(req, res, pathname) {
         throw error;
       }
 
-      await sendWelcomeEmail(email, user.firstName).catch(() => {});
+      await sendWelcomeEmail(email, user.firstName).catch((err) => console.error("[welcome-email] signup error:", err));
       const token = createSessionToken(email);
       json(res, 201, {
         email,
@@ -588,7 +591,7 @@ async function handleApi(req, res, pathname) {
               isNewUser = false;
             }
             user = await getUser(email);
-            if (isNewUser) await sendWelcomeEmail(email, newUser.firstName).catch(() => {});
+            if (isNewUser) await sendWelcomeEmail(email, newUser.firstName).catch((err) => console.error("[welcome-email] google signup error:", err));
           }
         }
 
