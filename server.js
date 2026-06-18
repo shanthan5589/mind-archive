@@ -389,6 +389,7 @@ async function sendWelcomeEmail(email, firstName) {
       <p style="margin:0 0 20px">Hi ${escapeHtml(firstName)},</p>
       <p style="margin:0 0 20px">This isn't an app that wants your attention. It doesn't have a feed, a follower count, or a reason to keep you scrolling. It's just a place to put your thoughts down and come back to them when you need to.</p>
       <p style="margin:0 0 20px">Some days you'll write a lot. Some days a single line. Some days nothing at all — and that's fine too. There's no streak to protect here. Your entries are yours. Only yours. Nobody else will read them, recommend them, or react to them. Just you, your words, and time.</p>
+      <p style="margin:0 0 20px">Various AI tools have been deeply integrated into this product to give you more ways to write and reflect.</p>
       <p style="margin:0 0 20px">I built this because I wanted a place to express myself without any judgement. I hope this becomes a place for you to open up and be yourself.</p>
       <p style="margin:0 0 20px">If anything feels off or you just want to share feedback, drop me a mail at <a href="mailto:shanthan.yxo@gmail.com" style="color:#1a1a1a">shanthan.yxo@gmail.com</a>. I'd love to hear from you.</p>
       <p style="margin:0 0 32px">— Shanthan</p>
