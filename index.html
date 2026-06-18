@@ -4354,20 +4354,15 @@
 
     function positionFloatBar() {
       const bar = $("aiFloatBar");
+      const rect = $("bodyInput").getBoundingClientRect();
       const barW = bar.offsetWidth || 160;
       const barH = bar.offsetHeight || 36;
-      if (window.innerWidth <= 640) {
-        // On mobile the virtual keyboard shrinks the viewport; anchor bar just above the keyboard
-        bar.style.top = "auto";
-        bar.style.bottom = "16px";
-        bar.style.left = `${Math.max((window.innerWidth - barW) / 2, 8)}px`;
-      } else {
-        const rect = $("bodyInput").getBoundingClientRect();
-        const top = rect.top - barH - 6;
-        bar.style.bottom = "auto";
-        bar.style.top = `${Math.max(top, 8)}px`;
-        bar.style.left = `${Math.max(Math.min(rect.left, window.innerWidth - barW - 8), 8)}px`;
-      }
+      const aboveTop = rect.top - barH - 6;
+      // Prefer above the textarea; fall below if too close to top edge
+      const top = aboveTop >= 8 ? aboveTop : Math.min(rect.bottom + 6, window.innerHeight - barH - 8);
+      bar.style.top = `${top}px`;
+      bar.style.bottom = "auto";
+      bar.style.left = `${Math.max(Math.min(rect.left, window.innerWidth - barW - 8), 8)}px`;
     }
 
     function hideFloatBar() {
