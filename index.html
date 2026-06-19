@@ -4402,16 +4402,36 @@
 
     async function doRephrase() {
       if (!floatSelection) return;
-      const panel = $("aiRephrasePanel");
-      panel.innerHTML = '<div class="rephrase-header">Rephrase</div><div class="rephrase-item ai-loading">✦ thinking…</div>';
-      panel.classList.remove("hidden");
-      try {
-        const text = await callAI("rephrase", { text: floatSelection });
-        const alts = text.split("\n").map((s) => s.trim()).filter(Boolean).slice(0, 3);
-        panel.innerHTML = '<div class="rephrase-header">Choose a rephrasing</div>' + alts.map((alt) =>
-          `<button type="button" class="rephrase-item" data-rephrase="${escapeHtml(alt)}">${escapeHtml(alt)}</button>`
-        ).join("");
-      } catch { panel.classList.add("hidden"); }
+      const wordCount = floatSelection.trim().split(/\s+/).length;
+      const ta = $("bodyInput");
+      const selStart = ta.selectionStart;
+      const selEnd = ta.selectionEnd;
+      const sel = floatSelection;
+
+      if (wordCount > 15) {
+        hideFloatBar();
+        const start = (ta.value.slice(selStart, selEnd) === sel) ? selStart : ta.value.indexOf(sel);
+        if (start === -1) return;
+        try {
+          const text = await callAI("rephrase", { text: sel });
+          const first = text.split("\n").map((s) => s.trim()).filter(Boolean)[0] || text.trim();
+          ta.value = ta.value.slice(0, start) + first + ta.value.slice(start + sel.length);
+          autoGrowBody();
+          renderPreview();
+          scheduleSave();
+        } catch {}
+      } else {
+        const panel = $("aiRephrasePanel");
+        panel.innerHTML = '<div class="rephrase-header">Rephrase</div><div class="rephrase-item ai-loading">✦ thinking…</div>';
+        panel.classList.remove("hidden");
+        try {
+          const text = await callAI("rephrase", { text: sel });
+          const alts = text.split("\n").map((s) => s.trim()).filter(Boolean).slice(0, 3);
+          panel.innerHTML = '<div class="rephrase-header">Choose a rephrasing</div>' + alts.map((alt) =>
+            `<button type="button" class="rephrase-item" data-rephrase="${escapeHtml(alt)}">${escapeHtml(alt)}</button>`
+          ).join("");
+        } catch { panel.classList.add("hidden"); }
+      }
     }
 
     async function doGrammar() {
