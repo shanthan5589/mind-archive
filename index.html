@@ -234,7 +234,7 @@
       transition: none;
     }
 
-    input:focus,
+    input:not([type="checkbox"]):not([type="radio"]):focus,
     select:focus,
     textarea:focus {
       outline: none;
@@ -1438,6 +1438,122 @@
       box-shadow: 0 1px 0 var(--line-dark);
     }
 
+    /* ── Product Tour ── */
+    #tourBackdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.62);
+      z-index: 1000;
+    }
+    #tourBackdrop.hidden { display: none; }
+
+    #tourSpotlight {
+      position: fixed;
+      z-index: 1001;
+      border-radius: 10px;
+      box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.25), 0 0 0 6px rgba(255, 255, 255, 0.06);
+      pointer-events: none;
+      transition: top 0.28s ease, left 0.28s ease, width 0.28s ease, height 0.28s ease;
+    }
+    #tourSpotlight.hidden { display: none; }
+
+    #tourTooltip {
+      position: fixed;
+      z-index: 1002;
+      background: var(--panel);
+      border-radius: 14px;
+      padding: 22px 24px 18px;
+      width: 300px;
+      box-shadow: 0 8px 40px rgba(0, 0, 0, 0.28), 0 0 0 0.5px rgba(0, 0, 0, 0.1);
+      transition: top 0.28s ease, left 0.28s ease;
+    }
+    #tourTooltip.hidden { display: none; }
+
+    .tour-step-label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--muted);
+      margin-bottom: 7px;
+    }
+
+    #tourTitle {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text);
+      margin: 0 0 8px;
+    }
+
+    #tourDesc {
+      font-size: 13.5px;
+      color: var(--muted);
+      line-height: 1.6;
+      margin: 0 0 18px;
+    }
+
+    .tour-actions {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .tour-progress {
+      font-size: 12px;
+      color: var(--muted);
+      flex-shrink: 0;
+    }
+
+    .tour-buttons {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    #tourSkip {
+      background: none;
+      border: none;
+      color: var(--muted);
+      font-size: 13px;
+      padding: 0;
+      cursor: pointer;
+      min-height: 0;
+      box-shadow: none;
+      font-weight: 400;
+    }
+    #tourSkip:hover {
+      color: var(--text);
+      background: none;
+      box-shadow: none;
+      transform: none;
+    }
+
+    #tourNext {
+      background: var(--button);
+      color: var(--button-fg);
+      border: none;
+      border-radius: 8px;
+      padding: 7px 15px;
+      font-size: 13.5px;
+      font-weight: 500;
+      cursor: pointer;
+      min-height: 0;
+      box-shadow: none;
+      white-space: nowrap;
+    }
+    #tourNext:hover {
+      background: var(--button-hover);
+      transform: none;
+      box-shadow: none;
+    }
+
+    @media (max-width: 640px) {
+      #tourTooltip {
+        width: calc(100vw - 24px);
+      }
+    }
+
     @media print {
       body {
         background: #ffffff;
@@ -1645,6 +1761,9 @@
       color: var(--pin);
       transform: none;
     }
+    .post-actions button[data-action="favourite"][aria-pressed="true"] {
+      color: var(--pin);
+    }
     /* Delete — red tint */
     .post-actions button[data-action="delete"] {
       color: var(--danger);
@@ -1761,6 +1880,9 @@
       color: var(--pin);
       transform: none;
       box-shadow: none;
+    }
+    .post-modal-icon-btn[aria-pressed="true"] {
+      color: var(--pin);
     }
 
     .post-modal-action-btn {
@@ -2812,6 +2934,7 @@
           </button>
           <div class="user-menu-dropdown hidden" id="userMenuDropdown" role="menu">
             <button type="button" id="settingsMenuItem" class="menu-item" role="menuitem">Settings</button>
+            <button type="button" id="tourMenuItem" class="menu-item" role="menuitem">Product tour</button>
             <div class="menu-divider" role="separator"></div>
             <button type="button" id="logoutButton" class="menu-item" role="menuitem">Sign out</button>
           </div>
@@ -3059,7 +3182,7 @@
 
               <div class="form-actions">
                 <button type="submit">Save</button>
-                <button type="button" id="clearEditor">New</button>
+
                 <button type="button" id="cancelEdit" class="hidden">Cancel edit</button>
                 <span class="muted" id="editorStatus" role="status" aria-live="polite"></span>
               </div>
@@ -3295,6 +3418,22 @@
     </div>
   </div>
 
+  <!-- Product Tour -->
+  <div id="tourBackdrop" class="hidden"></div>
+  <div id="tourSpotlight" class="hidden"></div>
+  <div id="tourTooltip" class="hidden" role="dialog" aria-modal="true" aria-live="polite">
+    <div class="tour-step-label" id="tourStepLabel"></div>
+    <h3 class="tour-title" id="tourTitle"></h3>
+    <p class="tour-desc" id="tourDesc"></p>
+    <div class="tour-actions">
+      <span class="tour-progress" id="tourProgress"></span>
+      <div class="tour-buttons">
+        <button type="button" id="tourSkip">Skip tour</button>
+        <button type="button" id="tourNext">Next →</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     const THEME_STORAGE_KEY = "mind-archive-theme";
     const state = {
@@ -3374,6 +3513,7 @@
         body: JSON.stringify({ firstName, lastName, email, password })
       });
       unlock(result.email, result.feedId, result.firstName || firstName, result.lastName || lastName, Array.isArray(result.vault) ? result.vault : []);
+      setTimeout(() => startTour(false), 700);
     }
 
     async function signIn(emailValue, password) {
@@ -3419,8 +3559,16 @@
       state.query = "";
       state.collection = "";
       state.onlyPinned = false;
+      state.onlyFavourite = false;
+      state.searchFrom = "";
+      state.searchTo = "";
+      state.minWords = "";
       $("searchInput").value = "";
       $("onlyPinned").checked = false;
+      $("onlyFavourite").checked = false;
+      $("searchFrom").value = "";
+      $("searchTo").value = "";
+      $("minWords").value = "";
       $("currentUserLabel").textContent = firstName || email;
       showApp();
       renderAll();
@@ -3725,7 +3873,7 @@
               ${preview ? `<p class="post-preview">${escapeHtml(preview)}${post.body.trim().length > 160 ? "…" : ""}</p>` : ""}
             </div>
             <div class="post-actions">
-              <button type="button" data-action="favourite" data-id="${post.id}" title="${post.favourite ? "Remove favourite" : "Mark as favourite"}">${post.favourite ? "★" : "☆"}</button>
+              <button type="button" data-action="favourite" data-id="${post.id}" aria-pressed="${post.favourite}" title="${post.favourite ? "Remove favourite" : "Mark as favourite"}">${post.favourite ? "★" : "☆"}</button>
               <button type="button" data-action="pin" data-id="${post.id}">📌 ${post.pinned ? "Unpin" : "Pin"}</button>
               <button type="button" data-action="edit" data-id="${post.id}">Edit</button>
               <button type="button" data-action="delete" data-id="${post.id}">Delete</button>
@@ -3947,6 +4095,7 @@
     const AI_PREFS_KEY = "ma_ai_prefs";
     const AI_DIGEST_KEY = "ma_ai_digest";
     const AI_INSIGHT_KEY = "ma_ai_insight";
+    const TOUR_KEY = "ma_tour_done";
 
     function saveDraft() {
       if ($("postId").value) return;
@@ -4032,7 +4181,7 @@
       $("postModalTags").innerHTML = tagChips.length ? `<div class="tags" style="margin-top:10px">${tagChips.join("")}</div>` : "";
 
       $("postModalHeaderActions").innerHTML = `
-        <button type="button" data-action="modal-favourite" data-id="${post.id}" title="${post.favourite ? "Remove favourite" : "Add to favourites"}" class="post-modal-icon-btn">${post.favourite ? "★" : "☆"}</button>
+        <button type="button" data-action="modal-favourite" data-id="${post.id}" aria-pressed="${post.favourite}" title="${post.favourite ? "Remove favourite" : "Add to favourites"}" class="post-modal-icon-btn">${post.favourite ? "★" : "☆"}</button>
         <button type="button" data-action="modal-pin" data-id="${post.id}" class="post-modal-action-btn">${post.pinned ? "Unpin" : "📌 Pin"}</button>
         <button type="button" data-action="modal-edit" data-id="${post.id}" class="post-modal-action-btn">Edit</button>
         <button type="button" data-action="modal-delete" data-id="${post.id}" class="post-modal-action-btn post-modal-delete-btn">Delete</button>
@@ -4940,7 +5089,7 @@
       });
 
       $("editorBackButton").addEventListener("click", () => setView("postsView"));
-      $("clearEditor").addEventListener("click", clearEditor);
+
       $("detailsToolButton").addEventListener("click", () => toggleEditorToolPanel("details"));
       $("sparkToolButton").addEventListener("click", () => toggleEditorToolPanel("spark"));
       document.addEventListener("click", (event) => {
@@ -5417,6 +5566,248 @@
           event.target.value = "";
         }
       });
+
+      // Tour event listeners
+      $("tourNext").addEventListener("click", () => showTourStep(_tourStep + 1));
+      $("tourSkip").addEventListener("click", endTour);
+      $("tourMenuItem").addEventListener("click", () => {
+        $("userMenuDropdown").classList.add("hidden");
+        $("userMenuButton").setAttribute("aria-expanded", "false");
+        startTour(true);
+      });
+      window.addEventListener("resize", () => {
+        if (!$("tourBackdrop").classList.contains("hidden")) {
+          const step = TOUR_STEPS[_tourStep];
+          if (step && step.target) {
+            const el = document.querySelector(step.target);
+            if (el) { positionTourSpotlight(el); positionTourTooltip(el); }
+          }
+        }
+      });
+    }
+
+    // ─── Product Tour ───
+
+    const TOUR_STEPS = [
+      {
+        target: null,
+        view: "postsView",
+        title: "Welcome to Mind Archive",
+        desc: "This is your private space to write, reflect, and remember. Let's take a quick look at what you can do."
+      },
+      {
+        target: "#newPostButton",
+        view: "postsView",
+        title: "Write a new post",
+        desc: "Tap here to start writing — a memory, a thought, a mood, or a moment from your day."
+      },
+      {
+        target: ".post",
+        view: "postsView",
+        title: "Your posts",
+        desc: "Tap any post to open and read it. On mobile, swipe left or right to move between posts, swipe down to close."
+      },
+      {
+        target: ".post [data-action='favourite']",
+        view: "postsView",
+        title: "Star your favourites",
+        desc: "Click ☆ to mark a post as a favourite. Filter starred posts using the Find box below."
+      },
+      {
+        target: "#findBox",
+        view: "postsView",
+        title: "Search & filter",
+        desc: "Search by keyword, filter by date, mood, or collection — or show only your starred posts.",
+        mobileSkip: true
+      },
+      {
+        target: "#detailsToolButton",
+        view: "editorView",
+        title: "Post details",
+        desc: "Tap ☰ to add mood, place, collections, and more to your post — makes it easier to find and filter later."
+      },
+      {
+        target: "#sparkToolButton",
+        view: "editorView",
+        title: "Writing ideas",
+        desc: "Stuck on what to write? Tap ✦ for AI-powered prompts and ideas to spark your next entry."
+      },
+      {
+        target: "#autoSuggestButton",
+        view: "editorView",
+        title: "Inline suggestions",
+        desc: "Tap ↝ to turn on AI completions — as you type, it suggests the next word or sentence. Press → for a word, Tab to accept all."
+      },
+      {
+        target: "#focusButton",
+        view: "editorView",
+        title: "Focus mode",
+        desc: "Tap Focus to hide everything except the editor — just you and your words, no distractions."
+      },
+      {
+        target: "#bodyInput",
+        view: "editorView",
+        title: "Select text for AI",
+        desc: "Highlight any text while writing and an AI toolbar pops up — instantly rephrase it or fix grammar."
+      },
+      {
+        target: "[data-view='insightsView']",
+        view: "postsView",
+        title: "Insights & AI summaries",
+        desc: "The Insights tab gives you a weekly digest of your writing, On This Day memories from past years, and recurring themes across all your posts."
+      },
+      {
+        target: "#shortcutsButton",
+        view: "postsView",
+        title: "Shortcuts & help",
+        desc: "Press ? anytime for keyboard shortcuts. You can restart this tour anytime from your account menu.",
+        mobileSkip: true
+      }
+    ];
+
+    let _tourStep = 0;
+    let _tourSkippable = false;
+
+    function startTour(skippable) {
+      _tourSkippable = skippable;
+      _tourStep = 0;
+      showTourStep(0);
+    }
+
+    function _tourIsMobile() { return window.innerWidth <= 640; }
+
+    function _tourVisibleSteps() {
+      const mob = _tourIsMobile();
+      return TOUR_STEPS.filter(s => !mob || !s.mobileSkip);
+    }
+
+    function showTourStep(index) {
+      if (index >= TOUR_STEPS.length) { endTour(); return; }
+      const step = TOUR_STEPS[index];
+
+      // Skip steps not applicable on mobile
+      if (step.mobileSkip && _tourIsMobile()) { _tourStep = index + 1; showTourStep(_tourStep); return; }
+
+      _tourStep = index; // keep counter in sync with what's actually shown
+
+      // Navigate to required view
+      if (step.view === "editorView" && state.view !== "editorView") {
+        setView("editorView");
+      } else if (step.view === "postsView" && state.view !== "postsView") {
+        setView("postsView");
+        renderAll();
+      }
+
+      // Step label uses visible-step count for mobile
+      const visible  = _tourVisibleSteps();
+      const position = visible.indexOf(step) + 1;
+      const total    = visible.length;
+      $("tourStepLabel").textContent = `Step ${position} of ${total}`;
+      $("tourTitle").textContent = step.title;
+      $("tourDesc").textContent  = step.desc;
+      $("tourProgress").textContent = "";
+      $("tourNext").textContent = position === total ? "Done ✓" : "Next →";
+
+      const skipBtn = $("tourSkip");
+      if (_tourSkippable) {
+        skipBtn.classList.remove("hidden");
+      } else {
+        skipBtn.classList.add("hidden");
+      }
+
+      $("tourBackdrop").classList.remove("hidden");
+      $("tourTooltip").classList.remove("hidden");
+
+      if (!step.target) {
+        $("tourSpotlight").classList.add("hidden");
+        centerTourTooltip();
+        return;
+      }
+
+      const el = document.querySelector(step.target);
+      if (!el || el.offsetParent === null) { showTourStep(index + 1); return; }
+
+      el.scrollIntoView({ block: "center", behavior: "instant" });
+      requestAnimationFrame(() => {
+        positionTourSpotlight(el);
+        positionTourTooltip(el);
+      });
+    }
+
+    function positionTourSpotlight(el) {
+      const r = el.getBoundingClientRect();
+      const pad = 7;
+      const s = $("tourSpotlight");
+      s.classList.remove("hidden");
+      s.style.top    = `${r.top    - pad}px`;
+      s.style.left   = `${r.left   - pad}px`;
+      s.style.width  = `${r.width  + pad * 2}px`;
+      s.style.height = `${r.height + pad * 2}px`;
+    }
+
+    function positionTourTooltip(el) {
+      const r   = el.getBoundingClientRect();
+      const t   = $("tourTooltip");
+      const vw  = window.innerWidth;
+      const vh  = window.innerHeight;
+      const mob = _tourIsMobile();
+      const tw  = mob ? vw - 24 : Math.min(300, vw - 24);
+      const th  = t.offsetHeight || 180;
+      const gap = 14;
+
+      t.style.transform = "";
+
+      if (mob) {
+        // Mobile: always anchored to left edge, position above or below element
+        t.style.left = "12px";
+        if (r.bottom + gap + th <= vh) {
+          t.style.top = `${r.bottom + gap}px`;
+        } else {
+          t.style.top = `${Math.max(12, r.top - gap - th)}px`;
+        }
+        return;
+      }
+
+      // Desktop: try below → above → right → left
+      let top, left;
+      if (r.bottom + gap + th <= vh) {
+        top  = r.bottom + gap;
+        left = Math.min(Math.max(r.left, 12), vw - tw - 12);
+      } else if (r.top - gap - th >= 0) {
+        top  = r.top - gap - th;
+        left = Math.min(Math.max(r.left, 12), vw - tw - 12);
+      } else if (r.right + gap + tw <= vw) {
+        top  = Math.max(12, Math.min(r.top, vh - th - 12));
+        left = r.right + gap;
+      } else {
+        top  = Math.max(12, Math.min(r.top, vh - th - 12));
+        left = Math.max(12, r.left - gap - tw);
+      }
+
+      t.style.top  = `${top}px`;
+      t.style.left = `${left}px`;
+    }
+
+    function centerTourTooltip() {
+      const t   = $("tourTooltip");
+      const mob = _tourIsMobile();
+      if (mob) {
+        t.style.top       = "50%";
+        t.style.left      = "12px";
+        t.style.transform = "translateY(-50%)";
+      } else {
+        t.style.top       = "50%";
+        t.style.left      = "50%";
+        t.style.transform = "translate(-50%, -50%)";
+      }
+    }
+
+    function endTour() {
+      $("tourBackdrop").classList.add("hidden");
+      $("tourSpotlight").classList.add("hidden");
+      $("tourTooltip").classList.add("hidden");
+      localStorage.setItem(TOUR_KEY, "1");
+      if (state.view === "editorView") { setView("postsView"); renderAll(); }
     }
 
     applyTheme(getSavedTheme());

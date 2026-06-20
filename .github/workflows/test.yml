@@ -67,3 +67,19 @@ jobs:
         run: node tests/edgetest.cjs
         env:
           SESSION_SECRET: ci-test-secret-at-least-32-chars-long
+
+      - name: Restart server (reset for feature tests)
+        run: |
+          pkill -f "node server.js" || true
+          node server.js &
+        env:
+          SESSION_SECRET: ci-test-secret-at-least-32-chars-long
+          NODE_ENV: development
+
+      - name: Wait for server
+        run: npx wait-on http://localhost:3000 --timeout 15000
+
+      - name: Run feature tests
+        run: node tests/featuretest.cjs
+        env:
+          SESSION_SECRET: ci-test-secret-at-least-32-chars-long
