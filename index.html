@@ -1551,7 +1551,6 @@
     @media (max-width: 640px) {
       #tourTooltip {
         width: calc(100vw - 24px);
-        left: 12px !important;
       }
     }
 
@@ -5569,7 +5568,7 @@
       });
 
       // Tour event listeners
-      $("tourNext").addEventListener("click", () => showTourStep(++_tourStep));
+      $("tourNext").addEventListener("click", () => showTourStep(_tourStep + 1));
       $("tourSkip").addEventListener("click", endTour);
       $("tourMenuItem").addEventListener("click", () => {
         $("userMenuDropdown").classList.add("hidden");
@@ -5618,7 +5617,8 @@
         target: "#findBox",
         view: "postsView",
         title: "Search & filter",
-        desc: "Search by keyword, filter by date, mood, or collection — or show only your starred posts."
+        desc: "Search by keyword, filter by date, mood, or collection — or show only your starred posts.",
+        mobileSkip: true
       },
       {
         target: "#detailsToolButton",
@@ -5660,7 +5660,8 @@
         target: "#shortcutsButton",
         view: "postsView",
         title: "Shortcuts & help",
-        desc: "Press ? anytime for keyboard shortcuts. You can restart this tour anytime from your account menu."
+        desc: "Press ? anytime for keyboard shortcuts. You can restart this tour anytime from your account menu.",
+        mobileSkip: true
       }
     ];
 
@@ -5673,9 +5674,21 @@
       showTourStep(0);
     }
 
+    function _tourIsMobile() { return window.innerWidth <= 640; }
+
+    function _tourVisibleSteps() {
+      const mob = _tourIsMobile();
+      return TOUR_STEPS.filter(s => !mob || !s.mobileSkip);
+    }
+
     function showTourStep(index) {
       if (index >= TOUR_STEPS.length) { endTour(); return; }
       const step = TOUR_STEPS[index];
+
+      // Skip steps not applicable on mobile
+      if (step.mobileSkip && _tourIsMobile()) { _tourStep = index + 1; showTourStep(_tourStep); return; }
+
+      _tourStep = index; // keep counter in sync with what's actually shown
 
       // Navigate to required view
       if (step.view === "editorView" && state.view !== "editorView") {
@@ -5685,12 +5698,15 @@
         renderAll();
       }
 
-      // Render content
-      $("tourStepLabel").textContent = `Step ${index + 1} of ${TOUR_STEPS.length}`;
+      // Step label uses visible-step count for mobile
+      const visible  = _tourVisibleSteps();
+      const position = visible.indexOf(step) + 1;
+      const total    = visible.length;
+      $("tourStepLabel").textContent = `Step ${position} of ${total}`;
       $("tourTitle").textContent = step.title;
-      $("tourDesc").textContent = step.desc;
+      $("tourDesc").textContent  = step.desc;
       $("tourProgress").textContent = "";
-      $("tourNext").textContent = index === TOUR_STEPS.length - 1 ? "Done ✓" : "Next →";
+      $("tourNext").textContent = position === total ? "Done ✓" : "Next →";
 
       const skipBtn = $("tourSkip");
       if (_tourSkippable) {
@@ -5709,10 +5725,7 @@
       }
 
       const el = document.querySelector(step.target);
-      if (!el) {
-        showTourStep(index + 1);
-        return;
-      }
+      if (!el || el.offsetParent === null) { showTourStep(index + 1); return; }
 
       el.scrollIntoView({ block: "center", behavior: "instant" });
       requestAnimationFrame(() => {
@@ -5737,13 +5750,26 @@
       const t   = $("tourTooltip");
       const vw  = window.innerWidth;
       const vh  = window.innerHeight;
-      const tw  = Math.min(300, vw - 24);
+      const mob = _tourIsMobile();
+      const tw  = mob ? vw - 24 : Math.min(300, vw - 24);
       const th  = t.offsetHeight || 180;
       const gap = 14;
 
-      let top, left;
       t.style.transform = "";
 
+      if (mob) {
+        // Mobile: always anchored to left edge, position above or below element
+        t.style.left = "12px";
+        if (r.bottom + gap + th <= vh) {
+          t.style.top = `${r.bottom + gap}px`;
+        } else {
+          t.style.top = `${Math.max(12, r.top - gap - th)}px`;
+        }
+        return;
+      }
+
+      // Desktop: try below → above → right → left
+      let top, left;
       if (r.bottom + gap + th <= vh) {
         top  = r.bottom + gap;
         left = Math.min(Math.max(r.left, 12), vw - tw - 12);
@@ -5763,10 +5789,17 @@
     }
 
     function centerTourTooltip() {
-      const t = $("tourTooltip");
-      t.style.top       = "50%";
-      t.style.left      = "50%";
-      t.style.transform = "translate(-50%, -50%)";
+      const t   = $("tourTooltip");
+      const mob = _tourIsMobile();
+      if (mob) {
+        t.style.top       = "50%";
+        t.style.left      = "12px";
+        t.style.transform = "translateY(-50%)";
+      } else {
+        t.style.top       = "50%";
+        t.style.left      = "50%";
+        t.style.transform = "translate(-50%, -50%)";
+      }
     }
 
     function endTour() {
