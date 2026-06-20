@@ -1645,6 +1645,9 @@
       color: var(--pin);
       transform: none;
     }
+    .post-actions button[data-action="favourite"][aria-pressed="true"] {
+      color: var(--pin);
+    }
     /* Delete — red tint */
     .post-actions button[data-action="delete"] {
       color: var(--danger);
@@ -1761,6 +1764,9 @@
       color: var(--pin);
       transform: none;
       box-shadow: none;
+    }
+    .post-modal-icon-btn[aria-pressed="true"] {
+      color: var(--pin);
     }
 
     .post-modal-action-btn {
@@ -3419,8 +3425,16 @@
       state.query = "";
       state.collection = "";
       state.onlyPinned = false;
+      state.onlyFavourite = false;
+      state.searchFrom = "";
+      state.searchTo = "";
+      state.minWords = "";
       $("searchInput").value = "";
       $("onlyPinned").checked = false;
+      $("onlyFavourite").checked = false;
+      $("searchFrom").value = "";
+      $("searchTo").value = "";
+      $("minWords").value = "";
       $("currentUserLabel").textContent = firstName || email;
       showApp();
       renderAll();
@@ -3725,7 +3739,7 @@
               ${preview ? `<p class="post-preview">${escapeHtml(preview)}${post.body.trim().length > 160 ? "…" : ""}</p>` : ""}
             </div>
             <div class="post-actions">
-              <button type="button" data-action="favourite" data-id="${post.id}" title="${post.favourite ? "Remove favourite" : "Mark as favourite"}">${post.favourite ? "★" : "☆"}</button>
+              <button type="button" data-action="favourite" data-id="${post.id}" aria-pressed="${post.favourite}" title="${post.favourite ? "Remove favourite" : "Mark as favourite"}">${post.favourite ? "★" : "☆"}</button>
               <button type="button" data-action="pin" data-id="${post.id}">📌 ${post.pinned ? "Unpin" : "Pin"}</button>
               <button type="button" data-action="edit" data-id="${post.id}">Edit</button>
               <button type="button" data-action="delete" data-id="${post.id}">Delete</button>
@@ -4032,7 +4046,7 @@
       $("postModalTags").innerHTML = tagChips.length ? `<div class="tags" style="margin-top:10px">${tagChips.join("")}</div>` : "";
 
       $("postModalHeaderActions").innerHTML = `
-        <button type="button" data-action="modal-favourite" data-id="${post.id}" title="${post.favourite ? "Remove favourite" : "Add to favourites"}" class="post-modal-icon-btn">${post.favourite ? "★" : "☆"}</button>
+        <button type="button" data-action="modal-favourite" data-id="${post.id}" aria-pressed="${post.favourite}" title="${post.favourite ? "Remove favourite" : "Add to favourites"}" class="post-modal-icon-btn">${post.favourite ? "★" : "☆"}</button>
         <button type="button" data-action="modal-pin" data-id="${post.id}" class="post-modal-action-btn">${post.pinned ? "Unpin" : "📌 Pin"}</button>
         <button type="button" data-action="modal-edit" data-id="${post.id}" class="post-modal-action-btn">Edit</button>
         <button type="button" data-action="modal-delete" data-id="${post.id}" class="post-modal-action-btn post-modal-delete-btn">Delete</button>
